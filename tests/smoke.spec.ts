@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-test('the page loads with the bracket title', async ({ page }) => {
+test('the page loads with the bracketeer title', async ({ page }) => {
   await page.goto('/');
-  await expect(page).toHaveTitle('bracket');
-  await expect(page.getByRole('heading', { name: 'bracket' })).toBeVisible();
+  await expect(page).toHaveTitle('bracketeer');
+  await expect(page.getByRole('heading', { name: 'bracketeer' })).toBeVisible();
 });

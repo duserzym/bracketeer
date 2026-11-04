@@ -7,7 +7,7 @@
 
   onMount(() => {
     try {
-      const saved = localStorage.getItem('bracket.theme');
+      const saved = localStorage.getItem('bracketeer.theme');
       if (saved === 'light' || saved === 'dark' || saved === 'system')
         theme = saved;
     } catch {
@@ -28,7 +28,7 @@
   function chooseTheme(event: Event) {
     theme = (event.currentTarget as HTMLSelectElement).value as Theme;
     try {
-      localStorage.setItem('bracket.theme', theme);
+      localStorage.setItem('bracketeer.theme', theme);
     } catch {
       // Keep the selection for this visit if storage is unavailable.
     }
@@ -37,7 +37,7 @@
 
 <main>
   <header>
-    <h1>bracket</h1>
+    <h1>bracketeer</h1>
     <label>
       Theme
       <select value={theme} onchange={chooseTheme}>

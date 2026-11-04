@@ -1,9 +1,12 @@
-# AGENTS.md — bracket
+# AGENTS.md — bracketeer
 
-`bracket` turns a list of unknowns and standards (with their laser spot ranges)
+`bracketeer` turns a list of unknowns and standards (with their laser spot ranges)
 into a standard-bracketed LA-ICP-MS run sequence for the Thermo Qtegra LabBook,
-lets the user edit it in a grid, and exports it. It runs mainly on the Windows
-PC at the instrument, as a small fast executable; development is on macOS.
+lets the user edit it in a grid, and exports it. It runs on the Windows PC at
+the instrument (a small fast `bracketeer.exe`) and on macOS (a normal app);
+both are shipped. The `.xls` export (BIFF8) is the default, because that is
+what Qtegra on the Windows PC reads; `.xlsx`, `.csv` and the clipboard copy
+are the others. Development is on macOS.
 
 The spec is `docs/PLAN.md`. Read it before any change. Where this file is more
 precise than the plan, this file wins. The supervisor (a Claude session) gives
@@ -37,7 +40,7 @@ each milestone as a separate prompt; do only that milestone.
   `src-tauri/` (desktop, milestone 4).
 - `Makefile`: `make dev` (Vite dev server), `make test` (lint + `svelte-check`
   + Vitest, and Playwright once it exists), `make build` (web build into
-  `dist/`, plus `dist/bracket.html` single file from milestone 4),
+  `dist/`, plus `dist/bracketeer.html` single file from milestone 4),
   `make desktop` (Tauri build, milestone 4), `make e2e` (Playwright only).
 - Engine (`src/lib/engine/`): pure functions, no DOM, no Svelte, no I/O
   except the file-format helpers taking/returning bytes or strings.
@@ -51,13 +54,13 @@ each milestone as a separate prompt; do only that milestone.
 
 - Light theme by default; a three-way **Light / Dark / System** switch;
   nothing stored means light; the choice lives in
-  `localStorage['bracket.theme']`, never in a project file. Tokens: light is
+  `localStorage['bracketeer.theme']`, never in a project file. Tokens: light is
   the base in `:root`, `[data-theme='dark']` overrides.
 - One click for a good result (Generate), every control still visible and
   editable, an explicit Reset to defaults.
 - Fits a 14-inch laptop: checked at 1440×900 and 1280×800 CSS px; nothing
   clipped, panels scroll inside, the left column folds to a strip (» / «).
-  Layout (folded column, splitter) in `localStorage['bracket.layout']`, with
+  Layout (folded column, splitter) in `localStorage['bracketeer.layout']`, with
   a Reset layout action. Desktop window opens at 1280×800 centred, never
   below 1024×640, geometry remembered in the config folder.
 - Plain, short English in the UI; no exclamation marks, no emoji.
@@ -94,61 +97,104 @@ CRLF line ends, booleans as `TRUE`, numbers without trailing `.0`.
 
 ## The recipe (engine semantics)
 
-Inputs: experiment (name, session number, column defaults), unknowns (rows
-`name, tag, from, to` in run order, inclusive ranges, ascending spots),
-standards (`name, role, ranges[], used[]`; role `primary` (exactly one),
-`secondary` (several, rotated in table order), `reference` (only in the
-opening, mid and closing blocks)), recipe.
+A project is one experiment with several **sessions** (one sequence sheet
+each). Each session has its unknowns (rows `name, tag, from, to` in run
+order, inclusive, ascending spots) and its rows. A session is either
+**planned** (rows come from Generate) or **fixed** (imported from an earlier
+sequence, or marked as run): fixed sessions are never regenerated and their
+standard spots count as used. Standards: `name, role, ranges[], used[],
+spare` with role `primary` (exactly one), `secondary` (several, rotated in
+table order; today Seiland, 91500, PL, LTSE), `reference` (only in the
+opening, mid and closing blocks). `used` holds spots typed in by hand; the
+spots in fixed sessions are added to it automatically. `spare` (default 0)
+is how many spots of that standard to leave unused ("keep N spare").
 
-Recipe defaults (today's template):
+Blocks (defaults = today's template):
 
 - opening: NIST612 × 3, NIST610 × 3, primary × 2
-- after every chunk of unknowns, a **bracket**: `secondaryPairsPerBracket`
-  (default 1) pairs, each pair = 2 consecutive draws of the next secondary in
-  rotation, then primary × 2
-- mid block: NIST610 × 3, NIST612 × 3, inserted at the start of the bracket
-  nearest the midpoint (before that bracket's secondaries); nearest = the
-  bracket whose cumulative unknown count is closest to half of all unknowns,
-  ties to the earlier; no mid block with fewer than 2 chunks
+- after **every** chunk of unknowns, the last one included, a **bracket**:
+  its secondary pairs (each pair = 2 consecutive draws of the next secondary
+  in the rotation), then primary × 2
+- mid block: NIST610 × 3, NIST612 × 3, in bracket m = floor((k + 1) / 2)
+  of a session with k chunks, before that bracket's secondary pairs; none
+  when k < 2
 - closing: NIST612 × 3, NIST610 × 3, after the last bracket
-- sequence = opening, chunk 1, bracket 1, chunk 2, bracket 2, …, chunk C,
-  bracket C, closing
-- chunking: `auto` (the largest bracket count the budget allows), `size`
-  (target unknowns per chunk: C = ceil(N / size)) or `count` (C given).
-  Chunks are equal ±1, the larger ones first: q = floor(N / C), r = N mod C,
-  the first r chunks get q + 1. Chunks run across sample boundaries unless
-  `bracketAtSampleBoundaries` is on; then each sample is chunked on its own
-  with the same target size (size mode: the size; other modes: ceil(N / C)).
-- budget: remaining_s = pool_s − used_s. With `sessionsLeft` (default 1,
-  this session included), the share for this session is
-  floor(remaining_s / sessionsLeft). Bmax = the largest C (≤ N) for which
-  every standard's demand (opening + mid + closing + its bracket draws for C
-  brackets, simulating the rotation exactly) fits its share. Auto uses
-  C = Bmax; size/count modes warn when C > Bmax.
-- draw: each standard takes its unused spots in ascending order across its
-  ranges (several ranges allowed, e.g. NIST610 848–856 and 866–874),
-  skipping `used` and spots already drawn. An exhausted pool still emits the
-  row, with label `<name>_?` and an empty position, plus a warning.
-- rotation: `rotationStart` (index into the secondaries) is where this
-  session starts; the result reports `nextRotation` and the spots used per
-  standard, so the next session continues where this one stopped.
-- warnings (computed from rows, so they also apply after manual edits):
-  pool exhausted; duplicate position number; a standard row whose spot is
-  outside that standard's pool; a standard row whose spot was already used
-  in an earlier session; an unknown row whose spot is outside its sample
-  range. Each warning names the row(s).
+- session = opening, chunk 1, bracket 1, …, chunk k, bracket k, closing
 
-`docs/PLAN.md` §6 and `fixtures/RULES.md` (when present) give today's
-acceptance case; the generated sessions 2 and 3 must match
-`fixtures/session-2.xls` and `fixtures/session-3.xls` cell for cell.
-If `fixtures/RULES.md` disagrees with this section, RULES.md wins for
-the defaults; say so in your final message.
+Chunking modes (`recipe.chunking`):
+
+1. **`budget`** ("Auto from budget", the default): plan all planned
+   sessions of the project together so that the standards last exactly.
+   - S = number of planned sessions; n_i = unknowns of session i.
+   - available_s = pool_s − used_s − spare_s, where used_s includes all
+     fixed sessions.
+   - Fixed use per session: f_s = count of s in opening + mid + closing.
+   - K = floor((available_primary − S·f_primary) / primaryPerBracket),
+     capped at the pair budget P below (every bracket has at least one
+     pair) and at Σ n_i.
+   - P = the largest number of pairs such that drawing P pairs in rotation
+     from `rotationStart` never takes more than floor(available_s /
+     spotsPerSecondary) pairs of any secondary s; then P = min(P,
+     maxPairsPerBracket · K) (maxPairsPerBracket default 2).
+   - Split K over the sessions in proportion to n_i by the largest-remainder
+     method (floors first, the leftover brackets to the largest fractional
+     parts, ties to the earlier session); every session gets ≥ 1.
+   - Number the brackets of the whole run j = 1 … K in session order.
+     Bracket j gets floor(j·P/K) − floor((j−1)·P/K) pairs.
+   - Warn when a reference standard cannot cover S·f_s, or when K < S.
+2. **`size`** (target unknowns per chunk, e.g. 18): per session
+   k = ceil(n / size); every bracket gets `secondaryPairsPerBracket` pairs
+   (default 1).
+3. **`count`**: k given per session; `secondaryPairsPerBracket` pairs.
+
+In every mode: chunks within a session are equal ±1, the larger first
+(q = floor(n / k), r = n mod k, the first r chunks get q + 1); chunks run
+across sample boundaries unless `bracketAtSampleBoundaries` is on (then each
+sample is chunked on its own, its share of k by largest remainder, ≥ 1 per
+sample). The rotation continues across sessions in run order
+(`rotationStart`, default 0 = the first secondary in table order, is where
+the first planned session starts; imported sessions do not change it, because
+hand-made sessions need not follow the rotation; when a planned session is
+marked as run, the app sets `rotationStart` to the secondary after its last
+pair).
+
+Draw: each standard takes its available spots in ascending order across its
+ranges (several ranges allowed, e.g. NIST610 848–856 and 866–874), skipping
+used spots and spots already drawn, in run order across the planned
+sessions. An exhausted pool still emits the row, label `<name>_?`, empty
+position, plus a warning.
+
+Warnings (computed from rows, so they also apply after manual edits):
+pool exhausted; duplicate position number (within a session and across the
+project's sessions); a standard row outside that standard's pool; a
+standard row on a spot already used (typed-in used list or a fixed
+session); an unknown row outside its sample range. Each names the row(s).
+
+### Today's acceptance case (`fixtures/RULES.md`, revision 3)
+
+Session 1 is fixed (imported from `fixtures/session-1.xls`); sessions 2
+and 3 are planned together in budget mode with spare 0: S513 has 78
+available → K = (78 − 2·2) / 2 = 37; each secondary has 20 → P = 40
+(rotation from Seiland, rotationStart 0); split 37 by 234 : 228
+→ 19 and 18 brackets; doubled run brackets 13, 25, 37 (session 2 bracket 13;
+session 3 brackets 6 and 18); mid block at bracket 10 and 9; 332 and 324
+rows; every pool fully used. The generated rows must equal
+`fixtures/session-2.xls` and `fixtures/session-3.xls` cell for cell (value
+and cell type).
 
 ## Fixtures
 
 - `fixtures/session-1.xls`: the hand-made template for session 1 (245 rows).
   Its standard draw order was by hand, so it is checked only structurally
   (chunk sizes, bracket composition, used spots per standard).
-- `fixtures/session-2.xls`, `fixtures/session-3.xls`, `fixtures/RULES.md`:
-  sessions 2 and 3 generated independently from the recipe (added in
-  milestone 2 when available).
+- `fixtures/session-2.xls`, `fixtures/session-3.xls`: sessions 2 and 3,
+  generated independently by `fixtures/make_sessions.py` following
+  `fixtures/RULES.md` (revision 3, final); `fixtures/verify.txt` is the
+  independent check. Golden tests compare labels, positions, values and cell
+  types against them; never fonts, fills or column widths (the app writes
+  no formatting).
+- Excel I/O: SheetJS only (`xlsx` from the official tarball). `.xls` is
+  written with `bookType: 'biff8'`, `.xlsx` with `'xlsx'`, both unstyled.
+  Cell types: Status a truly blank cell (no cell), Evaluate a boolean,
+  Standard/Amount/Final Quantity empty-string text cells, the four numeric
+  columns numbers.

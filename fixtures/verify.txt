@@ -1,0 +1,180 @@
+=== Session 1: Zircon_04Nov26_Synthetic.xls
+rows: 245  (unknowns 165, standards 80)
+standard spots used (run order -> ranges):
+  S513     n=22  628-649
+  91500    n=10  738-747
+  Seiland  n=10  768-777
+  LTSE     n=10  798-807
+  PL       n=10  828-837
+  NIST610  n= 9  857-865
+  NIST612  n= 9  893-901
+unknown chunks (10): [15, 15, 15, 16, 20, 19, 20, 15, 15, 15]
+unknown samples in order: SYN-K1 323-383, SYN-V1 384-487
+standard blocks:
+  [ 0] NIST612x3 + NIST610x3 + S513x2                spots 896, 897, 898, 863, 864, 865, 628, 629
+  [ 1] Seilandx2 + 91500x2 + S513x2                  spots 768, 769, 738, 739, 648, 649
+  [ 2] PLx2 + LTSEx2 + S513x2                        spots 836, 837, 806, 807, 630, 631
+  [ 3] 91500x2 + Seilandx2 + S513x2                  spots 740, 741, 770, 771, 632, 633
+  [ 4] LTSEx2 + PLx2 + S513x2                        spots 804, 805, 834, 835, 644, 645
+  [ 5] NIST610x3 + NIST612x3 + 91500x2 + Seilandx2 + S513x2 spots 860, 861, 862, 899, 900, 901, 742, 743, 772, 773, 646, 647
+  [ 6] PLx2 + LTSEx2 + S513x2                        spots 832, 833, 800, 801, 634, 635
+  [ 7] PLx2 + LTSEx2 + S513x2                        spots 828, 829, 802, 803, 638, 639
+  [ 8] 91500x2 + Seilandx2 + S513x2                  spots 744, 745, 776, 777, 640, 641
+  [ 9] LTSEx2 + PLx2 + S513x2                        spots 798, 799, 830, 831, 636, 637
+  [10] Seilandx2 + 91500x2 + S513x2                  spots 774, 775, 746, 747, 642, 643
+  [11] NIST612x3 + NIST610x3                         spots 893, 894, 895, 857, 858, 859
+checks:
+  PASS  header and per-column cell types/values match the template
+  PASS  S513 spots inside pool 628-727
+  PASS  91500 spots inside pool 728-757
+  PASS  Seiland spots inside pool 758-787
+  PASS  LTSE spots inside pool 788-817
+  PASS  PL spots inside pool 818-847
+  PASS  NIST610 spots inside pool 848-874
+  PASS  NIST612 spots inside pool 875-901
+
+=== Session 2: Zircon_04Nov26_Synthetic_2.xls
+rows: 332  (unknowns 234, standards 98)
+standard spots used (run order -> ranges):
+  S513     n=40  650-689
+  91500    n=10  728-737
+  Seiland  n=10  758-767
+  LTSE     n=10  788-797
+  PL       n=10  818-827
+  NIST610  n= 9  848-856
+  NIST612  n= 9  875-883
+unknown chunks (19): [13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12]
+unknown samples in order: SYN-H3 1-30, SYN-H4 31-55, SYN-H5 56-83, SYN-H11 84-90, SYN-T1 91-116, SYN-T2 117-119, DKR1 120-131, SYN-W2 132-142, SYN-S2 143-167, SYN-S12 168-181, SYN-K2 182-192, SYN-W1 193-234
+standard blocks:
+  [ 0] NIST612x3 + NIST610x3 + S513x2                spots 875, 876, 877, 848, 849, 850, 650, 651
+  [ 1] Seilandx2 + S513x2                            spots 758, 759, 652, 653
+  [ 2] 91500x2 + S513x2                              spots 728, 729, 654, 655
+  [ 3] PLx2 + S513x2                                 spots 818, 819, 656, 657
+  [ 4] LTSEx2 + S513x2                               spots 788, 789, 658, 659
+  [ 5] Seilandx2 + S513x2                            spots 760, 761, 660, 661
+  [ 6] 91500x2 + S513x2                              spots 730, 731, 662, 663
+  [ 7] PLx2 + S513x2                                 spots 820, 821, 664, 665
+  [ 8] LTSEx2 + S513x2                               spots 790, 791, 666, 667
+  [ 9] Seilandx2 + S513x2                            spots 762, 763, 668, 669
+  [10] NIST610x3 + NIST612x3 + 91500x2 + S513x2      spots 851, 852, 853, 878, 879, 880, 732, 733, 670, 671
+  [11] PLx2 + S513x2                                 spots 822, 823, 672, 673
+  [12] LTSEx2 + S513x2                               spots 792, 793, 674, 675
+  [13] Seilandx2 + 91500x2 + S513x2                  spots 764, 765, 734, 735, 676, 677
+  [14] PLx2 + S513x2                                 spots 824, 825, 678, 679
+  [15] LTSEx2 + S513x2                               spots 794, 795, 680, 681
+  [16] Seilandx2 + S513x2                            spots 766, 767, 682, 683
+  [17] 91500x2 + S513x2                              spots 736, 737, 684, 685
+  [18] PLx2 + S513x2                                 spots 826, 827, 686, 687
+  [19] LTSEx2 + S513x2                               spots 796, 797, 688, 689
+  [20] NIST612x3 + NIST610x3                         spots 881, 882, 883, 854, 855, 856
+checks:
+  PASS  header and per-column cell types/values match the template
+  PASS  S513 spots inside pool 628-727
+  PASS  91500 spots inside pool 728-757
+  PASS  Seiland spots inside pool 758-787
+  PASS  LTSE spots inside pool 788-817
+  PASS  PL spots inside pool 818-847
+  PASS  NIST610 spots inside pool 848-874
+  PASS  NIST612 spots inside pool 875-901
+  PASS  row count 332 == 332
+  PASS  chunk sizes [13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12]
+  PASS  21 standard blocks (opening + 19 brackets + closing)
+  PASS  opening = NIST612x3 + NIST610x3 + S513x2
+  PASS  closing = NIST612x3 + NIST610x3
+  PASS  19 brackets = secondary pair(s) + S513x2; two pairs in bracket(s) [13]; rotation from Seiland; NIST610x3 + NIST612x3 first in bracket 10
+  PASS  S513 drawn in ascending order
+  PASS  91500 drawn in ascending order
+  PASS  Seiland drawn in ascending order
+  PASS  LTSE drawn in ascending order
+  PASS  PL drawn in ascending order
+  PASS  NIST610 drawn in ascending order
+  PASS  NIST612 drawn in ascending order
+
+=== Session 3: Zircon_04Nov26_Synthetic_3.xls
+rows: 324  (unknowns 228, standards 96)
+standard spots used (run order -> ranges):
+  S513     n=38  690-727
+  91500    n=10  748-757
+  Seiland  n=10  778-787
+  LTSE     n=10  808-817
+  PL       n=10  838-847
+  NIST610  n= 9  866-874
+  NIST612  n= 9  884-892
+unknown chunks (18): [13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12]
+unknown samples in order: SYN-J1 235-252, SYN-M1 253-302, SYN-F1 303-322, SYN-A1 488-627
+standard blocks:
+  [ 0] NIST612x3 + NIST610x3 + S513x2                spots 884, 885, 886, 866, 867, 868, 690, 691
+  [ 1] Seilandx2 + S513x2                            spots 778, 779, 692, 693
+  [ 2] 91500x2 + S513x2                              spots 748, 749, 694, 695
+  [ 3] PLx2 + S513x2                                 spots 838, 839, 696, 697
+  [ 4] LTSEx2 + S513x2                               spots 808, 809, 698, 699
+  [ 5] Seilandx2 + S513x2                            spots 780, 781, 700, 701
+  [ 6] 91500x2 + PLx2 + S513x2                       spots 750, 751, 840, 841, 702, 703
+  [ 7] LTSEx2 + S513x2                               spots 810, 811, 704, 705
+  [ 8] Seilandx2 + S513x2                            spots 782, 783, 706, 707
+  [ 9] NIST610x3 + NIST612x3 + 91500x2 + S513x2      spots 869, 870, 871, 887, 888, 889, 752, 753, 708, 709
+  [10] PLx2 + S513x2                                 spots 842, 843, 710, 711
+  [11] LTSEx2 + S513x2                               spots 812, 813, 712, 713
+  [12] Seilandx2 + S513x2                            spots 784, 785, 714, 715
+  [13] 91500x2 + S513x2                              spots 754, 755, 716, 717
+  [14] PLx2 + S513x2                                 spots 844, 845, 718, 719
+  [15] LTSEx2 + S513x2                               spots 814, 815, 720, 721
+  [16] Seilandx2 + S513x2                            spots 786, 787, 722, 723
+  [17] 91500x2 + S513x2                              spots 756, 757, 724, 725
+  [18] PLx2 + LTSEx2 + S513x2                        spots 846, 847, 816, 817, 726, 727
+  [19] NIST612x3 + NIST610x3                         spots 890, 891, 892, 872, 873, 874
+checks:
+  PASS  header and per-column cell types/values match the template
+  PASS  S513 spots inside pool 628-727
+  PASS  91500 spots inside pool 728-757
+  PASS  Seiland spots inside pool 758-787
+  PASS  LTSE spots inside pool 788-817
+  PASS  PL spots inside pool 818-847
+  PASS  NIST610 spots inside pool 848-874
+  PASS  NIST612 spots inside pool 875-901
+  PASS  row count 324 == 324
+  PASS  chunk sizes [13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12]
+  PASS  20 standard blocks (opening + 18 brackets + closing)
+  PASS  opening = NIST612x3 + NIST610x3 + S513x2
+  PASS  closing = NIST612x3 + NIST610x3
+  PASS  18 brackets = secondary pair(s) + S513x2; two pairs in bracket(s) [6, 18]; rotation from Seiland; NIST610x3 + NIST612x3 first in bracket 9
+  PASS  S513 drawn in ascending order
+  PASS  91500 drawn in ascending order
+  PASS  Seiland drawn in ascending order
+  PASS  LTSE drawn in ascending order
+  PASS  PL drawn in ascending order
+  PASS  NIST610 drawn in ascending order
+  PASS  NIST612 drawn in ascending order
+
+=== Cross-session
+  PASS  no laser position used twice across sessions 1-3 
+cumulative standard usage after session 3 / spare within pool:
+  S513     used 628-727                        not used -
+  91500    used 728-757                        not used -
+  Seiland  used 758-787                        not used -
+  LTSE     used 788-817                        not used -
+  PL       used 818-847                        not used -
+  NIST610  used 848-874                        not used -
+  NIST612  used 875-901                        not used -
+  PASS  S513 pool 628-727 fully used across sessions 1-3 (no spare)
+  PASS  91500 pool 728-757 fully used across sessions 1-3 (no spare)
+  PASS  Seiland pool 758-787 fully used across sessions 1-3 (no spare)
+  PASS  LTSE pool 788-817 fully used across sessions 1-3 (no spare)
+  PASS  PL pool 818-847 fully used across sessions 1-3 (no spare)
+  PASS  NIST610 pool 848-874 fully used across sessions 1-3 (no spare)
+  PASS  NIST612 pool 875-901 fully used across sessions 1-3 (no spare)
+  PASS  S513: 78 spots used by sessions 2-3
+  PASS  91500: 20 spots used by sessions 2-3
+  PASS  Seiland: 20 spots used by sessions 2-3
+  PASS  LTSE: 20 spots used by sessions 2-3
+  PASS  PL: 20 spots used by sessions 2-3
+  PASS  NIST610: 18 spots used by sessions 2-3
+  PASS  NIST612: 18 spots used by sessions 2-3
+
+=== Twins (.xlsx, .csv) match the .xls
+  PASS  session 2 .xlsx labels/spots/constants identical (332 rows)
+  PASS  session 2 .csv labels/spots identical (332 rows)
+  PASS  session 3 .xlsx labels/spots/constants identical (324 rows)
+  PASS  session 3 .csv labels/spots identical (324 rows)
+
+RESULT: ALL CHECKS PASSED

@@ -1,4 +1,4 @@
-# bracket — plan (2026-11-04)
+# bracketeer — plan (2026-11-04)
 
 A small, fast app that turns a list of unknowns and standards with their laser
 spot ranges into a bracketed LA-ICP-MS run sequence, lets the user edit the
@@ -12,10 +12,11 @@ Studio). House style: one lowercase word, light theme by default, fits a
 
 ## 1. Who runs it, where
 
-- **Windows first.** It runs on the instrument PC next to Qtegra as a
-  lightweight, fast executable. Developed on the Mac; the Mac build is a
-  convenience.
-- Zero install if possible: a single `bracket.exe` (portable, no installer)
+- **Windows and macOS.** It runs on the instrument PC next to Qtegra as a
+  lightweight, fast executable, and on the Mac as a normal app (both are
+  shipped; revised 2026-11-04 by Yiming). The `.xls` export is what goes to
+  the Windows instrument PC.
+- Zero install if possible: a single `bracketeer.exe` (portable, no installer)
   that opens in under a second; an NSIS installer is optional.
 - Also usable as a static web page (same code), for a quick check in a browser.
 
@@ -24,7 +25,7 @@ Studio). House style: one lowercase word, light theme by default, fits a
 - **Experiment**: name (used for the file name, e.g. `Zircon_04Nov26_Synthetic`),
   session number, defaults for the sheet columns (duration 30 s, laser output
   46 %, sample type `UNKNOWN`, comment `<Comment>`, identifier `<Identifier>`,
-  evaluate 1, dilution 1).
+  evaluate TRUE (a boolean cell, as in the template), dilution 1).
 - **Unknowns**: a list of rows `name, size tag (optional: S / L / xs / anything), spot from, spot to`
   in run order. Example: `SYN-H3, S, 1, 30`. Rows can be reordered; a
   paste-from-clipboard box accepts lines like `SYN-H3 S 1-30` (the format Yiming
@@ -38,21 +39,23 @@ Studio). House style: one lowercase word, light theme by default, fits a
   typed in or taken from an **imported** earlier sequence (`.xls`/`.xlsx`
   of the same column layout, or paste). This is how session 2 knows what
   session 1 used.
-- **Recipe** (defaults = today's template):
+- **Recipe** (defaults = today's template; exact semantics in `AGENTS.md`
+  and `fixtures/RULES.md`, revision 3, which supersede this list):
   - opening block: NIST612 × 3, NIST610 × 3, primary × 2;
-  - bracket after every chunk of unknowns: one secondary pair (2 spots of the
-    next secondary in rotation) then primary × 2;
-  - mid block: NIST610 × 3, NIST612 × 3 at the bracket nearest the midpoint
+  - a bracket after every chunk of unknowns, the last included: one
+    secondary pair (2 spots of the next secondary in rotation) then
+    primary × 2; some brackets get two pairs when the budget spreads more
+    pairs than brackets;
+  - mid block: NIST610 × 3, NIST612 × 3 in bracket floor((k + 1) / 2)
     (before that bracket's secondaries);
   - closing block after the last bracket: NIST612 × 3, NIST610 × 3;
-  - chunk target (unknowns between brackets): a number, or **Auto from
-    budget**: the largest number of brackets the remaining pools allow
-    (min over standards of floor(remaining − opening/mid/closing use) / per-bracket use),
-    then chunks of equal size (±1, the larger ones first), never above the
-    target when a number is given;
+  - **Auto from budget** (default): plan all remaining sessions together so
+    the standards last exactly: bracket count from the primary supply,
+    shared between sessions by their unknowns, secondary pairs spread
+    evenly over the brackets; "keep N spare" per standard (default 0);
+  - or a **chunk target** (unknowns per chunk, e.g. 18);
   - option *bracket at sample boundaries* (off by default; on, each sample is
-    chunked on its own like today's template);
-  - secondaries per bracket (1 pair default; template day 1 used 2 pairs).
+    chunked on its own like today's template).
 - Draw order from a pool: ascending through the unused spots; the user can
   edit any cell afterwards.
 
@@ -66,10 +69,13 @@ Studio). House style: one lowercase word, light theme by default, fits a
   deleted, moved; a status strip shows counts (unknowns, each standard used /
   remaining) and warnings (pool exhausted, duplicate spot, spot outside a
   pool).
-- **Export**: `.xlsx` (and `.xls` BIFF8 if the library allows), `.csv`,
+- **Export**: `.xls` (BIFF8, the default, for Qtegra on the Windows PC),
+  `.xlsx`, `.csv`,
   and **Copy for Qtegra** (tab-separated, no header, straight into the
-  LabBook sheet). Sheet name `Sheet1`, no formatting, numbers as numbers.
-- **Project file** `<experiment>.bracket.json` with everything above, so a
+  LabBook sheet). Sheet name `Sheet1`, no formatting, numbers as numbers,
+  cell types as in the template (Evaluate a boolean, Status blank,
+  Standard/Amount/Final Quantity empty strings).
+- **Project file** `<experiment>.bracketeer.json` with everything above, so a
   multi-session experiment is one file; "New session from this one" carries
   the pools and used spots forward.
 
@@ -98,21 +104,23 @@ Studio). House style: one lowercase word, light theme by default, fits a
   bundles the bootstrapper).
 - Fallback: GitHub Actions `windows-latest` job on `workflow_dispatch` and
   `v*` tags only (CI stays quiet until release, as in the other repos), which
-  uploads `bracket.exe` as an artifact.
+  uploads `bracketeer.exe` as an artifact.
 - Also build the web version as a single HTML file (`vite-plugin-singlefile`)
   that opens in Edge with no install: the zero-risk way to test on the
   instrument PC.
-- Done for Windows = a `bracket.exe` that opens, loads
-  `fixtures/session-1.bracket.json`, regenerates sessions 2 and 3 identical
-  to the fixtures, exports `.xlsx`, and copies TSV.
+- Done for Windows = a `bracketeer.exe` that opens, loads
+  `fixtures/session-1.bracketeer.json`, regenerates sessions 2 and 3 identical
+  to the fixtures, exports `.xls`, and copies TSV. The Mac build does the same.
 
 ## 6. Acceptance fixtures (today's experiment)
 
-Template session 1: `~/Downloads/Zircon_04Nov26_Synthetic.xls`
-(245 rows). Sessions 2 and 3 are generated by a separate Opus session into
-`~/Downloads/bracket-sessions-2026-11-04/` with the recipe
-above (one secondary pair per bracket, 10 chunks per session, mid NIST block
-at bracket 5). The app must reproduce them exactly from the inputs:
+Template session 1: `fixtures/session-1.xls` (245 rows, by hand). Sessions
+2 and 3 were generated by a separate session (`fixtures/RULES.md`,
+revision 3, final; `fixtures/make_sessions.py`, `fixtures/verify.py`,
+`fixtures/verify.txt`) into `fixtures/session-2.xls` and
+`fixtures/session-3.xls`. Goal set by Yiming: leave no spare standards.
+The app must reproduce them exactly (labels, positions, values and cell
+types; never fonts or widths) from:
 
 - unknowns session 2: SYN-H3 S 1–30, SYN-H4 S 31–55, SYN-H5 S 56–83, SYN-H11 S 84–90,
   SYN-T1 S 91–116, SYN-T2 S 117–119, DKR1 S 120–131, SYN-W2 S 132–142,
@@ -120,16 +128,21 @@ at bracket 5). The app must reproduce them exactly from the inputs:
 - unknowns session 3: SYN-J1 xs 235–252, SYN-M1 xs 253–302,
   SYN-F1 xs 303–322, SYN-A1 xs 488–627;
 - pools: S513 628–727, 91500 728–757, Seiland 758–787, LTSE 788–817,
-  PL 818–847, NIST610 848–874, NIST612 875–901; used by session 1:
-  S513 628–649, 91500 738–747, Seiland 768–777, LTSE 798–807, PL 828–837,
-  NIST610 857–865, NIST612 893–901.
+  PL 818–847, NIST610 848–874, NIST612 875–901; used by session 1 (read
+  from the template): S513 628–649, 91500 738–747, Seiland 768–777,
+  LTSE 798–807, PL 828–837, NIST610 857–865, NIST612 893–901; everything
+  else is free (20 per secondary);
+- sessions 2 and 3 planned together, Auto from budget, spare 0:
+  K = (78 − 2 × 2) / 2 = 37 brackets, split 19 / 18 by 234 : 228; 40
+  secondary pairs in the rotation Seiland, 91500, PL, LTSE, doubled in run
+  brackets 13, 25, 37; 332 and 324 rows; every pool used up.
 
 Tests: engine unit tests (chunking, budget, rotation across sessions,
 pool exhaustion warnings), golden tests against the three fixtures (session 1
 only structurally: chunk sizes and bracket composition, since its standard
 draw order was by hand), Playwright smoke incl. sizes.
 
-## 7. Build procedure (Codex, monitored by Opus)
+## 7. Build procedure (Codex, supervised by Claude)
 
 Codex CLI 0.166 with model `gpt-6.1-sol` builds the repo in milestones; the
 Opus session writes `AGENTS.md` and `docs/PLAN.md` (this file), runs each
