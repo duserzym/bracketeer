@@ -1,4 +1,4 @@
-.PHONY: setup dev test e2e build desktop
+.PHONY: setup dev test check e2e build desktop
 
 setup:
 	pnpm install
@@ -6,7 +6,10 @@ setup:
 dev:
 	pnpm dev
 
-test:
+test: check
+	$(MAKE) e2e
+
+check:
 	pnpm format:check
 	pnpm lint
 	pnpm check
