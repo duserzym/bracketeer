@@ -1,0 +1,63 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #202b35;
+  background: #f6f7f9;
+  color-scheme: light;
+  --surface: #fff;
+  --border: #c4cbd2;
+}
+
+[data-theme='dark'] {
+  color: #e9edf1;
+  background: #151b22;
+  color-scheme: dark;
+  --surface: #222c36;
+  --border: #566574;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  max-width: 64rem;
+  margin: 3rem auto;
+  padding: 0 1.5rem;
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+h1 {
+  font-size: 2rem;
+  margin: 0;
+}
+
+label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+select {
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  padding: 0.4rem 0.6rem;
+}
+
+select:focus-visible {
+  outline: 2px solid #4d86b5;
+  outline-offset: 2px;
+}
