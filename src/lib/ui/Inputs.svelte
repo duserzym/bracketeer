@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { deriveSession } from '../engine/import';
   import { parseRanges, parseUnknowns, parseUsedSpots } from '../engine/parse';
   import type { ProjectPlan } from '../engine/sequence';
   import type {
@@ -41,6 +42,25 @@
   const doubled = $derived(
     planned.flatMap((s) => s.pairsPerBracket).filter((n) => n > 1).length,
   );
+  const fixedUse = $derived(
+    project.sessions
+      .filter((s) => s.fixed)
+      .map((s) => ({
+        number: s.number,
+        source: s.source,
+        used: deriveSession(s.rows, project.standards).used,
+      })),
+  );
+  function spotRanges(spots: number[]) {
+    const ranges: string[] = [];
+    for (let i = 0; i < spots.length; i++) {
+      const first = spots[i]!;
+      let last = first;
+      while (spots[i + 1] === last + 1) last = spots[++i]!;
+      ranges.push(first === last ? String(first) : `${first}–${last}`);
+    }
+    return ranges.join(', ');
+  }
   function current(p: Project) {
     return p.sessions.find((s) => s.number === session.number)!;
   }
@@ -339,6 +359,15 @@
               p.standards[i]!.used = parseUsedSpots(text).rows;
             })}
         />
+        {#each fixedUse as fixed (fixed.number)}
+          {@const spots = fixed.used[s.name] ?? []}
+          {#if spots.length}
+            <p class="hint fixed-used">
+              Session {fixed.number} ({fixed.source ? 'imported' : 'run'}):
+              {spotRanges(spots)}
+            </p>
+          {/if}
+        {/each}
         <div class="pool-stats">
           <label
             >Keep spare<input
@@ -393,6 +422,15 @@
 >
   <summary>Recipe</summary>
   <div class="section-body form-grid">
+    {#if plan}
+      <p class="budget span-2" data-testid="budget">
+        {plan.budget.K} brackets for {planned.length} sessions ({planned
+          .map((s) => s.chunks.length)
+          .join(' + ') || '0'}), {plan.budget.P} secondary pairs, {doubled} doubled{#each project.standards.filter((s) => s.role === 'primary') as s, i (i)};
+          {s.name}
+          {plan.budget.perStandard[s.name]?.leftAfter ?? '—'} left{/each}
+      </p>
+    {/if}
     <label class="span-2"
       >Chunking<select
         aria-label="Chunking"
@@ -442,33 +480,35 @@
         /></label
       >
     {/if}
-    <label
-      >Max pairs per bracket<input
-        type="number"
-        required
-        min="1"
-        step="1"
-        value={project.recipe.maxPairsPerBracket}
-        onchange={(e) =>
-          numeric(e, (p, n) => {
-            p.recipe.maxPairsPerBracket = n;
-          })}
-      /></label
-    >
-    <label
-      >Pairs per bracket<input
-        type="number"
-        required
-        min="0"
-        step="1"
-        disabled={project.recipe.chunking.mode === 'budget'}
-        value={project.recipe.secondaryPairsPerBracket}
-        onchange={(e) =>
-          numeric(e, (p, n) => {
-            p.recipe.secondaryPairsPerBracket = n;
-          })}
-      /></label
-    >
+    {#if project.recipe.chunking.mode === 'budget'}
+      <label class="span-2"
+        >Max pairs per bracket<input
+          type="number"
+          required
+          min="1"
+          step="1"
+          value={project.recipe.maxPairsPerBracket}
+          onchange={(e) =>
+            numeric(e, (p, n) => {
+              p.recipe.maxPairsPerBracket = n;
+            })}
+        /></label
+      >
+    {:else}
+      <label class="span-2"
+        >Pairs per bracket<input
+          type="number"
+          required
+          min="0"
+          step="1"
+          value={project.recipe.secondaryPairsPerBracket}
+          onchange={(e) =>
+            numeric(e, (p, n) => {
+              p.recipe.secondaryPairsPerBracket = n;
+            })}
+        /></label
+      >
+    {/if}
     <label
       >Spots per secondary<input
         type="number"
@@ -567,13 +607,6 @@
       </fieldset>
     {/each}
     {#if plan}
-      <p class="budget span-2" data-testid="budget">
-        {plan.budget.K} brackets for {planned.length} sessions ({planned
-          .map((s) => s.chunks.length)
-          .join(' + ') || '0'}), {plan.budget.P} secondary pairs, {doubled} doubled{#each project.standards.filter((s) => s.role === 'primary') as s, i (i)};
-          {s.name}
-          {plan.budget.perStandard[s.name]?.leftAfter ?? '—'} left{/each}
-      </p>
       {#each plan.advisories as advisory (advisory)}<p class="error span-2">
           {advisory}
         </p>{/each}

@@ -27,6 +27,21 @@
   } = $props();
   let anchor = 0;
   let scroller: HTMLDivElement;
+  // Label takes the remaining width; the constant columns stay compact.
+  const columnWidths: Partial<Record<keyof QtegraCells, number>> = {
+    Status: 40,
+    'Duration [s]': 56,
+    Comment: 88,
+    Evaluate: 54,
+    'Sample Type': 76,
+    Standard: 56,
+    'Dilution Factor': 52,
+    Amount: 50,
+    'Final Quantity': 60,
+    Identifier: 90,
+    'Laser Scan Position Number': 126,
+    'Laser Output Setting [%]': 100,
+  };
   function select(index: number, event: MouseEvent | KeyboardEvent) {
     if (event.shiftKey) {
       const first = Math.min(anchor, index);
@@ -68,6 +83,16 @@
     aria-label={`Session ${session.number} sequence`}
     aria-readonly={session.fixed}
   >
+    <colgroup>
+      <col class="row-number" />
+      {#each QTEGRA_COLUMNS as column (column)}
+        <col
+          style:width={columnWidths[column] === undefined
+            ? undefined
+            : `${columnWidths[column]}px`}
+        />
+      {/each}
+    </colgroup>
     <thead
       ><tr
         ><th class="row-number" scope="col">Row</th>

@@ -682,6 +682,7 @@
             onclick={markAsRun}>Mark as run</button
           >
           {#if session.fixed}<button onclick={unlock}>Unlock</button>{/if}
+          <span class="toast" role="status" aria-live="polite">{message}</span>
           <span class="toolbar-spacer"></span>
           <button
             class="primary"
@@ -798,7 +799,6 @@
       </footer>
     </section>
   </div>
-  <div class="toast" role="status" aria-live="polite">{message}</div>
 </main>
 
 <dialog bind:this={regenerateDialog} aria-labelledby="regenerate-title">
