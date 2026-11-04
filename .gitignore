@@ -1,0 +1,23 @@
+# dependencies and builds
+node_modules/
+/dist/
+/build/
+/.svelte-kit/
+/src-tauri/target/
+/src-tauri/gen/
+**/target/
+# test output
+/test-results/
+/playwright-report/
+/coverage/
+# env and OS
+.env
+.env.*
+.DS_Store
+Thumbs.db
+*.log
+# data never lives in git, only the small fixtures
+*.xls
+*.xlsx
+*.csv
+!fixtures/**
