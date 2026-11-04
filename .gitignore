@@ -6,6 +6,7 @@ node_modules/
 /.svelte-kit/
 /src-tauri/target/
 /src-tauri/gen/
+/src-tauri/icons/
 **/target/
 # test output
 /test-results/

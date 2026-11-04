@@ -8,3 +8,6 @@ coverage/
 AGENTS.md
 docs/PLAN.md
 fixtures/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/icons/

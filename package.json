@@ -13,9 +13,14 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
     "e2e": "playwright test",
-    "build": "vite build"
+    "build": "vite build",
+    "build:desktop": "vite build --outDir dist/tauri --emptyOutDir",
+    "build:web": "vite build --mode singlefile && mv dist/.singlefile/index.html dist/bracketeer.html && rmdir dist/.singlefile"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2.12.4",
+    "@tauri-apps/plugin-clipboard-manager": "^2.5.0",
+    "@tauri-apps/plugin-dialog": "^2.8.4",
     "svelte": "^5.57.3",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
@@ -35,6 +40,7 @@
     "typescript": "^6.0.0",
     "typescript-eslint": "^8.72.1",
     "vite": "^8.3.5",
+    "vite-plugin-singlefile": "^2.3.4",
     "vitest": "^5.1.0"
   }
 }

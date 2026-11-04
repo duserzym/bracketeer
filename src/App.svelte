@@ -470,13 +470,18 @@
         : layout.collapsed.filter((s) => s !== name),
     });
   }
-  function resetLayout() {
+  async function resetLayout() {
     layout = { folded: false, collapsed: [] };
     menuOpen = false;
     try {
       localStorage.removeItem('bracketeer.layout');
     } catch {
       /* Storage is optional. */
+    }
+    try {
+      await platform.resetWindow();
+    } catch (e) {
+      fail(e);
     }
   }
   function resetRecipe() {
