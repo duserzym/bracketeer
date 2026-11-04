@@ -1,49 +1,45 @@
-import { bracketLayout, calculateBudget, planChunks } from './plan';
+import { calculateBudget, type BracketLayout } from './plan';
+import { parseLabel } from './labels';
+import { deriveSession } from './import';
 import { createDrawer } from './pools';
 import type {
   Block,
   BlockEntry,
   Budget,
   Experiment,
+  Project,
   Recipe,
   Row,
+  Session,
   Standard,
   Unknown,
   Warning,
 } from './types';
 
 export interface Generation {
+  number: number;
+  fixed: boolean;
   rows: Row[];
   warnings: Warning[];
   chunks: number[];
-  /** One name per secondary pair, in bracket order (one per bracket by default). */
+  pairsPerBracket: number[];
+  /** One standard name per secondary pair, in run order. */
   rotation: string[];
   nextRotation: number;
-  drawn: Record<string, number[]>;
+}
+export interface ProjectPlan {
+  sessions: Generation[];
   budget: Budget;
+  advisories: string[];
 }
 
-/**
- * Generate one session without changing inputs. Structured inputs must satisfy
- * the model (one primary, valid ranges and nonnegative recipe counts). Budget
- * advisories live in budget.warnings; row-cell warnings come from validate.
- */
-export function generate(
+function emitSession(
   experiment: Experiment,
   unknowns: readonly Unknown[],
   standards: readonly Standard[],
-  recipe: Recipe,
-): Generation {
-  const total = unknowns.reduce(
-    (n, sample) => n + sample.to - sample.from + 1,
-    0,
-  );
-  let budget = calculateBudget(total, standards, recipe);
-  const chunks = planChunks(unknowns, recipe, budget.Bmax);
-  if (chunks.length !== budget.chunksPerSession)
-    budget = calculateBudget(total, standards, recipe, chunks.length);
-  const layout = bracketLayout(chunks, standards, recipe);
-  const drawer = createDrawer(standards);
+  layout: BracketLayout,
+  drawer: ReturnType<typeof createDrawer>,
+): Row[] {
   const byName = new Map(standards.map((s) => [s.name, s]));
   const rows: Row[] = [];
   const addRow = (label: string, spot: number | null, meta: Row['meta']) =>
@@ -65,7 +61,6 @@ export function generate(
         });
     }
   };
-  // Flatten the unknowns in run order; planned chunks can cross sample ranges.
   const pending = unknowns.flatMap((sample) =>
     Array.from({ length: sample.to - sample.from + 1 }, (_, i) => ({
       sample,
@@ -77,93 +72,247 @@ export function generate(
   for (const bracket of layout.brackets) {
     for (let i = 0; i < bracket.chunkSize; i++) {
       const { sample, spot } = pending[cursor++]!;
-      const label = [
-        sample.name,
-        ...(sample.tag ? [sample.tag] : []),
+      addRow(
+        [sample.name, ...(sample.tag ? [sample.tag] : []), spot].join('_'),
         spot,
-      ].join('_');
-      addRow(label, spot, {
-        kind: 'unknown',
-        name: sample.name,
-        block: 'unknowns',
-      });
+        { kind: 'unknown', name: sample.name, block: 'unknowns' },
+      );
     }
     emit(bracket.mid, 'mid');
     emit(bracket.secondaries, 'bracket');
     emit([bracket.primary], 'bracket');
   }
   emit(layout.closing, 'closing');
+  return rows;
+}
+
+/** Pure project-wide planning: fixed rows survive, draws and rotation span planned sessions. */
+export function planProject(project: Project): ProjectPlan {
+  const fixed = project.sessions.filter((s) => s.fixed);
+  const standards = project.standards.map((s) => ({
+    ...s,
+    used: [
+      ...s.used,
+      ...fixed.flatMap((session) =>
+        session.rows
+          .filter((row) => {
+            const label = parseLabel(row.Label, project.standards);
+            return label.kind === s.role && label.name === s.name;
+          })
+          .flatMap((row) =>
+            row['Laser Scan Position Number'] === null
+              ? []
+              : [row['Laser Scan Position Number']],
+          ),
+      ),
+    ],
+  }));
+  const planned = project.sessions.filter((s) => !s.fixed);
+  const plan = calculateBudget(
+    planned.map((s) => s.unknowns),
+    standards,
+    project.recipe,
+  );
+  const drawer = createDrawer(standards);
+  let index = 0;
+  const sessions: Generation[] = project.sessions.map((session) => {
+    if (session.fixed) {
+      const derived = deriveSession(session.rows, project.standards);
+      const rotation = derived.structure.brackets.flatMap((entries) =>
+        entries
+          .filter((e) =>
+            project.standards.some(
+              (s) => s.name === e.standard && s.role === 'secondary',
+            ),
+          )
+          .flatMap((e) =>
+            Array.from(
+              { length: Math.ceil(e.count / project.recipe.spotsPerSecondary) },
+              () => e.standard,
+            ),
+          ),
+      );
+      return {
+        number: session.number,
+        fixed: true,
+        rows: structuredClone(session.rows),
+        chunks: derived.structure.chunks,
+        pairsPerBracket: derived.structure.brackets.map((entries) =>
+          entries
+            .filter((e) =>
+              project.standards.some(
+                (s) => s.name === e.standard && s.role === 'secondary',
+              ),
+            )
+            .reduce(
+              (n, e) =>
+                n + Math.ceil(e.count / project.recipe.spotsPerSecondary),
+              0,
+            ),
+        ),
+        rotation,
+        nextRotation: project.recipe.rotationStart,
+        warnings: [],
+      };
+    }
+    const i = index++;
+    const layout = plan.layouts[i]!;
+    return {
+      number: session.number,
+      fixed: false,
+      rows: emitSession(
+        project.experiment,
+        session.unknowns,
+        standards,
+        layout,
+        drawer,
+      ),
+      chunks: plan.chunks[i]!,
+      pairsPerBracket: plan.pairsPerBracket[i]!,
+      rotation: layout.brackets.flatMap((b) =>
+        b.secondaries.map((e) => e.standard),
+      ),
+      nextRotation: layout.nextRotation,
+      warnings: [],
+    };
+  });
+  const resolved = project.sessions.map((s, i) => ({
+    ...s,
+    rows: sessions[i]!.rows,
+  }));
+  sessions.forEach((session, i) => {
+    session.warnings = validate(
+      session.rows,
+      project.standards,
+      resolved[i]!.unknowns,
+      resolved.filter((_, j) => j !== i),
+      session.number,
+    );
+  });
+  return { sessions, budget: plan.budget, advisories: plan.advisories };
+}
+
+/** Convenience for a single planned session; multi-session callers use planProject. */
+export function generate(
+  experiment: Experiment,
+  unknowns: readonly Unknown[],
+  standards: readonly Standard[],
+  recipe: Recipe,
+): Generation & {
+  budget: Budget;
+  advisories: string[];
+  drawn: Record<string, number[]>;
+} {
+  const result = planProject({
+    version: 1,
+    experiment,
+    standards: [...standards],
+    recipe,
+    sessions: [{ number: 1, unknowns: [...unknowns], rows: [], fixed: false }],
+  });
+  const session = result.sessions[0]!;
+  const drawn = Object.fromEntries(
+    standards.map((s) => [
+      s.name,
+      session.rows
+        .filter((row) => row.meta.name === s.name && row.meta.kind === s.role)
+        .flatMap((row) =>
+          row['Laser Scan Position Number'] === null
+            ? []
+            : [row['Laser Scan Position Number']],
+        ),
+    ]),
+  );
   return {
-    rows,
-    warnings: validate(rows, standards, unknowns),
-    chunks,
-    rotation: layout.brackets.flatMap((b) =>
-      b.secondaries.map((s) => s.standard),
-    ),
-    nextRotation: layout.nextRotation,
-    drawn: drawer.getDrawn(),
-    budget,
+    ...session,
+    budget: result.budget,
+    advisories: result.advisories,
+    drawn,
   };
 }
 
-/** Recompute warnings after edits using only current rows and pool/sample definitions. */
+/** Recompute from edited cells, including global positions and other fixed sessions. */
 export function validate(
   rows: readonly Row[],
   standards: readonly Standard[],
   unknowns: readonly Unknown[],
+  otherSessions: readonly Session[] = [],
+  sessionNumber = 1,
 ): Warning[] {
   const warnings: Warning[] = [];
   const byName = new Map(standards.map((s) => [s.name, s]));
-  const positions = new Map<number, number[]>();
-  rows.forEach((row, i) => {
+  const positions = new Map<number, { session: number; rowIndex: number }[]>();
+  const addPosition = (row: Row, session: number, rowIndex: number) => {
     const spot = row['Laser Scan Position Number'];
-    const description = `Row ${i + 1} (${row.Label})`;
+    if (spot === null) return;
+    const locations = positions.get(spot) ?? [];
+    locations.push({ session, rowIndex });
+    positions.set(spot, locations);
+  };
+  rows.forEach((row, i) => {
+    addPosition(row, sessionNumber, i);
+    const label = parseLabel(row.Label, standards);
+    const spot = row['Laser Scan Position Number'];
     const warn = (kind: Warning['kind'], message: string) =>
       warnings.push({
         kind,
-        message: `${description} ${message}`,
+        message: `Row ${i + 1} (${row.Label}) ${message}`,
         rowIndexes: [i],
       });
-    if (spot !== null) {
-      const indexes = positions.get(spot) ?? [];
-      indexes.push(i);
-      positions.set(spot, indexes);
-    }
     const validSpot = spot !== null && Number.isSafeInteger(spot) && spot > 0;
-    if (row.meta.kind === 'unknown') {
+    if (label.kind === 'unrecognized')
+      warn('unrecognized-row', 'has an unrecognized label.');
+    else if (label.kind === 'unknown') {
       if (
         !validSpot ||
         !unknowns.some(
           (sample) =>
-            sample.name === row.meta.name &&
+            sample.name === label.name &&
+            sample.tag === label.tag &&
             spot >= sample.from &&
             spot <= sample.to,
         )
       )
-        warn('outside-sample', `has a spot outside sample ${row.meta.name}.`);
-    } else if (spot === null) {
-      warn('pool-exhausted', `has no spot available from ${row.meta.name}.`);
-    } else {
-      const standard = byName.get(row.meta.name);
+        warn('outside-sample', `has a spot outside sample ${label.name}.`);
+    } else if (spot === null)
+      warn('pool-exhausted', `has no spot available from ${label.name}.`);
+    else {
+      const standard = byName.get(label.name)!;
       if (
         !validSpot ||
-        !standard?.ranges.some(({ from, to }) => spot >= from && spot <= to)
+        !standard.ranges.some(({ from, to }) => spot >= from && spot <= to)
       )
-        warn('outside-pool', `has a spot outside the ${row.meta.name} pool.`);
-      if (standard?.used.includes(spot))
+        warn('outside-pool', `has a spot outside the ${label.name} pool.`);
+      const usedInFixed = otherSessions
+        .filter((s) => s.fixed)
+        .some((s) =>
+          s.rows.some(
+            (r) =>
+              r['Laser Scan Position Number'] === spot &&
+              parseLabel(r.Label, standards).name === label.name,
+          ),
+        );
+      if (standard.used.includes(spot) || usedInFixed)
         warn(
           'already-used',
-          `uses spot ${spot}, already used in an earlier session.`,
+          `uses spot ${spot}, already used in an earlier session or the used list.`,
         );
     }
   });
-  for (const [spot, indexes] of positions) {
-    if (indexes.length > 1)
-      warnings.push({
-        kind: 'duplicate-spot',
-        message: `Rows ${indexes.map((i) => i + 1).join(', ')} share spot ${spot}.`,
-        rowIndexes: indexes,
-      });
+  for (const session of otherSessions)
+    session.rows.forEach((row, i) => addPosition(row, session.number, i));
+  for (const [spot, locations] of positions) {
+    const local = locations.filter((l) => l.session === sessionNumber);
+    if (locations.length < 2 || !local.length) continue;
+    const cross = locations.some((l) => l.session !== sessionNumber);
+    warnings.push({
+      kind: 'duplicate-spot',
+      message: cross
+        ? `${locations.map((l) => `Session ${l.session} row ${l.rowIndex + 1}`).join(', ')} share spot ${spot}.`
+        : `Rows ${local.map((l) => l.rowIndex + 1).join(', ')} share spot ${spot}.`,
+      rowIndexes: local.map((l) => l.rowIndex),
+      ...(cross ? { locations } : {}),
+    });
   }
   return warnings;
 }

@@ -1,6 +1,11 @@
 // Small, explicit acceptance inputs from docs/PLAN.md §6 and AGENTS.md.
-// Session-1 workbook reading and golden comparisons arrive in milestone 2.
-import type { Standard, Unknown } from './types';
+// Used spots follow RULES.md revision 3; the fixture script reads them from XLS.
+import {
+  DEFAULT_EXPERIMENT,
+  DEFAULT_RECIPE,
+  type Standard,
+  type Unknown,
+} from './types';
 
 function range(from: number, to: number): number[] {
   return Array.from({ length: to - from + 1 }, (_, i) => from + i);
@@ -32,44 +37,62 @@ export const SESSION_3_UNKNOWNS: Unknown[] = [
 export const SESSION_2_STANDARDS: Standard[] = [
   {
     name: 'S513',
+    spare: 0,
     role: 'primary',
     ranges: [{ from: 628, to: 727 }],
     used: range(628, 649),
   },
   {
     name: 'Seiland',
+    spare: 0,
     role: 'secondary',
     ranges: [{ from: 758, to: 787 }],
-    used: range(758, 777),
+    used: range(768, 777),
   },
   {
     name: '91500',
+    spare: 0,
     role: 'secondary',
     ranges: [{ from: 728, to: 757 }],
-    used: range(728, 747),
+    used: range(738, 747),
   },
   {
     name: 'PL',
+    spare: 0,
     role: 'secondary',
     ranges: [{ from: 818, to: 847 }],
-    used: range(818, 837),
+    used: range(828, 837),
   },
   {
     name: 'LTSE',
+    spare: 0,
     role: 'secondary',
     ranges: [{ from: 788, to: 817 }],
-    used: range(788, 807),
+    used: range(798, 807),
   },
   {
     name: 'NIST610',
+    spare: 0,
     role: 'reference',
     ranges: [{ from: 848, to: 874 }],
     used: range(857, 865),
   },
   {
     name: 'NIST612',
+    spare: 0,
     role: 'reference',
     ranges: [{ from: 875, to: 901 }],
     used: range(893, 901),
   },
 ];
+
+export const TEST_PROJECT: import('./types').Project = {
+  version: 1,
+  experiment: { ...DEFAULT_EXPERIMENT, name: 'Zircon_04Nov26_Synthetic' },
+  standards: SESSION_2_STANDARDS,
+  recipe: DEFAULT_RECIPE,
+  sessions: [
+    { number: 2, unknowns: SESSION_2_UNKNOWNS, rows: [], fixed: false },
+    { number: 3, unknowns: SESSION_3_UNKNOWNS, rows: [], fixed: false },
+  ],
+};

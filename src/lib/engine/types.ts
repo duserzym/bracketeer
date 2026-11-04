@@ -16,6 +16,7 @@ export interface Standard {
   role: StandardRole;
   ranges: SpotRange[];
   used: number[];
+  spare: number;
 }
 
 /** The exact Qtegra column order; metadata never enters an export. */
@@ -58,7 +59,6 @@ export type ColumnDefaults = Omit<
 
 export interface Experiment {
   name: string;
-  session: number;
   defaults: ColumnDefaults;
 }
 
@@ -69,7 +69,7 @@ export interface BlockEntry {
 }
 
 export type Chunking =
-  | { mode: 'auto' }
+  | { mode: 'budget' }
   | { mode: 'size'; size: number }
   | { mode: 'count'; count: number };
 
@@ -81,7 +81,7 @@ export interface Recipe {
   spotsPerSecondary: number;
   primaryPerBracket: number;
   chunking: Chunking;
-  sessionsLeft: number;
+  maxPairsPerBracket: number;
   bracketAtSampleBoundaries: boolean;
   rotationStart: number;
 }
@@ -91,7 +91,7 @@ export type Block = 'opening' | 'unknowns' | 'mid' | 'bracket' | 'closing';
 export interface Row extends QtegraCells {
   /** Internal identity survives cell edits; excluded from all file formats. */
   meta: {
-    kind: 'unknown' | StandardRole;
+    kind: 'unknown' | 'unrecognized' | StandardRole;
     name: string;
     block: Block;
   };
@@ -102,32 +102,48 @@ export type WarningKind =
   | 'duplicate-spot'
   | 'outside-pool'
   | 'already-used'
-  | 'outside-sample';
+  | 'outside-sample'
+  | 'unrecognized-row';
 
 export interface Warning {
   kind: WarningKind;
   message: string;
   /** Zero-based indexes into the current rows; messages use one-based rows. */
   rowIndexes: number[];
+  locations?: { session: number; rowIndex: number }[];
+}
+
+export interface Session {
+  number: number;
+  unknowns: Unknown[];
+  rows: Row[];
+  fixed: boolean;
+  source?: string;
+}
+
+export interface Project {
+  version: 1;
+  experiment: Experiment;
+  standards: Standard[];
+  recipe: Recipe;
+  sessions: Session[];
 }
 
 export interface BudgetUse {
-  /** Draws across all sessionsLeft sessions for the proposed chunk count. */
-  need: number;
-  remaining: number;
+  available: number;
+  needed: number;
+  leftAfter: number;
 }
 
 export interface Budget {
-  Bmax: number;
-  chunksPerSession: number;
+  /** Feasible run-wide bracket and pair counts (before any shortage fallback). */
+  K: number;
+  P: number;
   perStandard: Record<string, BudgetUse>;
-  /** Planning advisories are separate from warnings computed from row cells. */
-  warnings: string[];
 }
 
 export const DEFAULT_EXPERIMENT: Experiment = {
   name: '',
-  session: 1,
   defaults: {
     'Duration [s]': 30,
     Comment: '<Comment>',
@@ -159,8 +175,8 @@ export const DEFAULT_RECIPE: Recipe = {
   secondaryPairsPerBracket: 1,
   spotsPerSecondary: 2,
   primaryPerBracket: 2,
-  chunking: { mode: 'auto' },
-  sessionsLeft: 1,
+  chunking: { mode: 'budget' },
+  maxPairsPerBracket: 2,
   bracketAtSampleBoundaries: false,
   rotationStart: 0,
 };

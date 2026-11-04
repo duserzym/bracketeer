@@ -4,16 +4,26 @@ import {
   calculateBudget,
   chunkCount,
   chunkSizes,
+  largestRemainder,
   midBracketIndex,
   planChunks,
 } from './plan';
-import { SESSION_2_STANDARDS } from './test-data';
+import {
+  SESSION_2_STANDARDS,
+  SESSION_2_UNKNOWNS,
+  SESSION_3_UNKNOWNS,
+} from './test-data';
 import {
   DEFAULT_RECIPE,
   type Recipe,
   type Standard,
   type Unknown,
 } from './types';
+
+const samples: Unknown[] = [
+  { name: 'A', tag: '', from: 1, to: 5 },
+  { name: 'B', tag: '', from: 6, to: 8 },
+];
 
 describe('chunk planning', () => {
   it('balances exactly, puts larger chunks first and avoids empty chunks', () => {
@@ -25,18 +35,20 @@ describe('chunk planning', () => {
     ]);
     expect(chunkSizes(3, 9)).toEqual([1, 1, 1]);
     expect(chunkSizes(0, 1)).toEqual([]);
-    expect(() => chunkSizes(10, 0)).toThrow(RangeError);
-    expect(() => chunkSizes(-1, 1)).toThrow(RangeError);
-    expect(() => chunkSizes(10, 1.5)).toThrow(RangeError);
+    for (const [total, count] of [
+      [10, 0],
+      [-1, 1],
+      [10, 1.5],
+    ])
+      expect(() => chunkSizes(total!, count!)).toThrow(RangeError);
   });
-
-  it('resolves size, count and auto modes, including an empty or impossible run', () => {
+  it('resolves size, count and budget modes, including an empty or impossible run', () => {
     expect(chunkCount(234, { mode: 'size', size: 25 }, 3)).toBe(10);
     expect(chunkCount(234, { mode: 'count', count: 10 }, 3)).toBe(10);
     expect(chunkCount(3, { mode: 'count', count: 10 }, 3)).toBe(3);
-    expect(chunkCount(234, { mode: 'auto' }, 10)).toBe(10);
-    expect(chunkCount(234, { mode: 'auto' }, 0)).toBe(1);
-    expect(chunkCount(0, { mode: 'auto' }, 0)).toBe(0);
+    expect(chunkCount(234, { mode: 'budget' }, 19)).toBe(19);
+    expect(chunkCount(234, { mode: 'budget' }, 0)).toBe(1);
+    expect(chunkCount(0, { mode: 'budget' }, 0)).toBe(0);
     expect(() => chunkCount(3, { mode: 'size', size: 0 }, 1)).toThrow(
       RangeError,
     );
@@ -44,47 +56,59 @@ describe('chunk planning', () => {
       RangeError,
     );
   });
-
-  it('uses a shared target size when chunking at sample boundaries', () => {
-    const samples: Unknown[] = [
-      { name: 'A', tag: '', from: 1, to: 5 },
-      { name: 'B', tag: '', from: 6, to: 8 },
-    ];
+  it('apportions k at sample boundaries by largest remainder, including minimums', () => {
     const recipe: Recipe = {
       ...DEFAULT_RECIPE,
       chunking: { mode: 'count', count: 2 },
     };
     expect(planChunks(samples, recipe, 2)).toEqual([4, 4]);
     recipe.bracketAtSampleBoundaries = true;
-    expect(planChunks(samples, recipe, 2)).toEqual([3, 2, 3]);
+    expect(planChunks(samples, recipe, 2)).toEqual([5, 3]);
     expect(
-      planChunks(samples, { ...recipe, chunking: { mode: 'auto' } }, 2),
-    ).toEqual([3, 2, 3]);
+      planChunks(samples, { ...recipe, chunking: { mode: 'budget' } }, 2),
+    ).toEqual([5, 3]);
     expect(
       planChunks(
         samples,
         { ...recipe, chunking: { mode: 'size', size: 2 } },
-        2,
+        0,
       ),
-    ).toEqual([2, 2, 1, 2, 1]);
+    ).toEqual([2, 2, 1, 3]);
+    expect(
+      planChunks(
+        samples,
+        { ...recipe, chunking: { mode: 'count', count: 1 } },
+        0,
+      ),
+    ).toEqual([5, 3]);
     expect(planChunks([], recipe, 0)).toEqual([]);
     expect(() => planChunks([{ ...samples[0]!, from: 6 }], recipe, 2)).toThrow(
       RangeError,
     );
   });
-
-  it('places the mid block by cumulative unknowns, with ties earlier', () => {
+  it('places the mid block at floor((k+1)/2), independent of chunk sizes', () => {
     expect(midBracketIndex([24, 24, 24, 24, 23, 23, 23, 23, 23, 23])).toBe(4);
-    expect(midBracketIndex([2, 2, 2])).toBe(0);
-    expect(midBracketIndex([1, 1, 8])).toBe(1);
+    expect(midBracketIndex([2, 2, 2])).toBe(1);
+    expect(midBracketIndex([8, 1, 1])).toBe(1);
     expect(midBracketIndex([10])).toBeNull();
     expect(midBracketIndex([])).toBeNull();
     expect(() => midBracketIndex([1, 0])).toThrow(RangeError);
   });
+  it('allocates exact totals with earlier ties, bounded by unknowns and minimums', () => {
+    expect(largestRemainder(37, [234, 228])).toEqual([19, 18]);
+    expect(largestRemainder(3, [2, 2])).toEqual([2, 1]);
+    expect(largestRemainder(3, [1000, 1, 1])).toEqual([1, 1, 1]);
+    expect(largestRemainder(4, [1000, 1, 1])).toEqual([2, 1, 1]);
+    expect(largestRemainder(20, [2, 3, 0])).toEqual([2, 3, 0]);
+    expect(largestRemainder(0, [])).toEqual([]);
+    expect(() => largestRemainder(1, [2, 2])).toThrow('Not enough');
+    expect(() => largestRemainder(2, [2], [3])).toThrow('minimum exceeds');
+    expect(() => largestRemainder(2, [2], [])).toThrow('bounds');
+  });
 });
 
 describe('bracket layout', () => {
-  it('places blocks, resolves @primary, and rotates two pairs per bracket', () => {
+  it('resolves @primary, rotates consecutive pairs, and places all blocks', () => {
     const recipe = { ...DEFAULT_RECIPE, secondaryPairsPerBracket: 2 };
     const layout = bracketLayout([2, 2, 2], SESSION_2_STANDARDS, recipe);
     expect(layout.opening).toEqual([
@@ -106,7 +130,7 @@ describe('bracket layout', () => {
         { standard: '91500', count: 2 },
       ],
     ]);
-    expect(layout.brackets.map((b) => b.mid)).toEqual([recipe.mid, [], []]);
+    expect(layout.brackets.map((b) => b.mid)).toEqual([[], recipe.mid, []]);
     expect(layout.brackets.map((b) => b.primary)).toEqual(
       Array(3).fill({ standard: 'S513', count: 2 }),
     );
@@ -121,14 +145,23 @@ describe('bracket layout', () => {
       closing: [],
       nextRotation: 0,
     });
+    expect(
+      bracketLayout([1, 1], SESSION_2_STANDARDS, recipe, [1, 2]).nextRotation,
+    ).toBe(3);
   });
-
-  it('supports primary-only brackets and custom block counts', () => {
+  it('supports size/count primary-only brackets and custom block counts', () => {
     const standards: Standard[] = [
-      { name: 'P', role: 'primary', ranges: [{ from: 50, to: 99 }], used: [] },
+      {
+        name: 'P',
+        role: 'primary',
+        ranges: [{ from: 50, to: 99 }],
+        used: [],
+        spare: 0,
+      },
     ];
     const recipe: Recipe = {
       ...DEFAULT_RECIPE,
+      chunking: { mode: 'count', count: 16 },
       opening: [{ standard: '@primary', count: 1 }],
       mid: [],
       closing: [],
@@ -149,10 +182,19 @@ describe('bracket layout', () => {
       closing: [],
       nextRotation: 0,
     });
-    expect(calculateBudget(30, standards, recipe).Bmax).toBe(16);
+    const result = calculateBudget(
+      [[{ name: 'X', tag: '', from: 1, to: 30 }]],
+      standards,
+      recipe,
+    );
+    expect(result.budget.perStandard.P).toEqual({
+      available: 50,
+      needed: 49,
+      leftAfter: 1,
+    });
+    expect(result.advisories).toEqual([]);
   });
-
-  it('rejects invalid structured recipes rather than silently dropping standards', () => {
+  it('rejects invalid recipes rather than silently dropping standards', () => {
     expect(() => bracketLayout([1], [], DEFAULT_RECIPE)).toThrow(
       'Exactly one primary',
     );
@@ -179,7 +221,7 @@ describe('bracket layout', () => {
     expect(() =>
       bracketLayout([1], SESSION_2_STANDARDS, {
         ...DEFAULT_RECIPE,
-        sessionsLeft: 0,
+        maxPairsPerBracket: 0,
       }),
     ).toThrow(RangeError);
     expect(() =>
@@ -189,128 +231,110 @@ describe('bracket layout', () => {
         DEFAULT_RECIPE,
       ),
     ).toThrow('secondary standard');
+    expect(() =>
+      bracketLayout([1], SESSION_2_STANDARDS, DEFAULT_RECIPE, []),
+    ).toThrow('Pair counts');
   });
 });
 
-describe('exact multi-session budget', () => {
-  it('gives Bmax 10 before session 2, with C 11 exceeding rotating pools', () => {
-    const recipe: Recipe = {
-      ...DEFAULT_RECIPE,
-      sessionsLeft: 2,
-      chunking: { mode: 'count', count: 10 },
-    };
-    const result = calculateBudget(234, SESSION_2_STANDARDS, recipe);
-    expect(result.Bmax).toBe(10);
-    expect(result.perStandard).toEqual({
-      S513: { need: 44, remaining: 78 },
-      Seiland: { need: 10, remaining: 10 },
-      '91500': { need: 10, remaining: 10 },
-      PL: { need: 10, remaining: 10 },
-      LTSE: { need: 10, remaining: 10 },
-      NIST610: { need: 18, remaining: 18 },
-      NIST612: { need: 18, remaining: 18 },
-    });
-    expect(result.warnings).toEqual([]);
-    const tooMany = calculateBudget(234, SESSION_2_STANDARDS, recipe, 11);
-    expect(tooMany.perStandard.Seiland?.need).toBe(12);
-    expect(tooMany.perStandard['91500']?.need).toBe(12);
-    expect(tooMany.warnings).toHaveLength(1);
+describe('project budget', () => {
+  it('uses the full primary and pair supplies and spreads pairs over run-wide brackets', () => {
+    const result = calculateBudget(
+      [SESSION_2_UNKNOWNS, SESSION_3_UNKNOWNS],
+      SESSION_2_STANDARDS,
+      DEFAULT_RECIPE,
+    );
+    expect(result.budget).toMatchObject({ K: 37, P: 40 });
+    expect(result.chunks.map((c) => c.length)).toEqual([19, 18]);
+    expect(
+      result.pairsPerBracket.flat().flatMap((p, i) => (p === 2 ? [i + 1] : [])),
+    ).toEqual([13, 25, 37]);
+    expect(
+      Object.values(result.budget.perStandard).every((s) => s.leftAfter === 0),
+    ).toBe(true);
+    expect(result.advisories).toEqual([]);
   });
-
-  it('continues at PL before session 3 and again gives Bmax 10', () => {
-    const consumed: Record<string, number[]> = {
-      S513: Array.from({ length: 22 }, (_, i) => 650 + i),
-      Seiland: [778, 779, 780, 781, 782, 783],
-      '91500': [748, 749, 750, 751, 752, 753],
-      PL: [838, 839, 840, 841],
-      LTSE: [808, 809, 810, 811],
-      NIST610: [848, 849, 850, 851, 852, 853, 854, 855, 856],
-      NIST612: [875, 876, 877, 878, 879, 880, 881, 882, 883],
-    };
-    const standards = SESSION_2_STANDARDS.map((s) => ({
-      ...s,
-      used: [...s.used, ...consumed[s.name]!],
-    }));
-    const result = calculateBudget(228, standards, {
-      ...DEFAULT_RECIPE,
-      rotationStart: 2,
-    });
-    expect(result.Bmax).toBe(10);
-    expect(result.perStandard.PL).toEqual({ need: 6, remaining: 6 });
-    expect(result.perStandard.LTSE).toEqual({ need: 6, remaining: 6 });
-    expect(result.perStandard.Seiland).toEqual({ need: 4, remaining: 4 });
-    expect(result.perStandard['91500']).toEqual({ need: 4, remaining: 4 });
-    expect(result.warnings).toEqual([]);
-  });
-
-  it('does not average secondary demand, and includes the mid-block discontinuity', () => {
+  it('stops at the first exhausted rotated secondary rather than averaging capacities', () => {
     const standards: Standard[] = [
       {
         name: 'P',
         role: 'primary',
         ranges: [{ from: 100, to: 199 }],
         used: [],
+        spare: 0,
       },
       {
         name: 'A',
         role: 'secondary',
         ranges: [{ from: 200, to: 201 }],
         used: [],
+        spare: 0,
       },
-      { name: 'B', role: 'secondary', ranges: [], used: [] },
+      { name: 'B', role: 'secondary', ranges: [], used: [], spare: 0 },
       {
         name: 'R',
         role: 'reference',
         ranges: [{ from: 300, to: 301 }],
         used: [],
+        spare: 0,
       },
     ];
-    const recipe: Recipe = {
-      ...DEFAULT_RECIPE,
-      opening: [],
-      closing: [],
-      mid: [],
-    };
-    expect(calculateBudget(10, standards, recipe).Bmax).toBe(1);
+    const recipe = { ...DEFAULT_RECIPE, opening: [], closing: [], mid: [] };
+    expect(calculateBudget([samples], standards, recipe).budget).toMatchObject({
+      K: 1,
+      P: 1,
+    });
     expect(
-      calculateBudget(10, standards, { ...recipe, rotationStart: 1 }).Bmax,
-    ).toBe(0);
-    const midLimited = {
+      calculateBudget([samples], standards, { ...recipe, rotationStart: 1 })
+        .budget,
+    ).toMatchObject({ K: 0, P: 0 });
+    const limited = calculateBudget([samples], standards, {
       ...recipe,
-      secondaryPairsPerBracket: 0,
       mid: [{ standard: 'R', count: 3 }],
-    };
-    expect(calculateBudget(10, standards, midLimited).Bmax).toBe(1);
-    expect(
-      calculateBudget(10, standards, { ...recipe, sessionsLeft: 2 }).Bmax,
-    ).toBe(0);
+      chunking: { mode: 'count', count: 2 },
+    });
+    expect(limited.advisories).toContain(
+      'R needs 3 spots; 2 available after used spots and spare.',
+    );
   });
-
-  it('warns in size/count modes and when even one chunk cannot fit', () => {
+  it('caps by maxPairsPerBracket, by total unknowns, and includes no mid for one chunk', () => {
+    const r = calculateBudget(
+      [[samples[0]!]],
+      SESSION_2_STANDARDS,
+      DEFAULT_RECIPE,
+    );
+    expect(r.budget).toMatchObject({ K: 5, P: 10 });
+    const r2 = calculateBudget(
+      [[{ ...samples[0]!, to: 1 }]],
+      SESSION_2_STANDARDS,
+      DEFAULT_RECIPE,
+    );
+    expect(r2.budget).toMatchObject({ K: 1, P: 2 });
+    expect(r2.layouts[0]!.brackets[0]!.mid).toEqual([]);
+    const capped = calculateBudget(
+      [SESSION_2_UNKNOWNS, SESSION_3_UNKNOWNS],
+      SESSION_2_STANDARDS,
+      { ...DEFAULT_RECIPE, maxPairsPerBracket: 1 },
+    );
+    expect(capped.budget).toMatchObject({ K: 37, P: 37 });
+  });
+  it('reports insufficient supplies in every mode without losing requested chunks', () => {
+    const standards = SESSION_2_STANDARDS.map((s) => ({ ...s, ranges: [] }));
     for (const chunking of [
-      { mode: 'size', size: 10 },
-      { mode: 'count', count: 11 },
+      { mode: 'budget' },
+      { mode: 'size', size: 2 },
+      { mode: 'count', count: 3 },
     ] as const) {
-      const result = calculateBudget(234, SESSION_2_STANDARDS, {
+      const r = calculateBudget([samples], standards, {
         ...DEFAULT_RECIPE,
-        sessionsLeft: 2,
         chunking,
       });
-      expect(result.Bmax).toBe(10);
-      expect(result.warnings).toHaveLength(1);
+      expect(r.chunks.flat().reduce((a, b) => a + b, 0)).toBe(8);
+      expect(r.advisories.length).toBeGreaterThan(0);
     }
-    const standards = SESSION_2_STANDARDS.map((s) => ({ ...s, ranges: [] }));
-    const result = calculateBudget(3, standards, DEFAULT_RECIPE);
-    expect(result.Bmax).toBe(0);
-    expect(result.chunksPerSession).toBe(1);
-    expect(result.warnings[0]).toContain('No bracket count fits');
-    expect(calculateBudget(0, standards, DEFAULT_RECIPE)).toMatchObject({
-      Bmax: 0,
-      chunksPerSession: 0,
-      warnings: [],
-    });
-    expect(() => calculateBudget(3, standards, DEFAULT_RECIPE, 4)).toThrow(
-      RangeError,
-    );
+    const empty = calculateBudget([[]], standards, DEFAULT_RECIPE);
+    expect(empty.budget).toMatchObject({ K: 0, P: 0 });
+    expect(empty.chunks).toEqual([[]]);
+    expect(empty.advisories).toEqual([]);
   });
 });

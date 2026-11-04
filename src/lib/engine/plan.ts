@@ -24,20 +24,64 @@ export function chunkSizes(total: number, count: number): number[] {
   return Array.from({ length: actual }, (_, i) => q + (i < r ? 1 : 0));
 }
 
-/** Resolve the mode, falling back to one chunk when no budget fits. */
+/** Hamilton allocation with lower bounds; fractions tie in input order. */
+export function largestRemainder(
+  total: number,
+  weights: readonly number[],
+  minima: readonly number[] = weights.map((w) => (w ? 1 : 0)),
+): number[] {
+  integer(total, 'Allocation total', 0);
+  weights.forEach((w) => integer(w, 'Allocation weight', 0));
+  if (minima.length !== weights.length)
+    throw new RangeError('Allocation bounds must match weights.');
+  minima.forEach((m, i) => {
+    integer(m, 'Allocation minimum', 0);
+    if (m > weights[i]!)
+      throw new RangeError('Allocation minimum exceeds weight.');
+  });
+  const sum = weights.reduce((a, b) => a + b, 0);
+  total = Math.min(total, sum);
+  if (minima.reduce((a, b) => a + b, 0) > total)
+    throw new RangeError('Not enough brackets for the allocation minimums.');
+  const quotas = weights.map((w) => (sum ? (total * w) / sum : 0));
+  const counts = quotas.map((q, i) => Math.max(minima[i]!, Math.floor(q)));
+  const order = quotas
+    .map((q, i) => ({ i, fraction: q - Math.floor(q) }))
+    .sort((a, b) => b.fraction - a.fraction || a.i - b.i);
+  let assigned = counts.reduce((a, b) => a + b, 0);
+  while (assigned < total)
+    for (const { i } of order) {
+      if (assigned === total) break;
+      if (counts[i]! < weights[i]!) {
+        counts[i]!++;
+        assigned++;
+      }
+    }
+  while (assigned > total)
+    for (const { i } of [...order].reverse()) {
+      if (assigned === total) break;
+      if (counts[i]! > minima[i]!) {
+        counts[i]!--;
+        assigned--;
+      }
+    }
+  return counts;
+}
+
+/** Resolve a session's mode, retaining one chunk when a budget cannot fit. */
 export function chunkCount(
   total: number,
   chunking: Chunking,
-  Bmax: number,
+  budget: number,
 ): number {
   integer(total, 'Unknown count', 0);
-  integer(Bmax, 'Bmax', 0);
+  integer(budget, 'Bracket budget', 0);
   if (chunking.mode === 'size') integer(chunking.size, 'Chunk size');
   if (chunking.mode === 'count') integer(chunking.count, 'Chunk count');
   if (total === 0) return 0;
   switch (chunking.mode) {
-    case 'auto':
-      return Math.min(total, Math.max(1, Bmax));
+    case 'budget':
+      return Math.min(total, Math.max(1, budget));
     case 'size':
       return Math.ceil(total / chunking.size);
     case 'count':
@@ -45,11 +89,11 @@ export function chunkCount(
   }
 }
 
-/** Chunk across samples, or chunk each sample with a shared target size. */
+/** Samples share k by largest remainder when brackets must respect boundaries. */
 export function planChunks(
   unknowns: readonly Unknown[],
   recipe: Recipe,
-  Bmax: number,
+  budget: number,
 ): number[] {
   const sizes = unknowns.map(({ from, to }) => {
     integer(from, 'Sample start');
@@ -58,33 +102,18 @@ export function planChunks(
     return to - from + 1;
   });
   const total = sizes.reduce((a, b) => a + b, 0);
-  const count = chunkCount(total, recipe.chunking, Bmax);
-  if (total === 0) return [];
+  const count = chunkCount(total, recipe.chunking, budget);
+  if (!total) return [];
   if (!recipe.bracketAtSampleBoundaries) return chunkSizes(total, count);
-  const target =
-    recipe.chunking.mode === 'size'
-      ? recipe.chunking.size
-      : Math.ceil(total / count);
-  return sizes.flatMap((size) => chunkSizes(size, Math.ceil(size / target)));
+  return largestRemainder(Math.max(count, sizes.length), sizes).flatMap(
+    (k, i) => chunkSizes(sizes[i]!, k),
+  );
 }
 
-/** Zero-based bracket nearest half the unknowns, ties earlier; null below two. */
+/** Zero-based floor((k + 1) / 2) bracket, with no mid block below two chunks. */
 export function midBracketIndex(chunks: readonly number[]): number | null {
-  for (const size of chunks) integer(size, 'Chunk size');
-  if (chunks.length < 2) return null;
-  const half = chunks.reduce((a, b) => a + b, 0) / 2;
-  let cumulative = 0;
-  let nearest = 0;
-  let distance = Infinity;
-  chunks.forEach((size, i) => {
-    cumulative += size;
-    const next = Math.abs(cumulative - half);
-    if (next < distance) {
-      distance = next;
-      nearest = i;
-    }
-  });
-  return nearest;
+  chunks.forEach((size) => integer(size, 'Chunk size'));
+  return chunks.length < 2 ? null : Math.floor((chunks.length + 1) / 2) - 1;
 }
 
 function context(standards: readonly Standard[], recipe: Recipe) {
@@ -102,13 +131,17 @@ function context(standards: readonly Standard[], recipe: Recipe) {
     throw new Error('Exactly one primary standard is required.');
   const secondaries = standards.filter((s) => s.role === 'secondary');
   integer(recipe.secondaryPairsPerBracket, 'Secondary pairs', 0);
+  integer(recipe.maxPairsPerBracket, 'Maximum pairs per bracket');
   integer(recipe.spotsPerSecondary, 'Spots per secondary');
-  integer(recipe.primaryPerBracket, 'Primary per bracket', 0);
-  integer(recipe.sessionsLeft, 'Sessions left');
+  integer(recipe.primaryPerBracket, 'Primary per bracket');
   integer(recipe.rotationStart, 'Rotation start', 0);
-  if (recipe.secondaryPairsPerBracket > 0 && !secondaries.length)
+  if (
+    (recipe.chunking.mode === 'budget' ||
+      recipe.secondaryPairsPerBracket > 0) &&
+    !secondaries.length
+  )
     throw new Error('A secondary standard is required for secondary pairs.');
-  const resolve = (entries: readonly BlockEntry[]): BlockEntry[] =>
+  const resolve = (entries: readonly BlockEntry[]) =>
     entries.map((entry) => {
       integer(entry.count, 'Block draw count', 0);
       const standard =
@@ -133,7 +166,6 @@ export interface Bracket {
   secondaries: BlockEntry[];
   primary: BlockEntry;
 }
-
 export interface BracketLayout {
   opening: BlockEntry[];
   brackets: Bracket[];
@@ -141,19 +173,27 @@ export interface BracketLayout {
   nextRotation: number;
 }
 
-/** Resolve standard names and ordered draws without consuming any pool spots. */
+/** Ordered draws without consuming pool spots; pair counts may vary per bracket. */
 export function bracketLayout(
   chunks: readonly number[],
   standards: readonly Standard[],
   recipe: Recipe,
+  pairsPerBracket = chunks.map(() => recipe.secondaryPairsPerBracket),
 ): BracketLayout {
   const ctx = context(standards, recipe);
   const midIndex = midBracketIndex(chunks);
+  if (pairsPerBracket.length !== chunks.length)
+    throw new RangeError('Pair counts must match brackets.');
   let rotation = ctx.start;
   const brackets = chunks.map((chunkSize, i): Bracket => {
+    integer(pairsPerBracket[i]!, 'Secondary pairs', 0);
     const secondaries: BlockEntry[] = [];
-    for (let pair = 0; pair < recipe.secondaryPairsPerBracket; pair++) {
-      const secondary = ctx.secondaries[rotation]!;
+    for (let pair = 0; pair < pairsPerBracket[i]!; pair++) {
+      const secondary = ctx.secondaries[rotation];
+      if (!secondary)
+        throw new Error(
+          'A secondary standard is required for secondary pairs.',
+        );
       secondaries.push({
         standard: secondary.name,
         count: recipe.spotsPerSecondary,
@@ -175,86 +215,146 @@ export function bracketLayout(
   };
 }
 
-function simulateNeed(
-  count: number,
-  standards: readonly Standard[],
-  recipe: Recipe,
-  ctx: ReturnType<typeof context>,
-): Map<string, number> {
-  const needs = new Map(standards.map((s) => [s.name, 0]));
-  const add = (name: string, n: number) =>
-    needs.set(name, needs.get(name)! + n);
-  const block = (entries: readonly BlockEntry[]) => {
-    for (const entry of entries) add(entry.standard, entry.count);
-  };
-  if (count === 0) return needs;
-  let rotation = ctx.start;
-  for (let session = 0; session < recipe.sessionsLeft; session++) {
-    block(ctx.opening);
-    if (count >= 2) block(ctx.mid);
-    for (let bracket = 0; bracket < count; bracket++) {
-      for (let pair = 0; pair < recipe.secondaryPairsPerBracket; pair++) {
-        add(ctx.secondaries[rotation]!.name, recipe.spotsPerSecondary);
-        rotation = (rotation + 1) % ctx.secondaries.length;
-      }
-      add(ctx.primary.name, recipe.primaryPerBracket);
-    }
-    block(ctx.closing);
-  }
-  return needs;
+export interface ProjectLayout {
+  layouts: BracketLayout[];
+  chunks: number[][];
+  pairsPerBracket: number[][];
+  budget: Budget;
+  advisories: string[];
 }
 
-/**
- * Exact multi-session Bmax: count each rotated draw with the rotation continuing
- * between sessions. Demand is monotone in C, so binary search finds the maximum.
- * perStandard describes the proposed (or mode-selected) count, including all
- * sessionsLeft sessions. Sample-boundary expansion can be supplied as proposed.
- */
+/** Plan all nonempty planned sessions; standards already include fixed-session use. */
 export function calculateBudget(
-  total: number,
+  unknowns: readonly (readonly Unknown[])[],
   standards: readonly Standard[],
   recipe: Recipe,
-  proposed?: number,
-): Budget {
-  integer(total, 'Unknown count', 0);
+): ProjectLayout {
   const ctx = context(standards, recipe);
-  const remaining = remainingCounts(standards);
-  const fits = (count: number) =>
-    [...simulateNeed(count, standards, recipe, ctx)].every(
-      ([name, need]) => need <= remaining[name]!,
-    );
-  let low = 0;
-  let high = total;
-  while (low < high) {
-    const candidate = Math.floor((low + high + 1) / 2);
-    if (fits(candidate)) low = candidate;
-    else high = candidate - 1;
+  const available = remainingCounts(standards);
+  const advisories: string[] = [];
+  for (const s of standards) {
+    const fresh = remainingCounts([{ ...s, spare: 0 }])[s.name]!;
+    if (s.spare > fresh)
+      advisories.push(
+        `${s.name}: keep ${s.spare} spare exceeds ${fresh} unused spots.`,
+      );
   }
-  const count = proposed ?? chunkCount(total, recipe.chunking, low);
-  integer(count, 'Proposed chunk count', total === 0 ? 0 : 1);
-  if (count > total)
-    throw new RangeError('Proposed chunk count exceeds unknown count.');
-  const needs = simulateNeed(count, standards, recipe, ctx);
-  const warnings =
-    count > low
-      ? [
-          low === 0
-            ? 'No bracket count fits the remaining standard pools for all sessions left.'
-            : `${count} chunks exceed the budget of ${low} for all sessions left.`,
-        ]
-      : [];
-  return {
-    Bmax: low,
-    chunksPerSession: count,
-    perStandard: Object.fromEntries(
-      standards.map((s) => [
+  const totals = unknowns.map((samples) =>
+    samples.reduce((n, s) => n + s.to - s.from + 1, 0),
+  );
+  const active = totals.filter((n) => n > 0).length;
+  const total = totals.reduce((a, b) => a + b, 0);
+  const fixedPrimary = [...ctx.opening, ...ctx.mid, ...ctx.closing]
+    .filter((e) => e.standard === ctx.primary.name)
+    .reduce((n, e) => n + e.count, 0);
+  // The first exhausted secondary stops the rotation, even if others have supply.
+  const capacities = ctx.secondaries.map((s) =>
+    Math.floor(available[s.name]! / recipe.spotsPerSecondary),
+  );
+  let pairBudget = 0;
+  if (capacities.length) {
+    const fullRounds = Math.min(...capacities);
+    pairBudget = fullRounds * capacities.length;
+    for (let step = 0; step < capacities.length; step++) {
+      if (capacities[(ctx.start + step) % capacities.length]! === fullRounds)
+        break;
+      pairBudget++;
+    }
+  }
+  let K = active
+    ? Math.max(
+        0,
+        Math.min(
+          total,
+          pairBudget,
+          Math.floor(
+            (available[ctx.primary.name]! - active * fixedPrimary) /
+              recipe.primaryPerBracket,
+          ),
+        ),
+      )
+    : 0;
+  let P = Math.min(pairBudget, recipe.maxPairsPerBracket * K);
+  let chunks: number[][];
+  if (recipe.chunking.mode === 'budget') {
+    const minima = unknowns.map((samples) =>
+      samples.length
+        ? recipe.bracketAtSampleBoundaries
+          ? samples.length
+          : 1
+        : 0,
+    );
+    const minimum = minima.reduce((a, b) => a + b, 0);
+    if (K < minimum)
+      advisories.push(
+        `Budget has ${K} brackets for ${active} sessions${recipe.bracketAtSampleBoundaries ? ` and ${minimum} samples` : ''}; emitting at least one bracket per ${recipe.bracketAtSampleBoundaries ? 'sample' : 'session'} with shortage warnings.`,
+      );
+    const counts = largestRemainder(Math.max(K, minimum), totals, minima);
+    chunks = unknowns.map((samples, i) =>
+      planChunks(samples, recipe, counts[i]!),
+    );
+  } else {
+    chunks = unknowns.map((samples) => planChunks(samples, recipe, 0));
+    K = chunks.reduce((n, c) => n + c.length, 0);
+    P = K * recipe.secondaryPairsPerBracket;
+  }
+  const emittedK = chunks.reduce((n, c) => n + c.length, 0);
+  let bracket = 0;
+  const pairsPerBracket = chunks.map((c) =>
+    c.map(() => {
+      const j = ++bracket;
+      return recipe.chunking.mode !== 'budget'
+        ? recipe.secondaryPairsPerBracket
+        : emittedK > K
+          ? 1
+          : Math.floor((j * P) / K) - Math.floor(((j - 1) * P) / K);
+    }),
+  );
+  let rotation = ctx.start;
+  const layouts = chunks.map((c, i) => {
+    const layout = bracketLayout(
+      c,
+      standards,
+      { ...recipe, rotationStart: rotation },
+      pairsPerBracket[i],
+    );
+    rotation = layout.nextRotation;
+    return layout;
+  });
+  const needed = Object.fromEntries(standards.map((s) => [s.name, 0]));
+  for (const layout of layouts)
+    for (const e of [
+      ...layout.opening,
+      ...layout.brackets.flatMap((b) => [
+        ...b.mid,
+        ...b.secondaries,
+        b.primary,
+      ]),
+      ...layout.closing,
+    ])
+      needed[e.standard]! += e.count;
+  const perStandard = Object.fromEntries(
+    standards.map((s) => {
+      const need = needed[s.name]!;
+      if (need > available[s.name]!)
+        advisories.push(
+          `${s.name} needs ${need} spots; ${available[s.name]} available after used spots and spare.`,
+        );
+      return [
         s.name,
         {
-          need: needs.get(s.name)!,
-          remaining: remaining[s.name]!,
+          available: available[s.name]!,
+          needed: need,
+          leftAfter: available[s.name]! - need,
         },
-      ]),
-    ),
-    warnings,
+      ];
+    }),
+  );
+  return {
+    layouts,
+    chunks,
+    pairsPerBracket,
+    budget: { K, P, perStandard },
+    advisories,
   };
 }

@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { generate, validate } from './sequence';
+import { generate, planProject, validate } from './sequence';
+import { newSessionFrom } from './project';
 import { availableSpots } from './pools';
 import {
   SESSION_2_STANDARDS,
   SESSION_2_UNKNOWNS,
   SESSION_3_UNKNOWNS,
+  TEST_PROJECT,
 } from './test-data';
 import {
   DEFAULT_EXPERIMENT,
@@ -17,207 +19,166 @@ import {
 const session2Recipe: Recipe = {
   ...DEFAULT_RECIPE,
   chunking: { mode: 'count', count: 10 },
-  sessionsLeft: 2,
 };
 const experiment2 = {
   ...DEFAULT_EXPERIMENT,
   name: 'Zircon_04Nov26_Synthetic',
   session: 2,
 };
-const experiment3 = { ...experiment2, session: 3 };
 
-describe('today’s acceptance sessions', () => {
-  it('reproduces session 2 and carries exact spots and rotation into session 3', () => {
-    const original = structuredClone({
-      experiment2,
-      unknowns: SESSION_2_UNKNOWNS,
-      standards: SESSION_2_STANDARDS,
-      recipe: session2Recipe,
-    });
-    const second = generate(
-      experiment2,
-      SESSION_2_UNKNOWNS,
-      SESSION_2_STANDARDS,
-      session2Recipe,
+describe('project generation', () => {
+  it('plans both sessions without mutating inputs and draws every unused spot exactly once', () => {
+    const original = structuredClone(TEST_PROJECT);
+    const result = planProject(TEST_PROJECT);
+    const [second, third] = result.sessions;
+    expect(result.sessions.map((s) => s.rows.length)).toEqual([332, 324]);
+    expect(result.sessions.map((s) => s.chunks.length)).toEqual([19, 18]);
+    expect(result.sessions.map((s) => s.nextRotation)).toEqual([0, 0]);
+    expect(second!.rotation).toEqual(
+      Array.from(
+        { length: 20 },
+        (_, i) => ['Seiland', '91500', 'PL', 'LTSE'][i % 4],
+      ),
     );
-    expect(second.rows).toHaveLength(294);
-    expect(second.chunks).toEqual([24, 24, 24, 24, 23, 23, 23, 23, 23, 23]);
-    expect(second.rotation).toEqual([
-      'Seiland',
-      '91500',
-      'PL',
-      'LTSE',
-      'Seiland',
-      '91500',
-      'PL',
-      'LTSE',
-      'Seiland',
-      '91500',
-    ]);
-    expect(second.nextRotation).toBe(2);
-    expect(second.rows.slice(0, 9).map((row) => row.Label)).toEqual([
-      'NIST612_875',
-      'NIST612_876',
-      'NIST612_877',
-      'NIST610_848',
-      'NIST610_849',
-      'NIST610_850',
-      'S513_650',
-      'S513_651',
-      'HH3_S_1',
-    ]);
-    const mid = second.rows.findIndex((row) => row.meta.block === 'mid');
-    expect(mid).toBe(143);
-    expect(
-      second.rows.slice(0, mid).filter((row) => row.meta.kind === 'unknown'),
-    ).toHaveLength(119);
-    expect(second.rows[mid - 1]?.Label).toBe('TH2_S_119');
-    expect(second.rows.slice(mid, mid + 7).map((row) => row.Label)).toEqual([
-      'NIST610_851',
-      'NIST610_852',
-      'NIST610_853',
-      'NIST612_878',
-      'NIST612_879',
-      'NIST612_880',
-      'Seiland_780',
-    ]);
-    expect(second.rows.slice(-6).map((row) => row.Label)).toEqual([
-      'NIST612_881',
-      'NIST612_882',
-      'NIST612_883',
-      'NIST610_854',
-      'NIST610_855',
-      'NIST610_856',
-    ]);
-    expect(second.warnings).toEqual([]);
-    expect(second.budget.Bmax).toBe(10);
-    expect(second.budget.warnings).toEqual([]);
-    expect(second.drawn).toEqual({
-      S513: Array.from({ length: 22 }, (_, i) => 650 + i),
-      Seiland: [778, 779, 780, 781, 782, 783],
-      '91500': [748, 749, 750, 751, 752, 753],
-      PL: [838, 839, 840, 841],
-      LTSE: [808, 809, 810, 811],
-      NIST610: [848, 849, 850, 851, 852, 853, 854, 855, 856],
-      NIST612: [875, 876, 877, 878, 879, 880, 881, 882, 883],
-    });
-    const standards3 = SESSION_2_STANDARDS.map((s) => ({
-      ...s,
-      used: [...s.used, ...second.drawn[s.name]!],
-    }));
-    const recipe3: Recipe = {
-      ...session2Recipe,
-      sessionsLeft: 1,
-      rotationStart: second.nextRotation,
-    };
-    const third = generate(
-      experiment3,
-      SESSION_3_UNKNOWNS,
-      standards3,
-      recipe3,
-    );
-    expect(third.rows).toHaveLength(288);
-    expect(third.chunks).toEqual([23, 23, 23, 23, 23, 23, 23, 23, 22, 22]);
-    expect(third.rotation).toEqual([
-      'PL',
-      'LTSE',
-      'Seiland',
-      '91500',
-      'PL',
-      'LTSE',
-      'Seiland',
-      '91500',
-      'PL',
-      'LTSE',
-    ]);
-    expect(third.nextRotation).toBe(0);
-    expect(third.rows[8]?.Label).toBe('SYN-J1_xs_235');
-    expect(third.rows.slice(0, 8).map((row) => row.Label)).toEqual([
-      'NIST612_884',
-      'NIST612_885',
-      'NIST612_886',
-      'NIST610_866',
-      'NIST610_867',
-      'NIST610_868',
-      'S513_672',
-      'S513_673',
-    ]);
-    expect(third.rows.slice(-6).map((row) => row.Label)).toEqual([
-      'NIST612_890',
-      'NIST612_891',
-      'NIST612_892',
-      'NIST610_872',
-      'NIST610_873',
-      'NIST610_874',
-    ]);
-    expect(third.drawn.S513).toEqual(
-      Array.from({ length: 22 }, (_, i) => 672 + i),
-    );
-    expect([...second.drawn.S513!, ...third.drawn.S513!]).toEqual(
-      Array.from({ length: 44 }, (_, i) => 650 + i),
-    );
-    expect(third.warnings).toEqual([]);
-    expect(third.budget.Bmax).toBe(10);
-    expect(third.budget.warnings).toEqual([]);
-    for (const standard of standards3.filter((s) => s.role === 'secondary')) {
-      expect(third.drawn[standard.name]).toEqual(availableSpots(standard));
-      expect(
-        availableSpots({
-          ...standard,
-          used: [...standard.used, ...third.drawn[standard.name]!],
-        }),
-      ).toEqual([]);
-    }
-    for (const [generated, samples] of [
-      [second, SESSION_2_UNKNOWNS],
-      [third, SESSION_3_UNKNOWNS],
-    ] as const) {
-      const expectedUnknowns = samples.flatMap((sample) =>
-        Array.from(
-          { length: sample.to - sample.from + 1 },
-          (_, i) => `${sample.name}_${sample.tag}_${sample.from + i}`,
-        ),
+    expect(third!.rotation).toEqual(second!.rotation);
+    expect(result.advisories).toEqual([]);
+    expect(result.sessions.flatMap((s) => s.warnings)).toEqual([]);
+    for (const standard of SESSION_2_STANDARDS) {
+      const positions = result.sessions.flatMap((s) =>
+        s.rows
+          .filter((r) => r.meta.name === standard.name)
+          .map((r) => r['Laser Scan Position Number']),
       );
+      expect(positions).toEqual(availableSpots(standard));
+    }
+    for (const [session, samples] of [
+      [second!, SESSION_2_UNKNOWNS],
+      [third!, SESSION_3_UNKNOWNS],
+    ] as const) {
       expect(
-        generated.rows
+        session.rows
           .filter((r) => r.meta.kind === 'unknown')
           .map((r) => r.Label),
-      ).toEqual(expectedUnknowns);
-      for (const row of generated.rows) {
+      ).toEqual(
+        samples.flatMap((s) =>
+          Array.from(
+            { length: s.to - s.from + 1 },
+            (_, i) => `${s.name}_${s.tag}_${s.from + i}`,
+          ),
+        ),
+      );
+      for (const row of session.rows) {
         expect(row).toMatchObject({
+          ...DEFAULT_EXPERIMENT.defaults,
           Status: null,
-          'Duration [s]': 30,
-          Comment: '<Comment>',
-          Evaluate: true,
-          'Sample Type': 'UNKNOWN',
-          Standard: '',
-          'Dilution Factor': 1,
-          Amount: '',
-          'Final Quantity': '',
-          Identifier: '<Identifier>',
-          'Laser Output Setting [%]': 46,
         });
         expect(typeof row['Laser Scan Position Number']).toBe('number');
       }
     }
+    expect(TEST_PROJECT).toEqual(original);
+  });
+
+  it('balances target-18 chunks with 13 brackets per session and mid at 7', () => {
+    const r = planProject({
+      ...TEST_PROJECT,
+      recipe: { ...DEFAULT_RECIPE, chunking: { mode: 'size', size: 18 } },
+    });
+    expect(r.sessions.map((s) => s.rows.length)).toEqual([306, 300]);
+    expect(r.sessions[0]!.chunks).toEqual(Array(13).fill(18));
+    expect(r.sessions[1]!.chunks).toEqual([
+      ...Array(7).fill(18),
+      ...Array(6).fill(17),
+    ]);
+    expect(r.sessions.map((s) => s.pairsPerBracket)).toEqual([
+      Array(13).fill(1),
+      Array(13).fill(1),
+    ]);
+    for (const session of r.sessions) {
+      const mid = session.rows.findIndex((row) => row.meta.block === 'mid');
+      expect(
+        session.rows.slice(0, mid).filter((row) => row.meta.kind === 'unknown'),
+      ).toHaveLength(session.chunks.slice(0, 7).reduce((a, b) => a + b, 0));
+      expect(session.warnings).toEqual([]);
+    }
+    expect(r.advisories).toEqual([]);
+  });
+
+  it('keeps eight spare per secondary, with twelve one-pair brackets in each session', () => {
+    const r = planProject({
+      ...TEST_PROJECT,
+      standards: TEST_PROJECT.standards.map((s) => ({
+        ...s,
+        spare: s.role === 'secondary' ? 8 : 0,
+      })),
+    });
+    expect(r.budget).toMatchObject({ K: 24, P: 24 });
+    expect(r.sessions.map((s) => s.pairsPerBracket)).toEqual([
+      Array(12).fill(1),
+      Array(12).fill(1),
+    ]);
+    expect(r.sessions.flatMap((s) => s.warnings)).toEqual([]);
+    expect(r.advisories).toEqual([]);
+    expect(r.budget.perStandard.S513!.leftAfter).toBe(26);
+    for (const standard of TEST_PROJECT.standards.filter(
+      (s) => s.role === 'secondary',
+    )) {
+      const drawn = r.sessions.flatMap((s) =>
+        s.rows
+          .filter((row) => row.meta.name === standard.name)
+          .map((row) => row['Laser Scan Position Number']),
+      );
+      expect(drawn).toHaveLength(12);
+      expect(
+        availableSpots(standard).filter((spot) => !drawn.includes(spot)),
+      ).toHaveLength(8);
+    }
+  });
+
+  it('reports spare larger than a pool and emits exhausted rows without crashing', () => {
+    const r = planProject({
+      ...TEST_PROJECT,
+      standards: TEST_PROJECT.standards.map((s) => ({ ...s, spare: 1000 })),
+    });
+    expect(r.budget).toMatchObject({ K: 0, P: 0 });
     expect(
-      generate(experiment2, SESSION_2_UNKNOWNS, SESSION_2_STANDARDS, {
-        ...session2Recipe,
-        chunking: { mode: 'auto' },
-      }).rows,
-    ).toEqual(second.rows);
+      r.advisories.some((a) => a.includes('keep 1000 spare exceeds')),
+    ).toBe(true);
+    expect(r.sessions.map((s) => s.chunks.length)).toEqual([1, 1]);
     expect(
-      generate(experiment3, SESSION_3_UNKNOWNS, standards3, {
-        ...recipe3,
-        chunking: { mode: 'auto' },
-      }).rows,
-    ).toEqual(third.rows);
-    expect({
-      experiment2,
-      unknowns: SESSION_2_UNKNOWNS,
-      standards: SESSION_2_STANDARDS,
-      recipe: session2Recipe,
-    }).toEqual(original);
+      r.sessions
+        .flatMap((s) => s.warnings)
+        .every((w) => w.kind === 'pool-exhausted'),
+    ).toBe(true);
+    expect(r.sessions.flatMap((s) => s.warnings).length).toBeGreaterThan(0);
+  });
+
+  it('reserves fixed rows and advances rotation when marking a planned session as run', () => {
+    const initial = planProject(TEST_PROJECT);
+    const saved = {
+      ...structuredClone(TEST_PROJECT),
+      sessions: TEST_PROJECT.sessions.map((s, i) => ({
+        ...s,
+        rows: initial.sessions[i]!.rows,
+      })),
+    };
+    const continued = newSessionFrom(saved, 2);
+    const result = planProject(continued);
+    expect(result.sessions[0]!.fixed).toBe(true);
+    expect(result.sessions[0]!.rows).toEqual(initial.sessions[0]!.rows);
+    expect(result.sessions[1]!.chunks).toEqual(initial.sessions[1]!.chunks);
+    // Replanning restarts run-wide bracket numbering for the remaining session.
+    expect(
+      result.sessions[1]!.pairsPerBracket.flatMap((pairs, i) =>
+        pairs === 2 ? [i + 1] : [],
+      ),
+    ).toEqual([9, 18]);
+    expect(result.sessions[1]!.rows.map((row) => row.Label).sort()).toEqual(
+      initial.sessions[1]!.rows.map((row) => row.Label).sort(),
+    );
+    expect(result.sessions[2]!.rows).toEqual([]);
+    expect(result.budget).toMatchObject({ K: 18, P: 20 });
+    expect(result.sessions.flatMap((s) => s.warnings)).toEqual([]);
+    expect(result.advisories).toEqual([]);
   });
 });
 
@@ -273,7 +234,7 @@ describe('generation options', () => {
       SESSION_2_STANDARDS,
       recipe,
     );
-    expect(result.chunks).toEqual([3, 2, 3]);
+    expect(result.chunks).toEqual([5, 3]);
     let inChunk: Row[] = [];
     const groups: Row[][] = [];
     for (const row of result.rows) {
@@ -286,10 +247,9 @@ describe('generation options', () => {
     expect(groups.map((g) => g.length)).toEqual(result.chunks);
     expect(groups.map((g) => [...new Set(g.map((r) => r.meta.name))])).toEqual([
       ['A'],
-      ['A'],
       ['B'],
     ]);
-    expect(result.budget.chunksPerSession).toBe(3);
+    expect(result.budget.K).toBe(2);
     expect(result.warnings).toEqual([]);
     const expanded = generate(
       DEFAULT_EXPERIMENT,
@@ -298,7 +258,8 @@ describe('generation options', () => {
       { ...session2Recipe, bracketAtSampleBoundaries: true },
     );
     expect(expanded.chunks.length).toBeGreaterThan(10);
-    expect(expanded.budget.warnings).toHaveLength(1);
+    expect(expanded.chunks.length).toBe(SESSION_2_UNKNOWNS.length);
+    expect(expanded.advisories).toEqual([]);
   });
 
   it('draws two consecutive secondary pairs per bracket then the primary', () => {
@@ -323,22 +284,22 @@ describe('generation options', () => {
     expect(
       result.rows.filter((r) => r.meta.block === 'bracket').map((r) => r.Label),
     ).toEqual([
-      'Seiland_778',
-      'Seiland_779',
-      '91500_748',
-      '91500_749',
+      'Seiland_758',
+      'Seiland_759',
+      '91500_728',
+      '91500_729',
       'S513_652',
       'S513_653',
-      'PL_838',
-      'PL_839',
-      'LTSE_808',
-      'LTSE_809',
+      'PL_818',
+      'PL_819',
+      'LTSE_788',
+      'LTSE_789',
       'S513_654',
       'S513_655',
-      'Seiland_780',
-      'Seiland_781',
-      '91500_750',
-      '91500_751',
+      'Seiland_760',
+      'Seiland_761',
+      '91500_730',
+      '91500_731',
       'S513_656',
       'S513_657',
     ]);
@@ -398,8 +359,8 @@ describe('generation options', () => {
       expect(
         result.warnings.find((w) => w.rowIndexes.includes(i))?.message,
       ).toContain(`Row ${i + 1}`);
-    expect(result.budget.Bmax).toBe(0);
-    expect(result.budget.warnings).toHaveLength(1);
+    expect(result.budget.K).toBe(0);
+    expect(result.advisories.length).toBeGreaterThan(0);
   });
 
   it('returns an empty sequence for no unknowns', () => {
@@ -485,4 +446,57 @@ describe('validate after manual edits', () => {
       ).toBe('outside-pool');
     }
   });
+});
+
+it('reports cross-session duplicates with both row locations, including unknowns', () => {
+  const p = structuredClone(TEST_PROJECT);
+  const rows = planProject(p).sessions.map((s) => s.rows);
+  const primary = rows[0]![6]!;
+  const unknown = rows[1]![8]!;
+  unknown['Laser Scan Position Number'] = primary['Laser Scan Position Number'];
+  const other = { ...p.sessions[0]!, rows: rows[0]!, fixed: true };
+  const warnings = validate(
+    rows[1]!,
+    p.standards,
+    p.sessions[1]!.unknowns,
+    [other],
+    3,
+  );
+  expect(warnings.find((w) => w.kind === 'duplicate-spot')).toMatchObject({
+    rowIndexes: [8],
+    locations: [
+      { session: 3, rowIndex: 8 },
+      { session: 2, rowIndex: 6 },
+    ],
+  });
+  expect(warnings.find((w) => w.kind === 'duplicate-spot')!.message).toContain(
+    'Session 2 row 7',
+  );
+  const edited = structuredClone(rows[1]![6]!);
+  edited['Laser Scan Position Number'] = primary['Laser Scan Position Number'];
+  expect(
+    validate([edited], p.standards, [], [other], 3).map((w) => w.kind),
+  ).toEqual(['already-used', 'duplicate-spot']);
+});
+
+it('validates the current label and tag after manual edits', () => {
+  const rows = generate(
+    DEFAULT_EXPERIMENT,
+    [{ name: 'A', tag: 'S', from: 1, to: 1 }],
+    SESSION_2_STANDARDS,
+    DEFAULT_RECIPE,
+  ).rows;
+  const unknown = rows.find((r) => r.meta.kind === 'unknown')!;
+  expect(
+    validate([{ ...unknown, Label: 'A_xs_1' }], SESSION_2_STANDARDS, [
+      { name: 'A', tag: 'S', from: 1, to: 1 },
+    ])[0]!.kind,
+  ).toBe('outside-sample');
+  expect(
+    validate(
+      [{ ...unknown, Label: 'unrecognized' }],
+      SESSION_2_STANDARDS,
+      [],
+    )[0]!.kind,
+  ).toBe('unrecognized-row');
 });

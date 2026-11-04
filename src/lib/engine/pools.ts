@@ -16,7 +16,13 @@ export function availableSpots(standard: Standard): number[] {
       if (!used.has(spot)) spots.add(spot);
     }
   }
-  return [...spots].sort((a, b) => a - b);
+  const spare = standard.spare ?? 0;
+  if (!Number.isSafeInteger(spare) || spare < 0)
+    throw new RangeError(
+      `Spare for ${standard.name} must be a non-negative integer.`,
+    );
+  const sorted = [...spots].sort((a, b) => a - b);
+  return sorted.slice(0, Math.max(0, sorted.length - spare));
 }
 
 /** Remaining counts per standard (used positions outside a pool do not count). */
@@ -29,7 +35,7 @@ export function remainingCounts(
 }
 
 /**
- * A session-local drawer. It owns its cursors, never mutates input standards,
+ * A run-wide drawer. It owns its cursors, never mutates input standards,
  * and returns null for each exhausted draw so sequence rows are never lost.
  */
 export function createDrawer(standards: readonly Standard[]) {

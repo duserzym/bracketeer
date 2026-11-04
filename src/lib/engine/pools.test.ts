@@ -5,6 +5,7 @@ import type { Standard } from './types';
 
 const pool: Standard = {
   name: 'P',
+  spare: 0,
   role: 'primary',
   ranges: [
     { from: 8, to: 10 },
@@ -25,10 +26,10 @@ describe('pools', () => {
   it('reports the exact remaining counts before session 2', () => {
     expect(remainingCounts(SESSION_2_STANDARDS)).toEqual({
       S513: 78,
-      Seiland: 10,
-      '91500': 10,
-      PL: 10,
-      LTSE: 10,
+      Seiland: 20,
+      '91500': 20,
+      PL: 20,
+      LTSE: 20,
       NIST610: 18,
       NIST612: 18,
     });
@@ -37,6 +38,7 @@ describe('pools', () => {
   it('draws independently, reports exhaustion, and returns defensive snapshots', () => {
     const secondary: Standard = {
       name: 'S',
+      spare: 0,
       role: 'secondary',
       ranges: [{ from: 20, to: 21 }],
       used: [],
@@ -64,6 +66,7 @@ describe('pools', () => {
   it('walks the two NIST610 ranges in order', () => {
     const nist: Standard = {
       name: 'NIST610',
+      spare: 0,
       role: 'reference',
       ranges: [
         { from: 866, to: 874 },
@@ -88,4 +91,16 @@ describe('pools', () => {
     expect(() => drawer.take('P', -1)).toThrow(RangeError);
     expect(() => drawer.take('P', 1.2)).toThrow(RangeError);
   });
+});
+
+it('reserves the highest unused spots as spare across ranges and never draws them', () => {
+  const standard = { ...pool, spare: 2 };
+  expect(availableSpots(standard)).toEqual([3, 5, 6]);
+  expect(createDrawer([standard]).take('P', 5)).toEqual({
+    spots: [3, 5, 6, null, null],
+    exhausted: 2,
+  });
+  expect(availableSpots({ ...pool, spare: 100 })).toEqual([]);
+  expect(() => availableSpots({ ...pool, spare: -1 })).toThrow('Spare');
+  expect(() => availableSpots({ ...pool, spare: 0.5 })).toThrow('Spare');
 });
