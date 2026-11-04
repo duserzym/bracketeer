@@ -1,5 +1,15 @@
 # bracketeer — plan (2026-11-04)
 
+## Status (2026-11-04)
+
+Milestones 1–5 are done. Golden tests verify generated sessions 2 and 3 cell
+for cell, including values and cell types. Playwright verifies the UI,
+including 1440 × 900 and 1280 × 800 layouts and the offline single-file
+build. The Mac app opens.
+
+Not yet verified: the executable on the instrument PC, and native file
+dialogs and clipboard access clicked by hand.
+
 A small, fast app that turns a list of unknowns and standards with their laser
 spot ranges into a bracketed LA-ICP-MS run sequence, lets the user edit the
 result in a table, and exports a sheet that pastes straight into the Qtegra
