@@ -1,0 +1,222 @@
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+import {
+  loadPrefs,
+  savePrefs,
+  pickEndpoint,
+  STABLE_ENDPOINT,
+  transition,
+  type UpdateStatus,
+  type UpdateInfo,
+  type UpdateEvent,
+  type UpdatePrefs,
+} from './updates';
+
+export const isTauri =
+  typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+const WEB_REASON = 'Updates come with the desktop app.';
+const PORTABLE_REASON =
+  'This portable copy cannot update itself; download the new version from GitHub.';
+const storage = {
+  getItem: (key: string) => localStorage.getItem(key),
+  setItem: (key: string, value: string) => localStorage.setItem(key, value),
+};
+export const updater = $state({
+  status: { kind: 'idle' } as UpdateStatus,
+  prefs: loadPrefs(storage),
+  version: __APP_VERSION__,
+  justChecked: false,
+});
+let flashTimer: ReturnType<typeof setTimeout>;
+let support: Promise<boolean> | undefined;
+const supported = () =>
+  (support ??= isTauri
+    ? invoke<boolean>('update_supported')
+    : Promise.resolve(false));
+function send(event: UpdateEvent) {
+  updater.status = transition(updater.status, event);
+}
+function failure(error: unknown) {
+  const message = String(error);
+  send({
+    type: 'failure',
+    message: /pubkey|public key|base64|decode/i.test(message)
+      ? 'Updates are not configured for this build yet'
+      : message,
+  });
+}
+export function setPrefs(prefs: Partial<UpdatePrefs>) {
+  updater.prefs = { ...updater.prefs, ...prefs };
+  savePrefs(storage, updater.prefs);
+}
+function record(result: string) {
+  setPrefs({ lastCheck: Date.now(), lastResult: result });
+}
+
+export async function check(manual = false) {
+  if (!isTauri) return;
+  const next = transition(updater.status, { type: 'check', manual });
+  if (next === updater.status) return;
+  updater.justChecked = false;
+  updater.status = next;
+  try {
+    const canInstall = await supported();
+    let endpoint = STABLE_ENDPOINT;
+    if (updater.prefs.channel === 'beta') {
+      try {
+        const response = await fetch(
+          'https://api.github.com/repos/duserzym/bracketeer/releases?per_page=10',
+          {
+            headers: { Accept: 'application/vnd.github+json' },
+          },
+        );
+        if (!response.ok) throw new Error('Release list unavailable');
+        endpoint = pickEndpoint('beta', await response.json());
+      } catch {
+        /* Use the stable endpoint when GitHub's API is unavailable. */
+      }
+    }
+    const info = await invoke<UpdateInfo | null>('update_check', { endpoint });
+    record(
+      info
+        ? `Version ${info.version} ${info.ready ? 'is ready to install' : 'is available'}`
+        : "You're up to date",
+    );
+    send({ type: 'result', info, checkedAt: updater.prefs.lastCheck! });
+    if (!canInstall) {
+      send({
+        type: 'unsupported',
+        reason: PORTABLE_REASON,
+        ...(info ? { info } : {}),
+      });
+    } else if (!info && manual) {
+      updater.justChecked = true;
+      clearTimeout(flashTimer);
+      flashTimer = setTimeout(() => {
+        updater.justChecked = false;
+      }, 5000);
+    } else if (info && !info.ready && updater.prefs.autoDownload) {
+      await download();
+    }
+  } catch (error) {
+    failure(error);
+    if (updater.status.kind === 'error') record(updater.status.message);
+  }
+}
+
+export async function download() {
+  if (!isTauri || updater.status.kind !== 'available') return;
+  send({ type: 'download' });
+  let off: (() => void) | undefined;
+  try {
+    off = await listen<{ downloaded: number; total: number | null }>(
+      'update-progress',
+      ({ payload }) => {
+        send({
+          type: 'progress',
+          pct: payload.total
+            ? Math.min(
+                100,
+                Math.round((payload.downloaded / payload.total) * 100),
+              )
+            : null,
+        });
+      },
+    );
+    const info = await invoke<UpdateInfo>('update_download');
+    send({ type: 'downloaded', info });
+    setPrefs({ lastResult: `Version ${info.version} is ready to install` });
+  } catch (error) {
+    failure(error);
+  } finally {
+    off?.();
+  }
+}
+export async function install() {
+  if (!isTauri || updater.status.kind !== 'ready') return;
+  send({ type: 'install' });
+  try {
+    await invoke('update_install');
+  } catch (error) {
+    failure(error);
+  }
+}
+
+/** Start once from onMount; disposal also handles an in-flight support probe. */
+export function startScheduler(): () => void {
+  let disposed = false;
+  let first: ReturnType<typeof setTimeout>;
+  let every: ReturnType<typeof setInterval>;
+  if (!isTauri) {
+    if (!preview()) send({ type: 'unsupported', reason: WEB_REASON });
+  } else {
+    void import('@tauri-apps/api/app')
+      .then(({ getVersion }) => getVersion())
+      .then((version) => {
+        if (!disposed) updater.version = version;
+      })
+      .catch(() => {});
+    void supported()
+      .then(async (canInstall) => {
+        if (disposed) return;
+        if (!canInstall) {
+          send({ type: 'unsupported', reason: PORTABLE_REASON });
+          return;
+        }
+        const info = await invoke<UpdateInfo | null>('update_status');
+        if (disposed) return;
+        if (info) {
+          send({ type: 'check', manual: false });
+          send({ type: 'result', info, checkedAt: Date.now() });
+        }
+        first = setTimeout(() => void check(), 8000);
+        every = setInterval(() => void check(), 6 * 3600_000);
+      })
+      .catch((error) => {
+        if (!disposed) {
+          send({ type: 'check', manual: false });
+          failure(error);
+        }
+      });
+  }
+  return () => {
+    disposed = true;
+    clearTimeout(first);
+    clearInterval(every);
+    clearTimeout(flashTimer);
+  };
+}
+function preview(): boolean {
+  const value = new URLSearchParams(location.search).get('update-preview');
+  const info: UpdateInfo = {
+    version: '0.2.0',
+    currentVersion: '0.1.0',
+    notes: 'Faster generate, new wizard',
+    date: null,
+    ready: false,
+  };
+  switch (value) {
+    case 'none':
+      updater.status = { kind: 'none', checkedAt: Date.now() };
+      updater.justChecked = true;
+      break;
+    case 'available':
+      updater.status = { kind: 'available', info };
+      break;
+    case 'downloading':
+      updater.status = { kind: 'downloading', info, pct: 43 };
+      break;
+    case 'ready':
+      updater.status = { kind: 'ready', info: { ...info, ready: true } };
+      break;
+    case 'error':
+      updater.status = { kind: 'error', message: 'Could not reach GitHub' };
+      break;
+    case 'unsupported':
+      updater.status = { kind: 'unsupported', reason: PORTABLE_REASON, info };
+      break;
+    default:
+      return false;
+  }
+  return true;
+}

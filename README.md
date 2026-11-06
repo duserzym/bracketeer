@@ -53,6 +53,19 @@ The files to copy are `dist/windows/bracketeer.exe`, `dist/macos/bracketeer.app`
 | `make windows`    | Cross-build the portable exe into `dist/windows/bracketeer.exe`                  |
 | `make mac-app`    | Run `make desktop` and copy the `.app` and `.dmg` to `dist/macos/`               |
 
+## Updates
+
+The version chip is at the bottom-right on every step. Click it to open Updates.
+Use **Check now** for an explicit check; a dot marks an available or ready update.
+Automatic downloads are on by default; use **Restart to update** when ready.
+Choose **Stable** or **Beta (pre-releases)** in the panel.
+Installed Windows copies and macOS update in place; the portable exe is replaced by hand.
+The browser build links to GitHub releases and does not update itself.
+See [in-app updates](docs/in-app-updates.md) for the release flow.
+Owner setup: run `pnpm updater:setup` once with `cargo tauri` 2 and `gh` available,
+back up `~/.tauri/bracketeer-updater.key`, and commit the public-key config change.
+The script sets `TAURI_SIGNING_PRIVATE_KEY`, or prints how to add it by hand.
+
 ## Development
 
 Use Node.js 22.18+ or 24+ and pnpm 10 (the package pins pnpm 10.33.0). Run `make setup`, then `make dev`. The app uses Svelte 5, strict TypeScript and Vite; the pure engine is in `src/lib/engine/`. Excel import and export use SheetJS 0.20.3 from its official tarball. The wizard is described in [docs/wizard.md](docs/wizard.md). The mineral tiles are static SVGs rendered by `scripts/make_minerals.py` from [mineral-habit-matrix](https://github.com/duserzym/mineral-habit-matrix).

@@ -23,7 +23,7 @@ export default defineConfig(
   svelte.configs['flat/recommended'],
   { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
   {
-    files: ['**/*.svelte'],
+    files: ['**/*.svelte', '**/*.svelte.ts'],
     languageOptions: {
       parserOptions: { parser: ts.parser, svelteConfig },
     },

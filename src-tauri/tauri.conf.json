@@ -3,6 +3,15 @@
   "productName": "bracketeer",
   "version": "0.1.0",
   "identifier": "org.bracketeer.desktop",
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": [
+        "https://github.com/duserzym/bracketeer/releases/latest/download/latest.json"
+      ],
+      "windows": { "installMode": "passive" }
+    }
+  },
   "build": {
     "frontendDist": "../dist/tauri",
     "devUrl": "http://localhost:4173",

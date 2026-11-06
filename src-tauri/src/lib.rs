@@ -3,6 +3,7 @@
 use tauri::{Manager, WindowEvent};
 
 mod geometry;
+mod updater;
 
 #[tauri::command]
 async fn read_file(path: String) -> Result<tauri::ipc::Response, String> {
@@ -25,6 +26,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(updater::UpdateState::default())
         .setup(|app| {
             if let Some(window) = app.get_webview_window("main") {
                 geometry::restore(&window);
@@ -46,7 +49,12 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             read_file,
             write_file,
-            reset_window
+            reset_window,
+            updater::update_check,
+            updater::update_download,
+            updater::update_install,
+            updater::update_status,
+            updater::update_supported
         ])
         .run(tauri::generate_context!())
         .expect("error while running bracketeer");

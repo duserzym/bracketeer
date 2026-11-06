@@ -1,5 +1,9 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
+  import VersionChip from './lib/updates/VersionChip.svelte';
+  import UpdatesPanel from './lib/updates/UpdatesPanel.svelte';
+  import { startScheduler } from './lib/updates/updater.svelte';
+  let updatesPanel: UpdatesPanel;
   import { exportWorkbook, toCSV, toTSV } from './lib/engine/export';
   import {
     deriveSession,
@@ -814,7 +818,9 @@
     window.addEventListener('pagehide', flush);
     refreshPlan();
     ready = true;
+    const stopUpdates = startScheduler();
     return () => {
+      stopUpdates();
       media.removeEventListener('change', update);
       window.removeEventListener('pagehide', flush);
       clearTimeout(noticeTimer);
@@ -1120,8 +1126,11 @@
             ? 'Next: bracketing'
             : 'Generate and review'}</button
       >{/if}
+    <VersionChip onopen={() => updatesPanel.open()} />
   </footer>
 </main>
+
+<UpdatesPanel bind:this={updatesPanel} />
 
 {#snippet sessions()}
   <nav class="session-tabs" aria-label="Sessions">
