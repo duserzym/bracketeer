@@ -134,3 +134,45 @@ export function parseUsedSpots(text: string): ParseResult<number> {
   }
   return { rows: [...spots].sort((a, b) => a - b), errors: parsed.errors };
 }
+
+/** Parse positive positions without allocating an unbounded range. */
+export function parseSpotList(text: string): {
+  spots: number[];
+  errors: { token: string; reason: string }[];
+} {
+  const spots = new Set<number>();
+  const errors: { token: string; reason: string }[] = [];
+  // Keep whitespace around a range dash inside its token.
+  const tokens =
+    text.trim().match(/[^,;\s]+?(?:\s*[-–—]\s*[^,;\s]+)?(?=[,;\s]|$)/gu) ?? [];
+  for (const token of tokens) {
+    const range = readRange(token);
+    const reason = !range
+      ? 'Expected a positive safe integer or ascending range.'
+      : range.to - range.from + 1 > 100000
+        ? 'A range must contain at most 100000 spots.'
+        : '';
+    if (reason) errors.push({ token, reason });
+    else if (range)
+      for (let spot = range.from; spot <= range.to; spot++) spots.add(spot);
+  }
+  return { spots: [...spots].sort((a, b) => a - b), errors };
+}
+
+/** Sorted, deduplicated positions as maximal inclusive runs. */
+export function spotRuns(spots: readonly number[]): SpotRange[] {
+  const runs: SpotRange[] = [];
+  for (const spot of [...new Set(spots)].sort((a, b) => a - b)) {
+    const last = runs.at(-1);
+    if (last && spot === last.to + 1) last.to = spot;
+    else runs.push({ from: spot, to: spot });
+  }
+  return runs;
+}
+
+/** Canonical display form shared by the editor and its validation messages. */
+export function formatSpots(spots: readonly number[]): string {
+  return spotRuns(spots)
+    .map(({ from, to }) => (from === to ? String(from) : `${from}–${to}`))
+    .join(', ');
+}

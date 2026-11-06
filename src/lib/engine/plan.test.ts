@@ -86,6 +86,52 @@ describe('chunk planning', () => {
       RangeError,
     );
   });
+  it('treats adjacent runs of one sample as one boundary in every mode', () => {
+    const split = [
+      { name: 'A', tag: 'S', from: 1, to: 3 },
+      { name: 'A', tag: 'S', from: 10, to: 12 },
+      { name: 'A', tag: 'S', from: 20, to: 23 },
+      { name: 'B', tag: '', from: 30, to: 34 },
+    ];
+    const contiguous = [{ name: 'A', tag: 'S', from: 1, to: 10 }, split[3]!];
+    for (const chunking of [
+      { mode: 'budget' },
+      { mode: 'count', count: 4 },
+      { mode: 'size', size: 3 },
+    ] as const) {
+      const recipe = {
+        ...DEFAULT_RECIPE,
+        chunking,
+        bracketAtSampleBoundaries: true,
+      };
+      expect(planChunks(split, recipe, 4)).toEqual(
+        planChunks(contiguous, recipe, 4),
+      );
+      expect(calculateBudget([split], SESSION_2_STANDARDS, recipe)).toEqual(
+        calculateBudget([contiguous], SESSION_2_STANDARDS, recipe),
+      );
+    }
+    const short = SESSION_2_STANDARDS.map((s) => ({ ...s, ranges: [] }));
+    const recipe = { ...DEFAULT_RECIPE, bracketAtSampleBoundaries: true };
+    expect(calculateBudget([split], short, recipe).chunks).toEqual([[10, 5]]);
+    expect(calculateBudget([split], short, recipe).advisories[0]).toContain(
+      '2 samples',
+    );
+    expect(
+      planChunks(
+        [split[0]!, split[3]!, split[1]!],
+        { ...recipe, chunking: { mode: 'count', count: 1 } },
+        0,
+      ),
+    ).toEqual([3, 5, 3]);
+    expect(
+      planChunks(
+        [split[0]!, { ...split[1]!, tag: 'L' }],
+        { ...recipe, chunking: { mode: 'count', count: 1 } },
+        0,
+      ),
+    ).toEqual([3, 3]);
+  });
   it('places the mid block at floor((k+1)/2), independent of chunk sizes', () => {
     expect(midBracketIndex([24, 24, 24, 24, 23, 23, 23, 23, 23, 23])).toBe(4);
     expect(midBracketIndex([2, 2, 2])).toBe(1);

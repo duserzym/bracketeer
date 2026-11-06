@@ -105,9 +105,21 @@ export function planChunks(
   const count = chunkCount(total, recipe.chunking, budget);
   if (!total) return [];
   if (!recipe.bracketAtSampleBoundaries) return chunkSizes(total, count);
-  return largestRemainder(Math.max(count, sizes.length), sizes).flatMap(
-    (k, i) => chunkSizes(sizes[i]!, k),
+  const grouped = sampleSizes(unknowns, sizes);
+  return largestRemainder(Math.max(count, grouped.length), grouped).flatMap(
+    (k, i) => chunkSizes(grouped[i]!, k),
   );
+}
+
+function sampleSizes(unknowns: readonly Unknown[], sizes: readonly number[]) {
+  const grouped: number[] = [];
+  unknowns.forEach((sample, i) => {
+    const previous = unknowns[i - 1];
+    if (previous?.name === sample.name && previous.tag === sample.tag)
+      grouped[grouped.length - 1]! += sizes[i]!;
+    else grouped.push(sizes[i]!);
+  });
+  return grouped;
 }
 
 /** Zero-based floor((k + 1) / 2) bracket, with no mid block below two chunks. */
@@ -280,7 +292,10 @@ export function calculateBudget(
     const minima = unknowns.map((samples) =>
       samples.length
         ? recipe.bracketAtSampleBoundaries
-          ? samples.length
+          ? sampleSizes(
+              samples,
+              samples.map((s) => s.to - s.from + 1),
+            ).length
           : 1
         : 0,
     );

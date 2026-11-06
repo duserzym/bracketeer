@@ -112,7 +112,9 @@ test('unknown paste shows line errors and fills the editable table', async ({
   });
   await paste.fill('SYN-H3 S 1-30\nbad line');
   await expect(
-    page.getByText('Line 2: bad line', { exact: false }),
+    page
+      .getByTestId('samples-panel')
+      .getByText('Line 2: bad line', { exact: false }),
   ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Add pasted unknowns', exact: true }),
@@ -125,11 +127,11 @@ test('unknown paste shows line errors and fills the editable table', async ({
     page.getByRole('textbox', { name: 'Unknown 1 name', exact: true }),
   ).toHaveValue('SYN-H3');
   await expect(
-    page.getByRole('spinbutton', { name: 'Unknown 2 to', exact: true }),
-  ).toHaveValue('55');
-  await expect(page.getByTestId('unknown-total')).toHaveText(
-    '55 unknowns in this session',
-  );
+    page.getByRole('textbox', { name: 'Unknown 2 spots', exact: true }),
+  ).toHaveValue('31–55');
+  await expect(
+    page.getByTestId('samples-panel').getByTestId('unknown-total'),
+  ).toHaveText('55 unknowns in this session');
 });
 
 test('row actions and keyboard undo and redo preserve edits and numeric types', async ({

@@ -17,7 +17,7 @@ for (const viewport of [
   { width: 1440, height: 900 },
   { width: 1280, height: 800 },
 ]) {
-  test(`Mineral and review fit ${viewport.width} × ${viewport.height}`, async ({
+  test(`Mineral, unknowns and review fit ${viewport.width} × ${viewport.height}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -40,6 +40,21 @@ for (const viewport of [
       expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
       expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
     }
+    const entry = page.locator('.catalogue-entry').filter({
+      has: page.getByRole('radio', { name: 'Use S513', exact: true }),
+    });
+    const nameBounds = (await entry
+      .getByRole('textbox', { name: 'Rename S513', exact: true })
+      .boundingBox())!;
+    for (const control of await entry.locator('select, button').all()) {
+      const bounds = (await control.boundingBox())!;
+      expect(
+        Math.abs(
+          bounds.y + bounds.height / 2 - nameBounds.y - nameBounds.height / 2,
+        ),
+      ).toBeLessThan(2);
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+    }
     const main = page.locator('.welcome-main');
     expect(await main.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(
       true,
@@ -52,6 +67,37 @@ for (const viewport of [
     expect(welcomeBounds.y + welcomeBounds.height).toBeLessThanOrEqual(
       viewport.height - 50,
     );
+
+    await page
+      .getByRole('button', { name: 'Open example', exact: true })
+      .click();
+    await page.getByRole('button', { name: '2 Unknowns', exact: true }).click();
+    await pageFits(page);
+    for (const name of ['samples-panel', 'spots-panel']) {
+      const panel = page.getByTestId(name);
+      const bounds = (await panel.boundingBox())!;
+      expect(bounds.x).toBeGreaterThanOrEqual(0);
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+      expect(bounds.y + bounds.height).toBeLessThanOrEqual(
+        viewport.height - 50,
+      );
+      expect(await panel.evaluate((el) => el.scrollWidth)).toBe(
+        await panel.evaluate((el) => el.clientWidth),
+      );
+    }
+    for (const name of ['samples-scroll', 'spots-scroll']) {
+      const scroll = page.getByTestId(name);
+      expect(
+        await scroll.evaluate((el) => el.scrollHeight > el.clientHeight),
+      ).toBe(true);
+      await scroll.evaluate((el) => {
+        el.scrollTop = el.scrollHeight;
+      });
+      expect(await scroll.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+    }
+    await expect(
+      page.getByRole('button', { name: 'Next: bracketing', exact: true }),
+    ).toBeEnabled();
 
     await generatedExample(page);
     await pageFits(page);

@@ -106,7 +106,9 @@ test('fixed sessions are locked, marking as run advances rotation, and plus adds
   await expect(
     page.getByRole('button', { name: '2 Unknowns', exact: true }),
   ).toHaveAttribute('aria-current', 'step');
-  await expect(page.getByTestId('unknown-total')).toContainText('0 unknowns');
+  await expect(
+    page.getByTestId('samples-panel').getByTestId('unknown-total'),
+  ).toContainText('0 unknowns');
 });
 
 test('imports a workbook into a new fixed session and imports pasted standard usage', async ({

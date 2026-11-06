@@ -36,6 +36,8 @@
   import Inputs from './lib/ui/Inputs.svelte';
   import SequenceGrid from './lib/ui/SequenceGrid.svelte';
   import Step1Mineral from './lib/ui/Step1Mineral.svelte';
+  import Step2Unknowns from './lib/ui/Step2Unknowns.svelte';
+  import { validateUnknowns, type UnknownsState } from './lib/ui/unknowns';
   import {
     applySelection,
     catalogue,
@@ -56,7 +58,11 @@
     recordRecent,
     type Recent,
   } from './lib/ui/recent';
-  import { unknownsProblem, type Problem } from './lib/ui/navigation';
+  import {
+    unknownsProblem,
+    problemLabel,
+    type Problem,
+  } from './lib/ui/navigation';
 
   type Theme = 'light' | 'dark' | 'system';
   type Layout = { collapsed: string[] };
@@ -77,6 +83,7 @@
   let recent = $state.raw<Recent[]>([]);
   let continuation = $state.raw<Recent | null>(null);
   let unknownPaste = $state('');
+  let unknownsState = $state<UnknownsState>({ sessions: {}, standards: {} });
   let inputsEpoch = $state(0);
   let invalidInput = $state<Problem | null>(null);
   let active = $state(1);
@@ -109,18 +116,29 @@
     theme === 'dark' || (theme === 'system' && systemDark),
   );
   const mineralProblem = $derived(selectionProblem(mineral, entries));
-  const inputProblem = $derived(
-    unknownsProblem(
+  const inputValidation = $derived(
+    validateUnknowns(
       step === 1 && !mineralProblem
         ? applySelection(project, mineral, entries)
         : project,
+      unknownsState,
     ),
   );
+  const inputProblem = $derived.by(() => {
+    const problem = inputValidation.errors[0];
+    return problem
+      ? {
+          message: problem.message,
+          label: problemLabel(problem),
+          session: problem.session ?? undefined,
+        }
+      : null;
+  });
   const blocking = $derived(
     step === 1
       ? mineralProblem
       : step === 2
-        ? invalidInput?.message || inputProblem?.message || ''
+        ? inputProblem?.message || ''
         : step === 3
           ? invalidInput?.message || planError
           : '',
@@ -138,8 +156,8 @@
   function reachProblem(target: number): string {
     if (target <= step) return '';
     if (target > 1 && mineralProblem) return mineralProblem;
-    if (target > 2 && (invalidInput || inputProblem))
-      return invalidInput?.message || inputProblem?.message || '';
+    if (target > 2 && inputProblem) return inputProblem.message;
+    if (target > 3 && invalidInput) return invalidInput.message;
     if (target > 3 && planError) return planError;
     return '';
   }
@@ -222,13 +240,13 @@
       }
       return;
     }
-    const problem = invalidInput ?? inputProblem;
+    const problem = step === 2 ? inputProblem : invalidInput;
     if (problem?.session) chooseSession(problem.session);
     layout = { ...layout, collapsed: [] };
     await tick();
     const field = problem?.label
       ? document.querySelector<HTMLElement>(
-          `[aria-label="${CSS.escape(problem.label)}"]`,
+          `${step === 2 ? '.step-two' : '.inputs-scroll'} [aria-label="${CSS.escape(problem.label)}"]`,
         )
       : document.querySelector<HTMLElement>(
           '.inputs-scroll :invalid, .inputs-scroll [aria-invalid="true"]',
@@ -373,6 +391,7 @@
       ? next
       : { ...next, wizard: { mineral: chosen, step: target } };
     unknownPaste = '';
+    unknownsState = { sessions: {}, standards: {} };
     inputsEpoch += 1;
     invalidInput = null;
     active =
@@ -423,6 +442,13 @@
     } catch (e) {
       fail(e);
     }
+  }
+  function addOpenSession() {
+    const number = Math.max(...project.sessions.map((s) => s.number)) + 1;
+    edit((p) => {
+      p.sessions.push({ number, fixed: false, unknowns: [], rows: [] });
+    });
+    chooseSession(number);
   }
   function addSession() {
     try {
@@ -821,7 +847,7 @@
         aria-label="Experiment title"
         value={project.experiment.name}
         placeholder="Untitled experiment"
-        onchange={(e) =>
+        oninput={(e) =>
           edit((p) => {
             p.experiment.name = e.currentTarget.value;
           })}
@@ -906,11 +932,32 @@
         {resume}
       />
     {/if}
+    <section
+      hidden={step !== 2}
+      class="unknowns-step"
+      aria-label="Unknowns and pools"
+    >
+      {@render sessions()}
+      <Step2Unknowns
+        {project}
+        {session}
+        bind:state={unknownsState}
+        problems={inputValidation.errors}
+        warnings={inputValidation.warnings}
+        bind:paste={unknownPaste}
+        {edit}
+        changeStandards={() => setStep(1)}
+        importSequence={() => {
+          importError = '';
+          importDialog.showModal();
+        }}
+      />
+    </section>
     {#key inputsEpoch}
       <section
-        hidden={step !== 2 && step !== 3}
+        hidden={step !== 3}
         class="temporary-inputs"
-        aria-label={step === 2 ? 'Unknowns and pools' : 'Bracketing'}
+        aria-label="Bracketing"
       >
         {@render sessions()}
         <div
@@ -1083,11 +1130,15 @@
             : ' · run'
           : ''}</button
       >{/each}
-    <button
-      aria-label="New session from current"
-      title="Mark this session as run and add a new session"
-      onclick={addSession}>+</button
-    >
+    {#if step === 2}
+      <button onclick={addOpenSession}>+ Session</button>
+    {:else}
+      <button
+        aria-label="New session from current"
+        title="Mark this session as run and add a new session"
+        onclick={addSession}>+</button
+      >
+    {/if}
   </nav>
 {/snippet}
 

@@ -159,9 +159,6 @@
                       update(entry.index, { name: e.currentTarget.value })}
                   />
                 </div>
-                {#if nameProblem(entry.index)}<small class="error"
-                    >{nameProblem(entry.index)}</small
-                  >{/if}
                 <div class="catalogue-tools">
                   <select
                     aria-label={`${entry.name} group`}
@@ -172,7 +169,11 @@
                       })}
                   >
                     {#each roles as r (r)}<option value={r}
-                        >{groupNames[r]}</option
+                        >{r === 'primary'
+                          ? 'Primary'
+                          : r === 'secondary'
+                            ? 'Secondary'
+                            : 'Reference'}</option
                       >{/each}
                   </select>
                   <button
@@ -193,6 +194,10 @@
                     >×</button
                   >
                 </div>
+                {#if nameProblem(entry.index)}<small
+                    class="error catalogue-error"
+                    >{nameProblem(entry.index)}</small
+                  >{/if}
               </div>
             {/each}
             <form

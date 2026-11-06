@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { parseRanges, parseUnknowns, parseUsedSpots } from './parse';
+import {
+  parseRanges,
+  parseUnknowns,
+  parseUsedSpots,
+  parseSpotList,
+  spotRuns,
+  formatSpots,
+} from './parse';
 
 describe('parseUnknowns', () => {
   it.each([
@@ -102,5 +109,65 @@ describe('standard and used ranges', () => {
     expect(parseUsedSpots('1-2, bad').errors).toEqual(
       parseRanges('1-2, bad').errors,
     );
+  });
+});
+
+describe('spot lists', () => {
+  it('normalizes arbitrary order, separators, dash styles, duplicates and overlaps', () => {
+    const expected = [
+      ...Array.from({ length: 30 }, (_, i) => i + 1),
+      35,
+      40,
+      41,
+      42,
+    ];
+    for (const text of [
+      '1-30, 35, 40-42',
+      '40-42,1-30 35',
+      '1 – 30;35\n40 — 42',
+      '1- 30;35;40 -42',
+      '1-20, 10-30, 35,35;42,40-42',
+    ]) {
+      expect(parseSpotList(text)).toEqual({ spots: expected, errors: [] });
+    }
+    expect(expected).toHaveLength(34);
+    expect(parseSpotList('')).toEqual({ spots: [], errors: [] });
+  });
+  it.each([
+    '0',
+    '-1',
+    '1.5',
+    '30-1',
+    '9007199254740992',
+    '1-9007199254740992',
+    '1-100001',
+    'NaN',
+    '1--2',
+    '2e3',
+    '1 - 0',
+    '1 - 2.5',
+  ])('rejects %s without losing other valid tokens', (token) => {
+    const result = parseSpotList(`${token}, 9`);
+    expect(result.spots).toEqual([9]);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toEqual({ token, reason: expect.any(String) });
+  });
+  it('accepts the range size limit and safe integer limit', () => {
+    expect(parseSpotList('1-100000').spots).toHaveLength(100000);
+    expect(parseSpotList('9007199254740991').spots).toEqual([
+      Number.MAX_SAFE_INTEGER,
+    ]);
+  });
+  it('formats sorted, unique maximal runs', () => {
+    expect(spotRuns([42, 40, 41, 35, 1, 2, 2, 3])).toEqual([
+      { from: 1, to: 3 },
+      { from: 35, to: 35 },
+      { from: 40, to: 42 },
+    ]);
+    expect(formatSpots(parseSpotList('1-30, 35, 40-42').spots)).toBe(
+      '1–30, 35, 40–42',
+    );
+    expect(spotRuns([])).toEqual([]);
+    expect(formatSpots([])).toBe('');
   });
 });
