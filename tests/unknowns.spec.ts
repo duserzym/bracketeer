@@ -87,8 +87,8 @@ test('three samples accept spot lists, persist runs immediately and keep invalid
     .poll(() =>
       page.evaluate(
         () =>
-          JSON.parse(localStorage.getItem('bracketeer.project')!).sessions[0]
-            .unknowns[3].from,
+          JSON.parse(localStorage.getItem('bracketeer.project') ?? 'null')
+            ?.sessions[0]?.unknowns[3]?.from,
       ),
     )
     .toBe(50);

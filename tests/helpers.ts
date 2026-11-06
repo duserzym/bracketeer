@@ -1,11 +1,30 @@
 import { expect, type Page } from '@playwright/test';
 
-export async function generatedExample(page: Page) {
+export async function exampleBracketing(page: Page) {
   await page.goto('/');
+  await expect(page.getByTestId('welcome-panel')).toBeVisible();
   await page.getByRole('button', { name: 'Open example', exact: true }).click();
+  // Visit the populated Mineral and Unknowns steps before planning the example.
+  await page.getByRole('button', { name: '1 Mineral', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Next: unknowns', exact: true })
+    .click();
+  await expect(
+    page.getByRole('button', { name: 'Session 2', exact: true }),
+  ).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByTestId('unknown-total')).toHaveText(
+    '234 unknowns in this session',
+  );
+  await page
+    .getByRole('button', { name: 'Next: bracketing', exact: true })
+    .click();
   await expect(
     page.getByRole('button', { name: '3 Bracketing', exact: true }),
   ).toHaveAttribute('aria-current', 'step');
+}
+
+export async function generatedExample(page: Page) {
+  await exampleBracketing(page);
   await page
     .getByRole('button', { name: 'Generate and review', exact: true })
     .click();

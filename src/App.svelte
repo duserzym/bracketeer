@@ -33,7 +33,8 @@
     rowsDiffer,
     moveRows,
   } from './lib/ui/model';
-  import Inputs from './lib/ui/Inputs.svelte';
+  import Step3Bracketing from './lib/ui/Step3Bracketing.svelte';
+  import QtegraPaste from './lib/ui/QtegraPaste.svelte';
   import SequenceGrid from './lib/ui/SequenceGrid.svelte';
   import Step1Mineral from './lib/ui/Step1Mineral.svelte';
   import Step2Unknowns from './lib/ui/Step2Unknowns.svelte';
@@ -65,7 +66,6 @@
   } from './lib/ui/navigation';
 
   type Theme = 'light' | 'dark' | 'system';
-  type Layout = { collapsed: string[] };
   type Snapshot = {
     project: Project;
     dirty: number[];
@@ -96,9 +96,10 @@
   let planError = $state('');
   let theme = $state<Theme>('light');
   let systemDark = $state(false);
-  let layout = $state.raw<Layout>({ collapsed: [] });
   let ready = $state(false);
   let message = $state('');
+  let copied = $state('');
+  let reviewView = $state<'grid' | 'paste'>('grid');
   let error = $state('');
   let saved = $state('');
   let menuOpen = $state(false);
@@ -110,6 +111,7 @@
   let importPaste = $state('');
   let importError = $state('');
   let noticeTimer: ReturnType<typeof setTimeout>;
+  let actionNumber = 0;
   const step = $derived(project.wizard?.step ?? 1);
   const mineral = $derived(project.wizard?.mineral ?? '');
   const resolvedDark = $derived(
@@ -140,7 +142,11 @@
       : step === 2
         ? inputProblem?.message || ''
         : step === 3
-          ? invalidInput?.message || planError
+          ? invalidInput?.message ||
+            planError ||
+            mineralProblem ||
+            inputProblem?.message ||
+            ''
           : '',
   );
   const stepNames = ['Mineral', 'Unknowns', 'Bracketing', 'Review'];
@@ -217,6 +223,11 @@
     }
   }
   async function focusProblem() {
+    if (step === 3 && !invalidInput && !planError) {
+      if (mineralProblem) setStep(1);
+      else if (inputProblem) setStep(2);
+      await tick();
+    }
     if (step === 1) {
       if (!mineral)
         document.querySelector<HTMLButtonElement>('[role="radio"]')?.focus();
@@ -242,26 +253,30 @@
     }
     const problem = step === 2 ? inputProblem : invalidInput;
     if (problem?.session) chooseSession(problem.session);
-    layout = { ...layout, collapsed: [] };
     await tick();
     const field = problem?.label
       ? document.querySelector<HTMLElement>(
-          `${step === 2 ? '.step-two' : '.inputs-scroll'} [aria-label="${CSS.escape(problem.label)}"]`,
+          `${step === 2 ? '.step-two' : '.bracketing-step'} [aria-label="${CSS.escape(problem.label)}"]`,
         )
       : document.querySelector<HTMLElement>(
-          '.inputs-scroll :invalid, .inputs-scroll [aria-invalid="true"]',
+          '.bracketing-step :invalid, .bracketing-step [aria-invalid="true"]',
         );
+    const details = field?.closest('details');
+    if (details) details.open = true;
     field?.focus();
   }
   async function checkInputs() {
     await tick();
     const field = document.querySelector<HTMLInputElement>(
-      '.inputs-scroll input:invalid, .inputs-scroll input[aria-invalid="true"]',
+      '.bracketing-step input:invalid, .bracketing-step input[aria-invalid="true"]',
     );
     invalidInput = field
       ? {
           message: `Enter a valid value for ${field.getAttribute('aria-label') || field.closest('label')?.textContent?.trim() || 'this input'}`,
-          label: field.getAttribute('aria-label') || '',
+          label:
+            field.getAttribute('aria-label') ||
+            field.closest('label')?.textContent?.trim() ||
+            '',
         }
       : null;
   }
@@ -324,7 +339,10 @@
       remember();
       project = next;
       error = '';
-      if (replan) refreshPlan();
+      if (replan) {
+        refreshPlan();
+        void checkInputs();
+      }
       return true;
     } catch (e) {
       fail(e);
@@ -343,6 +361,7 @@
     selected = s.selected;
     selectionBySession = {};
     refreshPlan();
+    void checkInputs();
     error = '';
   }
   function history(direction: 'undo' | 'redo') {
@@ -362,7 +381,6 @@
   function chooseSession(number: number) {
     selectionBySession[active] = selected;
     active = number;
-    invalidInput = null;
     selected = selectionBySession[number] ?? [];
   }
   function load(next: Project, blank = false) {
@@ -390,6 +408,7 @@
     project = blank
       ? next
       : { ...next, wizard: { mineral: chosen, step: target } };
+    reviewView = 'grid';
     unknownPaste = '';
     unknownsState = { sessions: {}, standards: {} };
     inputsEpoch += 1;
@@ -628,9 +647,14 @@
     }
   }
   async function copy() {
+    const rows = session.rows;
+    const startedAt = actionNumber;
     try {
-      await platform.copyText(toTSV(session.rows));
-      notify(`Copied ${session.rows.length} rows`);
+      await platform.copyText(toTSV(rows));
+      if (startedAt !== actionNumber) return;
+      clearTimeout(noticeTimer);
+      message = '';
+      copied = `Copied ${rows.length} rows. Paste into the LabBook sample list.`;
     } catch (e) {
       fail(e);
     }
@@ -700,7 +724,8 @@
       importError = e instanceof Error ? e.message : String(e);
     }
   }
-  function warningRows(warning: Warning, number = session.number) {
+  async function warningRows(warning: Warning, number = session.number) {
+    reviewView = 'grid';
     const rows =
       warning.locations
         ?.filter((l) => l.session === number)
@@ -712,22 +737,10 @@
           .map((l) => l.rowIndex);
     if (number !== active) chooseSession(number);
     selected = rows;
+    await tick();
     void grid?.reveal(rows[0] ?? 0);
   }
-  function setLayout(next: Layout) {
-    layout = next;
-  }
-  function collapse(name: string, closed: boolean) {
-    if (layout.collapsed.includes(name) === closed) return;
-    setLayout({
-      ...layout,
-      collapsed: closed
-        ? [...layout.collapsed, name]
-        : layout.collapsed.filter((s) => s !== name),
-    });
-  }
   async function resetLayout() {
-    layout = { collapsed: [] };
     menuOpen = false;
     try {
       localStorage.removeItem('bracketeer.layout');
@@ -741,6 +754,8 @@
     }
   }
   function resetRecipe() {
+    inputsEpoch += 1;
+    invalidInput = null;
     edit((p) => {
       p.recipe = structuredClone(DEFAULT_RECIPE);
       for (const block of ['opening', 'mid', 'closing'] as const)
@@ -761,6 +776,13 @@
     }
   }
   onMount(() => {
+    const clearCopied = () => {
+      actionNumber += 1;
+      copied = '';
+    };
+    document.addEventListener('click', clearCopied, true);
+    document.addEventListener('input', clearCopied, true);
+    document.addEventListener('keydown', clearCopied, true);
     continuation = launchContinue();
     recent = readRecent();
     try {
@@ -771,15 +793,6 @@
         storedTheme === 'system'
       )
         theme = storedTheme;
-      const storedLayout = JSON.parse(
-        localStorage.getItem('bracketeer.layout') ?? 'null',
-      ) as Partial<Layout> | null;
-      if (storedLayout)
-        layout = {
-          collapsed: Array.isArray(storedLayout.collapsed)
-            ? storedLayout.collapsed.filter((s) => typeof s === 'string')
-            : [],
-        };
     } catch (e) {
       fail(e);
     }
@@ -805,6 +818,9 @@
       media.removeEventListener('change', update);
       window.removeEventListener('pagehide', flush);
       clearTimeout(noticeTimer);
+      document.removeEventListener('click', clearCopied, true);
+      document.removeEventListener('input', clearCopied, true);
+      document.removeEventListener('keydown', clearCopied, true);
     };
   });
   $effect(() => {
@@ -824,16 +840,6 @@
       }
     }, 350);
     return () => clearTimeout(timer);
-  });
-  $effect(() => {
-    if (!ready) return;
-    try {
-      if (!layout.collapsed.length)
-        localStorage.removeItem('bracketeer.layout');
-      else localStorage.setItem('bracketeer.layout', JSON.stringify(layout));
-    } catch {
-      /* Layout still works without storage. */
-    }
   });
 </script>
 
@@ -956,26 +962,12 @@
     {#key inputsEpoch}
       <section
         hidden={step !== 3}
-        class="temporary-inputs"
+        class="bracketing-step"
         aria-label="Bracketing"
+        oninput={checkInputs}
+        onchange={checkInputs}
       >
-        {@render sessions()}
-        <div
-          class="inputs-scroll"
-          data-testid="inputs-scroll"
-          oninput={checkInputs}
-          onchange={checkInputs}
-        >
-          <Inputs
-            {project}
-            {session}
-            {plan}
-            collapsed={layout.collapsed}
-            {edit}
-            {collapse}
-            bind:paste={unknownPaste}
-          />
-        </div>
+        <Step3Bracketing {project} {plan} {planError} {edit} {resetRecipe} />
       </section>
     {/key}
     {#if step === 4}
@@ -984,18 +976,10 @@
         <div class="grid-toolbar" data-testid="grid-toolbar">
           <div class="toolbar-line">
             <button
-              class="generate"
-              disabled={!plan ||
-                !project.sessions.some((s) => !s.fixed && s.unknowns.length)}
-              onclick={requestGenerate}>Generate</button
-            >
-            <button
               disabled={session.fixed || !session.rows.length}
               onclick={markAsRun}>Mark as run</button
             >
             {#if session.fixed}<button onclick={unlock}>Unlock</button>{/if}
-            <span class="toast" role="status" aria-live="polite">{message}</span
-            >
             <span class="toolbar-spacer"></span>
             <button
               class="primary"
@@ -1015,6 +999,20 @@
             <button onclick={saveProject}>Save project</button>
           </div>
           <div class="toolbar-line row-tools">
+            <div class="view-toggle" role="group" aria-label="Sequence view">
+              <button
+                aria-pressed={reviewView === 'grid'}
+                onclick={() => {
+                  reviewView = 'grid';
+                }}>Grid</button
+              >
+              <button
+                aria-pressed={reviewView === 'paste'}
+                onclick={() => {
+                  reviewView = 'paste';
+                }}>Qtegra paste</button
+              >
+            </div>
             <button disabled={session.fixed} onclick={() => insert('above')}
               >Insert above</button
             ><button disabled={session.fixed} onclick={() => insert('below')}
@@ -1033,6 +1031,10 @@
               disabled={session.fixed || !selected.length}
               onclick={() => move(1)}>Move down</button
             >
+            <span class="toolbar-spacer"></span>
+            <button disabled={!session.rows.length} onclick={addSession}
+              >Start another session</button
+            >
             <span class="selection-count"
               >{selected.length
                 ? `${selected.length} selected`
@@ -1041,14 +1043,17 @@
                   : 'Select rows by number'}</span
             >
           </div>
+          <div class="toast" role="status" aria-live="polite">
+            {copied || message}
+          </div>
         </div>
         {#if !session.rows.length}
           <div class="empty-state">
-            <h2>Build your run sequence</h2>
-            <p>Add unknowns, check the pools, then Generate.</p>
-            <p>Generate plans all open sessions together.</p>
-            <small>Go Back to change the inputs.</small>
+            <h2>Nothing generated yet</h2>
+            <button onclick={() => setStep(3)}>Back to bracketing</button>
           </div>
+        {:else if reviewView === 'paste'}
+          <QtegraPaste rows={session.rows} {copy} />
         {:else}
           <SequenceGrid
             bind:this={grid}
@@ -1132,12 +1137,6 @@
       >{/each}
     {#if step === 2}
       <button onclick={addOpenSession}>+ Session</button>
-    {:else}
-      <button
-        aria-label="New session from current"
-        title="Mark this session as run and add a new session"
-        onclick={addSession}>+</button
-      >
     {/if}
   </nav>
 {/snippet}

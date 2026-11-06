@@ -30,11 +30,30 @@ test('single-file web build opens the offline example and generates 332 rows fro
   await expect(
     page.getByRole('button', { name: '3 Bracketing', exact: true }),
   ).toHaveAttribute('aria-current', 'step');
+  await page.getByRole('button', { name: '1 Mineral', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Next: unknowns', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Next: bracketing', exact: true })
+    .click();
+  await expect(page.getByTestId('budget')).toContainText(
+    '37 brackets for 2 sessions (19 + 18), 40 secondary pairs',
+  );
   await page
     .getByRole('button', { name: 'Generate and review', exact: true })
     .click();
   await expect(page.getByTestId('counts')).toContainText('332 rows');
   await expect(page.getByTestId('warnings')).toHaveText('No warnings');
+  await page.getByRole('button', { name: 'Qtegra paste', exact: true }).click();
+  await expect(
+    page
+      .getByRole('table', { name: 'Qtegra paste', exact: true })
+      .locator('tbody tr'),
+  ).toHaveCount(332);
+  await expect(
+    page.getByRole('button', { name: '4 Review', exact: true }),
+  ).toHaveAttribute('aria-current', 'step');
   expect(errors).toEqual([]);
   expect(
     requests.filter(

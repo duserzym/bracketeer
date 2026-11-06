@@ -1,8 +1,16 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import * as XLSX from 'xlsx';
+import { toTSV } from '../src/lib/engine/export';
+import { planProject } from '../src/lib/engine/sequence';
+import { parseProject } from '../src/lib/engine/project';
 import { QTEGRA_COLUMNS } from '../src/lib/engine/types';
-import { commitCell, generatedExample, startZircon } from './helpers';
+import {
+  commitCell,
+  exampleBracketing,
+  generatedExample,
+  startZircon,
+} from './helpers';
 
 function cells(bytes: Uint8Array) {
   const sheet = XLSX.read(bytes, { type: 'array' }).Sheets.Sheet1!;
@@ -15,58 +23,142 @@ function cells(bytes: Uint8Array) {
   );
 }
 
-test('example generates both sessions without warnings and exports the exact BIFF8 fixture', async ({
+test('the four-step example plans the shared budget and exports both exact BIFF8 fixtures', async ({
   page,
 }, testInfo) => {
-  await generatedExample(page);
-  await expect(page.getByRole('grid').locator('tbody tr')).toHaveCount(332);
-  await expect(page.getByTestId('warnings')).toHaveText('No warnings');
-  const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export .xls', exact: true }).click();
-  const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe(
-    'Zircon_04Nov26_Synthetic_2.xls',
+  await exampleBracketing(page);
+  const summary = page.getByTestId('plan-summary');
+  await expect(summary).toContainText('2 sessions planned');
+  await expect(summary).toContainText(
+    'Session 1, imported, 245 rows, read-only',
   );
-  const output = testInfo.outputPath('session-2.xls');
-  await download.saveAs(output);
-  expect(cells(await readFile(output))).toEqual(
-    cells(await readFile('fixtures/session-2.xls')),
+  await expect(page.getByTestId('budget')).toHaveText(
+    '37 brackets for 2 sessions (19 + 18), 40 secondary pairs. Doubled brackets: 13, 25, 37.',
   );
-  await page.getByRole('button', { name: 'Session 3', exact: true }).click();
-  await expect(page.getByTestId('counts')).toContainText('324 rows');
-  await expect(page.getByRole('grid').locator('tbody tr')).toHaveCount(324);
-  await expect(page.getByTestId('warnings')).toHaveText('No warnings');
+  await expect(page.getByTestId('session-plan-2')).toContainText(
+    '6 × 13, 13 × 12',
+  );
+  await expect(page.getByTestId('session-plan-2')).toContainText(
+    '19 brackets · Mid block: bracket 10',
+  );
+  await expect(page.getByTestId('session-plan-3')).toContainText(
+    '12 × 13, 6 × 12',
+  );
+  await expect(page.getByTestId('session-plan-3')).toContainText(
+    '18 brackets · Mid block: bracket 9',
+  );
+  const primaryBudget = page
+    .getByRole('table', { name: 'Standard budget' })
+    .getByRole('row')
+    .filter({
+      has: page.getByRole('rowheader', { name: 'S513', exact: true }),
+    });
+  await expect(primaryBudget.getByRole('cell')).toHaveText(['78', '78', '0']);
+  await page
+    .getByRole('button', { name: 'Generate and review', exact: true })
+    .click();
+  await expect(
+    page.getByRole('button', { name: '4 Review', exact: true }),
+  ).toHaveAttribute('aria-current', 'step');
+  for (const [number, rows] of [
+    [2, 332],
+    [3, 324],
+  ]) {
+    await page
+      .getByRole('button', { name: `Session ${number}`, exact: true })
+      .click();
+    await expect(page.getByRole('grid').locator('tbody tr')).toHaveCount(rows!);
+    await expect(page.getByTestId('counts')).toContainText(`${rows} rows`);
+    await expect(page.getByTestId('warnings')).toHaveText('No warnings');
+    const downloadPromise = page.waitForEvent('download');
+    await page
+      .getByRole('button', { name: 'Export .xls', exact: true })
+      .click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe(
+      `Zircon_04Nov26_Synthetic_${number}.xls`,
+    );
+    const output = testInfo.outputPath(`session-${number}.xls`);
+    await download.saveAs(output);
+    expect(cells(await readFile(output))).toEqual(
+      cells(await readFile(`fixtures/session-${number}.xls`)),
+    );
+  }
 });
 
-test('Copy for Qtegra writes 332 TSV rows with exact boolean and number text', async ({
+test('Copy and the Qtegra paste table equal toTSV byte for byte and keep the copy notice', async ({
   page,
   context,
+  browserName,
 }) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  // WebKit has no clipboard permissions to grant; it checks the paste table only.
+  const clipboard = browserName === 'chromium';
+  if (clipboard)
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await generatedExample(page);
+  const project = parseProject(
+    await readFile('fixtures/session-1.bracketeer.json', 'utf8'),
+  );
+  const expected = toTSV(planProject(project).sessions[1]!.rows);
   await page
     .getByRole('button', { name: 'Copy for Qtegra', exact: true })
     .click();
-  await expect(page.getByRole('status')).toHaveText('Copied 332 rows');
-  const text = await page.evaluate(() => navigator.clipboard.readText());
-  const lines = text.replace(/\r\n$/u, '').split(/\r?\n/u);
-  expect(lines).toHaveLength(332);
-  expect(lines[0]!.split('\t')).toEqual([
-    'NIST612_875',
-    '',
-    '30',
-    '<Comment>',
-    'TRUE',
-    'UNKNOWN',
-    '',
-    '1',
-    '',
-    '',
-    '<Identifier>',
-    '875',
-    '46',
-  ]);
-  expect(lines.every((line) => line.split('\t').length === 13)).toBe(true);
+  const notice = page.getByRole('status');
+  await expect(notice).toHaveText(
+    'Copied 332 rows. Paste into the LabBook sample list.',
+  );
+  if (clipboard)
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+      expected,
+    );
+  await page.getByRole('button', { name: 'Qtegra paste', exact: true }).click();
+  await expect(page.getByText('Copied 332 rows.')).toHaveCount(0);
+  const paste = page.getByRole('table', { name: 'Qtegra paste', exact: true });
+  await expect(paste.locator('tbody tr')).toHaveCount(332);
+  await expect(paste.locator('thead th[title]')).toHaveText(
+    'ABCDEFGHIJKLM'.split(''),
+  );
+  expect(
+    await paste
+      .locator('thead th[title]')
+      .evaluateAll((headers) =>
+        headers.map((cell) => cell.getAttribute('title')),
+      ),
+  ).toEqual([...QTEGRA_COLUMNS]);
+  expect(
+    await paste
+      .locator('tbody tr')
+      .evaluateAll((rows) =>
+        rows
+          .map(
+            (row) =>
+              [...row.querySelectorAll('td')]
+                .map((cell) => cell.textContent)
+                .join('\t') + '\r\n',
+          )
+          .join(''),
+      ),
+  ).toBe(expected);
+  await expect(paste.locator('input')).toHaveCount(0);
+  await page
+    .locator('.paste-heading')
+    .getByRole('button', { name: 'Copy for Qtegra', exact: true })
+    .click();
+  if (clipboard)
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+      expected,
+    );
+  await expect(notice).toHaveText(
+    'Copied 332 rows. Paste into the LabBook sample list.',
+  );
+  // The old toast timed out after four seconds; a copy notice must survive that timer.
+  await page.waitForTimeout(4200);
+  await expect(notice).toHaveText(
+    'Copied 332 rows. Paste into the LabBook sample list.',
+  );
+  await page.getByRole('button', { name: 'Grid', exact: true }).click();
+  await expect(page.getByText('Copied 332 rows.')).toHaveCount(0);
+  await expect(page.getByRole('grid').locator('tbody tr')).toHaveCount(332);
 });
 
 test('duplicate warning selects its rows and regeneration protects manual edits', async ({
@@ -89,15 +181,21 @@ test('duplicate warning selects its rows and regeneration protects manual edits'
   await expect(
     page.getByRole('button', { name: 'Select row 2', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: 'Generate', exact: true }).click();
+  await page.getByRole('button', { name: '3 Bracketing', exact: true }).click();
+  await page.getByRole('button', { name: '4 Review', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Replace manual edits?' });
   await expect(dialog).toContainText('656 rows');
   await expect(
     dialog.getByRole('button', { name: 'Cancel', exact: true }),
   ).toBeFocused();
+  await expect(dialog.getByRole('button')).toHaveCount(3);
   await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await expect(warning).toBeVisible();
-  await page.getByRole('button', { name: 'Generate', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: '3 Bracketing', exact: true }),
+  ).toHaveAttribute('aria-current', 'step');
+  await page
+    .getByRole('button', { name: 'Generate and review', exact: true })
+    .click();
   await dialog.getByRole('button', { name: 'Regenerate', exact: true }).click();
   await expect(page.getByTestId('warnings')).toHaveText('No warnings');
 });
@@ -244,4 +342,90 @@ test('Generate and review offers Keep my edits and returns to Review without rep
   await expect(
     page.getByRole('spinbutton', { name: 'Row 1 Duration [s]', exact: true }),
   ).toHaveValue('47');
+});
+
+test('live recipe changes, invalid numbers, Sheet columns and Reset recipe work through Back', async ({
+  page,
+}) => {
+  await exampleBracketing(page);
+  const pairs = page.getByRole('spinbutton', {
+    name: 'Max pairs per bracket',
+    exact: true,
+  });
+  await pairs.fill('1');
+  await pairs.press('Tab');
+  await expect(page.getByTestId('budget')).toHaveText(
+    '37 brackets for 2 sessions (19 + 18), 37 secondary pairs. Doubled brackets: none.',
+  );
+  await pairs.fill('');
+  await expect(
+    page.getByRole('button', { name: 'Generate and review', exact: true }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole('button', { name: '4 Review', exact: true }),
+  ).toBeDisabled();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Next: bracketing', exact: true })
+    .click();
+  await expect(pairs).toHaveValue('');
+  await page
+    .getByRole('button', {
+      name: 'Enter a valid value for Max pairs per bracket',
+      exact: true,
+    })
+    .click();
+  await expect(pairs).toBeFocused();
+  await page.getByRole('button', { name: 'Reset recipe', exact: true }).click();
+  await expect(pairs).toHaveValue('2');
+  await expect(
+    page.getByRole('button', { name: 'Generate and review', exact: true }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole('spinbutton', { name: 'Duration [s]', exact: true }),
+  ).toBeHidden();
+  await page.locator('.sheet-columns summary').click();
+  const duration = page.getByRole('spinbutton', {
+    name: 'Duration [s]',
+    exact: true,
+  });
+  await duration.fill('');
+  await page.locator('.sheet-columns summary').click();
+  await expect(
+    page.getByRole('button', { name: '4 Review', exact: true }),
+  ).toBeDisabled();
+  await page
+    .getByRole('button', {
+      name: 'Enter a valid value for Duration [s]',
+      exact: true,
+    })
+    .click();
+  await expect(duration).toBeFocused();
+  await duration.fill('35');
+  await duration.press('Tab');
+  await page.getByRole('button', { name: '4 Review', exact: true }).click();
+  await expect(
+    page.getByRole('spinbutton', { name: 'Row 1 Duration [s]', exact: true }),
+  ).toHaveValue('35');
+});
+
+test('Review with an empty session offers a return to Bracketing', async ({
+  page,
+}) => {
+  await exampleBracketing(page);
+  await page.getByRole('button', { name: '2 Unknowns', exact: true }).click();
+  await page.getByRole('button', { name: '+ Session', exact: true }).click();
+  await page.getByRole('button', { name: '4 Review', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Nothing generated yet', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Open example', exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole('button', { name: 'Back to bracketing', exact: true })
+    .click();
+  await expect(
+    page.getByRole('button', { name: '3 Bracketing', exact: true }),
+  ).toHaveAttribute('aria-current', 'step');
 });

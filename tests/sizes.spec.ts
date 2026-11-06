@@ -1,5 +1,4 @@
 import { expect, test, type Page } from '@playwright/test';
-import { generatedExample } from './helpers';
 
 async function pageFits(page: Page) {
   expect(
@@ -17,7 +16,7 @@ for (const viewport of [
   { width: 1440, height: 900 },
   { width: 1280, height: 800 },
 ]) {
-  test(`Mineral, unknowns and review fit ${viewport.width} × ${viewport.height}`, async ({
+  test(`all four wizard steps fit ${viewport.width} × ${viewport.height}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -55,6 +54,14 @@ for (const viewport of [
       ).toBeLessThan(2);
       expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
     }
+    const groups = await page.locator('.catalogue-group').all();
+    const bounds = await Promise.all(
+      groups.map((group) => group.boundingBox()),
+    );
+    expect(bounds[0]!.x).toBeLessThan(bounds[1]!.x);
+    expect(bounds[1]!.x).toBeLessThan(bounds[2]!.x);
+    expect(bounds[0]!.y).toBe(bounds[1]!.y);
+    expect(bounds[1]!.y).toBe(bounds[2]!.y);
     const main = page.locator('.welcome-main');
     expect(await main.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(
       true,
@@ -99,7 +106,45 @@ for (const viewport of [
       page.getByRole('button', { name: 'Next: bracketing', exact: true }),
     ).toBeEnabled();
 
-    await generatedExample(page);
+    await page
+      .getByRole('button', { name: 'Next: bracketing', exact: true })
+      .click();
+    await expect(page.getByTestId('budget')).toContainText('37 brackets');
+    await pageFits(page);
+    for (const id of ['recipe-scroll', 'plan-summary']) {
+      const panel = page.getByTestId(id);
+      const bounds = (await panel.boundingBox())!;
+      expect(bounds.x).toBeGreaterThanOrEqual(0);
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+      expect(bounds.y + bounds.height).toBeLessThanOrEqual(
+        viewport.height - 50,
+      );
+      expect(
+        await panel.evaluate((el) => el.scrollWidth <= el.clientWidth),
+      ).toBe(true);
+      expect(await panel.evaluate((el) => getComputedStyle(el).overflowY)).toBe(
+        'auto',
+      );
+    }
+    const recipe = page.getByTestId('recipe-scroll');
+    expect(
+      await recipe.evaluate((el) => el.scrollHeight > el.clientHeight),
+    ).toBe(true);
+    await recipe.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    expect(await recipe.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+    await page.locator('.sheet-columns summary').click();
+    await recipe.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    await expect(
+      page.getByRole('checkbox', { name: 'Evaluate', exact: true }),
+    ).toBeInViewport();
+    await page
+      .getByRole('button', { name: 'Generate and review', exact: true })
+      .click();
+    await expect(page.getByTestId('counts')).toContainText('332 rows');
     await pageFits(page);
     const notice = page.getByRole('status');
     await expect(notice).toHaveText('Generated all open sessions');
@@ -158,15 +203,29 @@ for (const viewport of [
       }).length;
     });
     expect(visibleRows).toBeGreaterThanOrEqual(16);
-    await page.getByRole('button', { name: 'Back', exact: true }).click();
-    const inputs = page.getByTestId('inputs-scroll');
+    await page
+      .getByRole('button', { name: 'Qtegra paste', exact: true })
+      .click();
+    const paste = page.getByTestId('paste-scroll');
     expect(
-      await inputs.evaluate((el) => el.scrollHeight > el.clientHeight),
+      await paste.evaluate((el) => el.scrollHeight > el.clientHeight),
     ).toBe(true);
-    await inputs.evaluate((el) => {
+    await paste.evaluate((el) => {
       el.scrollTop = el.scrollHeight;
+      el.scrollLeft = el.scrollWidth;
     });
-    expect(await inputs.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+    expect(await paste.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+    await pageFits(page);
+    // Every populated step also remains inside the window in Dark.
+    await page
+      .getByRole('combobox', { name: 'Theme', exact: true })
+      .selectOption('dark');
+    for (const step of ['3 Bracketing', '2 Unknowns', '1 Mineral']) {
+      await page.getByRole('button', { name: step, exact: true }).click();
+      await pageFits(page);
+    }
+    await page.getByRole('button', { name: '4 Review', exact: true }).click();
+    await expect(page.getByTestId('counts')).toContainText('332 rows');
     await pageFits(page);
   });
 }
