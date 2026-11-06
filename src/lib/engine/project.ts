@@ -106,6 +106,17 @@ export function parseProject(text: string): Project {
     throw new Error(
       `Unsupported project version ${String(p.version)}; expected 1.`,
     );
+  let wizard: Project['wizard'];
+  if (p.wizard !== undefined) {
+    const w = object(p.wizard, 'wizard');
+    const step = integer(w.step, 'wizard.step');
+    if (step > 4)
+      throw new Error('wizard.step must be an integer from 1 to 4.');
+    wizard = {
+      step: step as 1 | 2 | 3 | 4,
+      mineral: string(w.mineral, 'wizard.mineral', true),
+    };
+  }
   const experiment = object(p.experiment, 'experiment');
   const standards: Standard[] = array(p.standards, 'standards').map(
     (value, i) => {
@@ -242,6 +253,7 @@ export function parseProject(text: string): Project {
   });
   return {
     version: 1,
+    ...(wizard === undefined ? {} : { wizard }),
     experiment: {
       name: string(experiment.name, 'experiment.name'),
       defaults: defaults(experiment.defaults, 'experiment.defaults'),

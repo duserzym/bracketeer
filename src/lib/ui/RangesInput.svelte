@@ -24,6 +24,7 @@
   <input
     aria-label={label}
     class:invalid={errors.length > 0}
+    aria-invalid={errors.length > 0}
     {disabled}
     bind:value={draft}
     placeholder={used ? 'None' : '848-856, 866-874'}

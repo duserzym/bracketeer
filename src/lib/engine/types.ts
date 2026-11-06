@@ -123,6 +123,7 @@ export interface Session {
 
 export interface Project {
   version: 1;
+  wizard?: { step: 1 | 2 | 3 | 4; mineral: string };
   experiment: Experiment;
   standards: Standard[];
   recipe: Recipe;

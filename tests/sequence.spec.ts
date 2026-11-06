@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import * as XLSX from 'xlsx';
 import { QTEGRA_COLUMNS } from '../src/lib/engine/types';
-import { commitCell, generatedExample } from './helpers';
+import { commitCell, generatedExample, startZircon } from './helpers';
 
 function cells(bytes: Uint8Array) {
   const sheet = XLSX.read(bytes, { type: 'array' }).Sheets.Sheet1!;
@@ -105,7 +105,7 @@ test('duplicate warning selects its rows and regeneration protects manual edits'
 test('unknown paste shows line errors and fills the editable table', async ({
   page,
 }) => {
-  await page.goto('/');
+  await startZircon(page);
   const paste = page.getByRole('textbox', {
     name: 'Paste unknowns',
     exact: true,
@@ -217,4 +217,29 @@ test('cell edits do not replan the project and record browser edit timings', asy
     ),
     contentType: 'application/json',
   });
+});
+
+test('Generate and review offers Keep my edits and returns to Review without replacing rows', async ({
+  page,
+}) => {
+  await generatedExample(page);
+  await commitCell(page, 'Row 1 Duration [s]', '47');
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Generate and review', exact: true })
+    .click();
+  const dialog = page.getByRole('dialog', {
+    name: 'Replace manual edits?',
+    exact: true,
+  });
+  await expect(dialog).toBeVisible();
+  await dialog
+    .getByRole('button', { name: 'Keep my edits', exact: true })
+    .click();
+  await expect(
+    page.getByRole('button', { name: '4 Review', exact: true }),
+  ).toHaveAttribute('aria-current', 'step');
+  await expect(
+    page.getByRole('spinbutton', { name: 'Row 1 Duration [s]', exact: true }),
+  ).toHaveValue('47');
 });

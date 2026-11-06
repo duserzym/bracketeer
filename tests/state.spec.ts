@@ -1,5 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { commitCell, generatedExample } from './helpers';
+import {
+  commitCell,
+  generatedExample,
+  menuAction,
+  startZircon,
+} from './helpers';
 
 test('light is the default, Dark persists, and System follows the OS', async ({
   page,
@@ -10,9 +15,16 @@ test('light is the default, Dark persists, and System follows the OS', async ({
   await expect(
     page.getByRole('combobox', { name: 'Theme', exact: true }),
   ).toHaveValue('light');
+  const lightCrystal = await page
+    .getByRole('radio', { name: 'Zircon', exact: true })
+    .locator('img')
+    .getAttribute('src');
   await page
     .getByRole('combobox', { name: 'Theme', exact: true })
     .selectOption('dark');
+  await expect(
+    page.getByRole('radio', { name: 'Zircon', exact: true }).locator('img'),
+  ).not.toHaveAttribute('src', lightCrystal!);
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
@@ -23,12 +35,11 @@ test('light is the default, Dark persists, and System follows the OS', async ({
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 });
 
-test('autosave restores rows, manual edit protection, and layout without storing theme in project', async ({
+test('Continue restores autosaved rows and manual edit protection without storing theme in project', async ({
   page,
 }) => {
   await generatedExample(page);
   await commitCell(page, 'Row 2 Laser Scan Position Number', '875');
-  await page.getByRole('button', { name: 'Fold inputs', exact: true }).click();
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -40,10 +51,9 @@ test('autosave restores rows, manual edit protection, and layout without storing
     )
     .toBe(875);
   await page.reload();
+  await expect(page.getByTestId('welcome-panel')).toBeVisible();
+  await page.getByRole('button', { name: /^Continue:/ }).click();
   await expect(page.getByTestId('counts')).toContainText('332 rows');
-  await expect(
-    page.getByRole('button', { name: 'Unfold inputs', exact: true }),
-  ).toBeVisible();
   await expect(
     page.getByRole('button', {
       name: 'Rows 1, 2 share spot 875.',
@@ -62,9 +72,6 @@ test('autosave restores rows, manual edit protection, and layout without storing
   expect(stored).not.toHaveProperty('layout');
   await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await page.getByRole('button', { name: 'Reset layout', exact: true }).click();
-  await expect(
-    page.getByRole('button', { name: 'Fold inputs', exact: true }),
-  ).toBeVisible();
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem('bracketeer.layout')))
     .toBeNull();
@@ -96,16 +103,17 @@ test('fixed sessions are locked, marking as run advances rotation, and plus adds
   await expect(
     page.getByRole('button', { name: 'Session 4', exact: true }),
   ).toHaveAttribute('aria-current', 'page');
-  await expect(page.getByTestId('counts')).toContainText('0 rows');
+  await expect(
+    page.getByRole('button', { name: '2 Unknowns', exact: true }),
+  ).toHaveAttribute('aria-current', 'step');
+  await expect(page.getByTestId('unknown-total')).toContainText('0 unknowns');
 });
 
 test('imports a workbook into a new fixed session and imports pasted standard usage', async ({
   page,
 }) => {
-  await page.goto('/');
-  await page
-    .getByRole('button', { name: 'Import sequence', exact: true })
-    .click();
+  await startZircon(page);
+  await menuAction(page, 'Import sequence');
   const chooserPromise = page.waitForEvent('filechooser');
   await page
     .getByRole('button', { name: 'Choose .xls, .xlsx or .csv', exact: true })
@@ -115,9 +123,7 @@ test('imports a workbook into a new fixed session and imports pasted standard us
   await expect(
     page.getByRole('button', { name: 'Session 2 · imported', exact: true }),
   ).toBeVisible();
-  await page
-    .getByRole('button', { name: 'Import sequence', exact: true })
-    .click();
+  await menuAction(page, 'Import sequence');
   await page
     .getByRole('combobox', { name: 'Import destination', exact: true })
     .selectOption('used');
@@ -129,6 +135,7 @@ test('imports a workbook into a new fixed session and imports pasted standard us
   await page
     .getByRole('button', { name: 'Import pasted sequence', exact: true })
     .click();
+  await page.getByRole('button', { name: '2 Unknowns', exact: true }).click();
   await expect(
     page.getByRole('textbox', { name: 'S513 used', exact: true }),
   ).toHaveValue('650');
@@ -139,7 +146,7 @@ test('Save project and Open project round-trip the experiment and generated rows
 }, testInfo) => {
   await generatedExample(page);
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Save project', exact: true }).click();
+  await menuAction(page, 'Save project');
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe(
     'Zircon_04Nov26_Synthetic.bracketeer.json',
@@ -153,7 +160,7 @@ test('Save project and Open project round-trip the experiment and generated rows
     .getByRole('textbox', { name: 'Experiment title', exact: true })
     .press('Tab');
   const chooser = page.waitForEvent('filechooser');
-  await page.getByRole('button', { name: 'Open project', exact: true }).click();
+  await menuAction(page, 'Open project');
   await (await chooser).setFiles(file);
   await expect(
     page.getByRole('textbox', { name: 'Experiment title', exact: true }),

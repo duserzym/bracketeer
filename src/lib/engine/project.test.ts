@@ -213,3 +213,35 @@ describe('new session from an existing session', () => {
     expect(newSessionFrom(p, 2).sessions.at(-1)!.number).toBe(4);
   });
 });
+
+describe('optional wizard state', () => {
+  it('round trips version 1 projects with and without wizard state', () => {
+    const project = structuredClone(TEST_PROJECT);
+    expect(parseProject(serializeProject(project))).toEqual(project);
+    expect(parseProject(serializeProject(project))).not.toHaveProperty(
+      'wizard',
+    );
+    for (const step of [1, 2, 3, 4] as const) {
+      project.wizard = { step, mineral: 'carbonate' };
+      expect(parseProject(serializeProject(project))).toEqual(project);
+      expect(JSON.parse(serializeProject(project)).version).toBe(1);
+    }
+  });
+  it.each([
+    [null, 'wizard'],
+    [[], 'wizard'],
+    [{ step: 0, mineral: 'zircon' }, 'wizard.step'],
+    [{ step: 5, mineral: 'zircon' }, 'wizard.step'],
+    [{ step: 1.5, mineral: 'zircon' }, 'wizard.step'],
+    [{ step: '2', mineral: 'zircon' }, 'wizard.step'],
+    [{ mineral: 'zircon' }, 'wizard.step'],
+    [{ step: 1, mineral: '' }, 'wizard.mineral'],
+    [{ step: 1, mineral: '  ' }, 'wizard.mineral'],
+    [{ step: 1, mineral: 3 }, 'wizard.mineral'],
+    [{ step: 1 }, 'wizard.mineral'],
+  ])('rejects invalid wizard state %j with a path', (wizard, path) => {
+    expect(() =>
+      parseProject(JSON.stringify({ ...TEST_PROJECT, wizard })),
+    ).toThrow(path);
+  });
+});

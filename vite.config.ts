@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => {
     ],
     base: './',
     build: {
+      assetsInlineLimit: singlefile ? Infinity : 0,
       outDir: singlefile ? 'dist/.singlefile' : 'dist',
       // Other modes keep dist/windows, dist/macos and bracketeer.html intact.
       emptyOutDir: singlefile,

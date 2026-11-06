@@ -17,7 +17,9 @@
     collapsed,
     edit,
     collapse,
+    paste = $bindable(''),
   }: {
+    paste?: string;
     project: Project;
     session: Session;
     plan: ProjectPlan | null;
@@ -25,7 +27,6 @@
     edit: (change: (p: Project) => void) => void;
     collapse: (name: string, closed: boolean) => void;
   } = $props();
-  let paste = $state('');
   const parsed = $derived(parseUnknowns(paste));
   const total = $derived(
     session.unknowns.reduce(

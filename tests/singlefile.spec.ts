@@ -27,7 +27,12 @@ test('single-file web build opens the offline example and generates 332 rows fro
     /^data:image\/svg\+xml;base64,/,
   );
   await page.getByRole('button', { name: 'Open example', exact: true }).click();
-  await page.getByRole('button', { name: 'Generate', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: '3 Bracketing', exact: true }),
+  ).toHaveAttribute('aria-current', 'step');
+  await page
+    .getByRole('button', { name: 'Generate and review', exact: true })
+    .click();
   await expect(page.getByTestId('counts')).toContainText('332 rows');
   await expect(page.getByTestId('warnings')).toHaveText('No warnings');
   expect(errors).toEqual([]);

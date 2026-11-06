@@ -35,16 +35,50 @@
   } from './lib/ui/model';
   import Inputs from './lib/ui/Inputs.svelte';
   import SequenceGrid from './lib/ui/SequenceGrid.svelte';
+  import Step1Mineral from './lib/ui/Step1Mineral.svelte';
+  import {
+    applySelection,
+    catalogue,
+    deriveStep,
+    guessMineral,
+    minerals,
+    restoreSeeds,
+    saveCatalogue,
+    selectionFromProject,
+    selectionProblem,
+    type Entry,
+    type Step,
+  } from './lib/ui/catalogue';
+  import {
+    launchContinue,
+    nonemptyProject,
+    readRecent,
+    recordRecent,
+    type Recent,
+  } from './lib/ui/recent';
+  import { unknownsProblem, type Problem } from './lib/ui/navigation';
 
   type Theme = 'light' | 'dark' | 'system';
-  type Layout = { folded: boolean; collapsed: string[] };
+  type Layout = { collapsed: string[] };
   type Snapshot = {
     project: Project;
     dirty: number[];
     active: number;
     selected: number[];
+    entries: Entry[];
   };
-  let project = $state.raw<Project>(emptyProject());
+  function blankProject(): Project {
+    const next = emptyProject();
+    next.standards = next.standards.map((s) => ({ ...s, ranges: [] }));
+    return next;
+  }
+  let project = $state.raw<Project>(blankProject());
+  let entries = $state.raw<Entry[]>([]);
+  let recent = $state.raw<Recent[]>([]);
+  let continuation = $state.raw<Recent | null>(null);
+  let unknownPaste = $state('');
+  let inputsEpoch = $state(0);
+  let invalidInput = $state<Problem | null>(null);
   let active = $state(1);
   let dirty = $state.raw<number[]>([]);
   let selected = $state.raw<number[]>([]);
@@ -55,7 +89,7 @@
   let planError = $state('');
   let theme = $state<Theme>('light');
   let systemDark = $state(false);
-  let layout = $state.raw<Layout>({ folded: false, collapsed: [] });
+  let layout = $state.raw<Layout>({ collapsed: [] });
   let ready = $state(false);
   let message = $state('');
   let error = $state('');
@@ -69,6 +103,150 @@
   let importPaste = $state('');
   let importError = $state('');
   let noticeTimer: ReturnType<typeof setTimeout>;
+  const step = $derived(project.wizard?.step ?? 1);
+  const mineral = $derived(project.wizard?.mineral ?? '');
+  const resolvedDark = $derived(
+    theme === 'dark' || (theme === 'system' && systemDark),
+  );
+  const mineralProblem = $derived(selectionProblem(mineral, entries));
+  const inputProblem = $derived(
+    unknownsProblem(
+      step === 1 && !mineralProblem
+        ? applySelection(project, mineral, entries)
+        : project,
+    ),
+  );
+  const blocking = $derived(
+    step === 1
+      ? mineralProblem
+      : step === 2
+        ? invalidInput?.message || inputProblem?.message || ''
+        : step === 3
+          ? invalidInput?.message || planError
+          : '',
+  );
+  const stepNames = ['Mineral', 'Unknowns', 'Bracketing', 'Review'];
+
+  function setStep(next: Step) {
+    if (next === 1 && step !== 1)
+      entries = selectionFromProject(project, mineral);
+    project = {
+      ...project,
+      wizard: { mineral: mineral || guessMineral(project), step: next },
+    };
+  }
+  function reachProblem(target: number): string {
+    if (target <= step) return '';
+    if (target > 1 && mineralProblem) return mineralProblem;
+    if (target > 2 && (invalidInput || inputProblem))
+      return invalidInput?.message || inputProblem?.message || '';
+    if (target > 3 && planError) return planError;
+    return '';
+  }
+  async function goTo(target: Step) {
+    if (target <= step) {
+      setStep(target);
+      return;
+    }
+    if (reachProblem(target)) return;
+    if (step === 1) {
+      const next = applySelection(project, mineral, entries);
+      if (
+        JSON.stringify([next.standards, next.recipe]) !==
+        JSON.stringify([project.standards, project.recipe])
+      )
+        remember();
+      project = next;
+      refreshPlan();
+      setStep(2);
+    }
+    if (target >= 3 && step === 2) setStep(3);
+    if (target === 4 && step === 3) await requestGenerate();
+  }
+  function nextStep() {
+    if (step < 4 && !blocking) void goTo((step + 1) as Step);
+  }
+  function chooseMineral(id: string) {
+    if (id === mineral) return;
+    const name = minerals.find((m) => m.id === id)!.name;
+    if (
+      nonemptyProject(project) &&
+      !window.confirm(
+        `Switch to ${name}? Unknowns are kept; the standards list changes.`,
+      )
+    )
+      return;
+    remember();
+    entries = catalogue(id);
+    project = { ...project, wizard: { mineral: id, step: 1 } };
+    error = '';
+  }
+  function changeEntries(next: Entry[]) {
+    remember();
+    entries = next;
+    saveCatalogue(mineral, next);
+  }
+  function newProject() {
+    load(blankProject(), true);
+    menuOpen = false;
+  }
+  function resume(entry: Recent) {
+    try {
+      load(parseProject(entry.project));
+      recent = recordRecent(project);
+    } catch (e) {
+      fail(e);
+    }
+  }
+  async function focusProblem() {
+    if (step === 1) {
+      if (!mineral)
+        document.querySelector<HTMLButtonElement>('[role="radio"]')?.focus();
+      else {
+        const checked = entries
+          .map((e, i) => ({ ...e, i }))
+          .filter((e) => e.checked);
+        const duplicate = checked.find(
+          (e, i) =>
+            !e.name.trim() ||
+            checked.slice(0, i).some((p) => p.name.trim() === e.name.trim()),
+        );
+        const label = duplicate
+          ? `Rename ${duplicate.name}`
+          : 'Add primary standard';
+        document
+          .querySelector<HTMLInputElement>(
+            `[aria-label="${CSS.escape(label)}"]`,
+          )
+          ?.focus();
+      }
+      return;
+    }
+    const problem = invalidInput ?? inputProblem;
+    if (problem?.session) chooseSession(problem.session);
+    layout = { ...layout, collapsed: [] };
+    await tick();
+    const field = problem?.label
+      ? document.querySelector<HTMLElement>(
+          `[aria-label="${CSS.escape(problem.label)}"]`,
+        )
+      : document.querySelector<HTMLElement>(
+          '.inputs-scroll :invalid, .inputs-scroll [aria-invalid="true"]',
+        );
+    field?.focus();
+  }
+  async function checkInputs() {
+    await tick();
+    const field = document.querySelector<HTMLInputElement>(
+      '.inputs-scroll input:invalid, .inputs-scroll input[aria-invalid="true"]',
+    );
+    invalidInput = field
+      ? {
+          message: `Enter a valid value for ${field.getAttribute('aria-label') || field.closest('label')?.textContent?.trim() || 'this input'}`,
+          label: field.getAttribute('aria-label') || '',
+        }
+      : null;
+  }
   const session = $derived(
     project.sessions.find((s) => s.number === active) ?? project.sessions[0]!,
   );
@@ -115,7 +293,7 @@
     }
   }
   function snapshot(): Snapshot {
-    return { project, dirty, active, selected };
+    return { project, dirty, active, selected, entries };
   }
   function remember() {
     undo = [...undo.slice(-49), snapshot()];
@@ -136,7 +314,12 @@
     }
   }
   function restore(s: Snapshot) {
-    project = s.project;
+    const currentStep = step;
+    project = s.project.wizard
+      ? { ...s.project, wizard: { ...s.project.wizard, step: currentStep } }
+      : s.project;
+    entries = s.entries;
+    if (mineral) saveCatalogue(mineral, entries);
     dirty = s.dirty;
     active = s.active;
     selected = s.selected;
@@ -161,17 +344,45 @@
   function chooseSession(number: number) {
     selectionBySession[active] = selected;
     active = number;
+    invalidInput = null;
     selected = selectionBySession[number] ?? [];
   }
-  function load(next: Project) {
+  function load(next: Project, blank = false) {
     remember();
-    project = next;
+    const chosen = next.wizard?.mineral ?? guessMineral(next);
+    entries = blank ? [] : selectionFromProject(next, chosen);
+    let target: Step = blank ? 1 : (next.wizard?.step ?? deriveStep(next));
+    let problem = '';
+    if (!blank && target > 1) {
+      problem = selectionProblem(chosen, entries);
+      if (problem) target = 1;
+      else if (target > 2) {
+        problem = unknownsProblem(next)?.message ?? '';
+        if (problem) target = 2;
+        else if (target > 3) {
+          try {
+            planProject(next);
+          } catch (e) {
+            problem = e instanceof Error ? e.message : String(e);
+            target = 3;
+          }
+        }
+      }
+    }
+    project = blank
+      ? next
+      : { ...next, wizard: { mineral: chosen, step: target } };
+    unknownPaste = '';
+    inputsEpoch += 1;
+    invalidInput = null;
     active =
       next.sessions.find((s) => !s.fixed)?.number ?? next.sessions[0]!.number;
     selected = [];
     selectionBySession = {};
     dirty = [];
-    error = '';
+    error = problem;
+    const firstProblem = target === 2 ? unknownsProblem(project) : null;
+    if (firstProblem?.session) active = firstProblem.session;
     refreshPlan();
     dirty = next.sessions
       .filter(
@@ -193,6 +404,8 @@
       if (!next.sessions.length)
         throw new Error('The project needs at least one session.');
       load(next);
+      recent = recordRecent(project);
+      menuOpen = false;
       notify(`Opened ${file.name}`);
     } catch (e) {
       fail(e);
@@ -204,6 +417,8 @@
         `${fileStem(project.experiment.name)}.bracketeer.json`,
         serializeProject(project),
       );
+      recent = recordRecent(project);
+      menuOpen = false;
       notify('Project saved');
     } catch (e) {
       fail(e);
@@ -217,6 +432,7 @@
       dirty = dirty.filter((n) => n !== session.number);
       active = next.sessions.at(-1)!.number;
       selected = [];
+      setStep(2);
       refreshPlan();
     } catch (e) {
       fail(e);
@@ -237,6 +453,7 @@
       plan = result;
       planError = '';
       regenerateDialog.close();
+      setStep(4);
       notify('Generated all open sessions');
       await tick();
       performance.clearMeasures('bracketeer.generate');
@@ -335,6 +552,18 @@
   }
   function keyboard(event: KeyboardEvent) {
     if (importDialog?.open || regenerateDialog?.open) return;
+    if (!(document.activeElement instanceof HTMLTextAreaElement)) {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        event.preventDefault();
+        nextStep();
+        return;
+      }
+      if (event.altKey && event.key === 'ArrowLeft') {
+        event.preventDefault();
+        if (step > 1) setStep((step - 1) as Step);
+        return;
+      }
+    }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
       const focused = document.activeElement;
       if (
@@ -412,6 +641,7 @@
         });
       });
       chooseSession(number);
+      setStep(4);
     }
     importDialog.close();
     importPaste = '';
@@ -471,7 +701,7 @@
     });
   }
   async function resetLayout() {
-    layout = { folded: false, collapsed: [] };
+    layout = { collapsed: [] };
     menuOpen = false;
     try {
       localStorage.removeItem('bracketeer.layout');
@@ -487,6 +717,12 @@
   function resetRecipe() {
     edit((p) => {
       p.recipe = structuredClone(DEFAULT_RECIPE);
+      for (const block of ['opening', 'mid', 'closing'] as const)
+        p.recipe[block] = p.recipe[block].filter(
+          (e) =>
+            e.standard === '@primary' ||
+            p.standards.some((s) => s.name === e.standard),
+        );
     });
     menuOpen = false;
   }
@@ -499,6 +735,8 @@
     }
   }
   onMount(() => {
+    continuation = launchContinue();
+    recent = readRecent();
     try {
       const storedTheme = localStorage.getItem('bracketeer.theme');
       if (
@@ -512,18 +750,10 @@
       ) as Partial<Layout> | null;
       if (storedLayout)
         layout = {
-          folded: storedLayout.folded === true,
           collapsed: Array.isArray(storedLayout.collapsed)
             ? storedLayout.collapsed.filter((s) => typeof s === 'string')
             : [],
         };
-      const stored = localStorage.getItem('bracketeer.project');
-      if (stored) {
-        const restored = parseProject(stored);
-        if (!restored.sessions.length)
-          throw new Error('Saved project has no sessions.');
-        load(restored);
-      }
     } catch (e) {
       fail(e);
     }
@@ -572,7 +802,7 @@
   $effect(() => {
     if (!ready) return;
     try {
-      if (!layout.folded && !layout.collapsed.length)
+      if (!layout.collapsed.length)
         localStorage.removeItem('bracketeer.layout');
       else localStorage.setItem('bracketeer.layout', JSON.stringify(layout));
     } catch {
@@ -596,17 +826,27 @@
             p.experiment.name = e.currentTarget.value;
           })}
       />
-      <div class="file-actions">
-        <button onclick={openProject}>Open project</button><button
-          onclick={saveProject}>Save project</button
-        >
-        <button
-          onclick={() => {
-            importError = '';
-            importDialog.showModal();
-          }}>Import sequence</button
-        >
-      </div>
+      <nav class="step-bar" aria-label="Wizard steps">
+        {#each stepNames as name, i (name)}
+          <button
+            class:current={step === i + 1}
+            aria-current={step === i + 1 ? 'step' : undefined}
+            disabled={!!reachProblem(i + 1)}
+            title={reachProblem(i + 1) || `Go to ${name.toLowerCase()}`}
+            onclick={() => goTo((i + 1) as Step)}>{i + 1} {name}</button
+          >
+        {/each}
+      </nav>
+      <button
+        title="Ctrl/Cmd+Z"
+        disabled={!undo.length}
+        onclick={() => history('undo')}>Undo</button
+      >
+      <button
+        title="Ctrl/Cmd+Shift+Z"
+        disabled={!redo.length}
+        onclick={() => history('redo')}>Redo</button
+      >
       <label class="theme-control"
         >Theme<select aria-label="Theme" value={theme} onchange={chooseTheme}
           ><option value="light">Light</option><option value="dark">Dark</option
@@ -622,46 +862,62 @@
           }}>Menu</button
         >
         {#if menuOpen}<div class="menu" id="app-menu">
+            <button onclick={openProject}>Open project</button>
+            <button onclick={saveProject}>Save project</button>
+            <button
+              onclick={() => {
+                menuOpen = false;
+                importError = '';
+                importDialog.showModal();
+              }}>Import sequence</button
+            >
+            <button onclick={newProject}>New project</button>
             <button onclick={resetLayout}>Reset layout</button><button
               onclick={resetRecipe}>Reset recipe</button
             >
           </div>{/if}
       </div>
     </div>
-    <nav class="session-tabs" aria-label="Sessions">
-      {#each project.sessions as s (s.number)}<button
-          class:active={s.number === session.number}
-          aria-current={s.number === session.number ? 'page' : undefined}
-          onclick={() => chooseSession(s.number)}
-          >Session {s.number}{s.fixed
-            ? s.source
-              ? ' · imported'
-              : ' · run'
-            : ''}</button
-        >{/each}
-      <button
-        aria-label="New session from current"
-        title="Mark this session as run and add a new session"
-        onclick={addSession}>+</button
-      >
-    </nav>
   </header>
-  <div class="workspace" class:folded={layout.folded}>
-    <aside
-      class="inputs-panel"
-      aria-label="Experiment inputs"
-      data-testid="left-panel"
-    >
-      <div class="panel-heading">
-        <span>Inputs</span><button
-          aria-label={layout.folded ? 'Unfold inputs' : 'Fold inputs'}
-          onclick={() => setLayout({ ...layout, folded: !layout.folded })}
-          >{layout.folded ? '»' : '«'}</button
-        >
-      </div>
-      {#if !layout.folded}<div
+  {#if error}<div class="app-error" role="alert">
+      {error}<button
+        aria-label="Dismiss error"
+        onclick={() => {
+          error = '';
+        }}>×</button
+      >
+    </div>{/if}
+  <div class="wizard-body">
+    {#if step === 1}
+      <Step1Mineral
+        {mineral}
+        {entries}
+        dark={resolvedDark}
+        {recent}
+        {continuation}
+        choose={chooseMineral}
+        change={changeEntries}
+        restore={() => changeEntries(restoreSeeds(mineral))}
+        open={openProject}
+        openExample={() => {
+          load(exampleProject());
+          recent = recordRecent(project);
+        }}
+        {resume}
+      />
+    {/if}
+    {#key inputsEpoch}
+      <section
+        hidden={step !== 2 && step !== 3}
+        class="temporary-inputs"
+        aria-label={step === 2 ? 'Unknowns and pools' : 'Bracketing'}
+      >
+        {@render sessions()}
+        <div
           class="inputs-scroll"
           data-testid="inputs-scroll"
+          oninput={checkInputs}
+          onchange={checkInputs}
         >
           <Inputs
             {project}
@@ -670,141 +926,170 @@
             collapsed={layout.collapsed}
             {edit}
             {collapse}
+            bind:paste={unknownPaste}
           />
-        </div>{/if}
-    </aside>
-    <section class="sequence-panel" aria-label="Sequence editor">
-      <div class="grid-toolbar" data-testid="grid-toolbar">
-        <div class="toolbar-line">
-          <button
-            class="generate"
-            disabled={!plan ||
-              !project.sessions.some((s) => !s.fixed && s.unknowns.length)}
-            onclick={requestGenerate}>Generate</button
-          >
-          <button
-            disabled={session.fixed || !session.rows.length}
-            onclick={markAsRun}>Mark as run</button
-          >
-          {#if session.fixed}<button onclick={unlock}>Unlock</button>{/if}
-          <span class="toast" role="status" aria-live="polite">{message}</span>
-          <span class="toolbar-spacer"></span>
-          <button
-            class="primary"
-            disabled={!session.rows.length}
-            onclick={() => exportSequence('xls')}>Export .xls</button
-          >
-          <button
-            disabled={!session.rows.length}
-            onclick={() => exportSequence('xlsx')}>.xlsx</button
-          ><button
-            disabled={!session.rows.length}
-            onclick={() => exportSequence('csv')}>.csv</button
-          >
-          <button disabled={!session.rows.length} onclick={copy}
-            >Copy for Qtegra</button
-          >
         </div>
-        <div class="toolbar-line row-tools">
-          <button disabled={session.fixed} onclick={() => insert('above')}
-            >Insert above</button
-          ><button disabled={session.fixed} onclick={() => insert('below')}
-            >Insert below</button
-          >
-          <button
-            disabled={session.fixed || !selected.length}
-            onclick={removeRows}>Delete rows</button
-          >
-          <button
-            title="Alt+↑"
-            disabled={session.fixed || !selected.length}
-            onclick={() => move(-1)}>Move up</button
-          ><button
-            title="Alt+↓"
-            disabled={session.fixed || !selected.length}
-            onclick={() => move(1)}>Move down</button
-          >
-          <button
-            title="Ctrl/Cmd+Z"
-            disabled={!undo.length}
-            onclick={() => history('undo')}>Undo</button
-          ><button
-            title="Ctrl/Cmd+Shift+Z"
-            disabled={!redo.length}
-            onclick={() => history('redo')}>Redo</button
-          >
-          <span class="selection-count"
-            >{selected.length
-              ? `${selected.length} selected`
-              : session.fixed
-                ? 'Read-only'
-                : 'Select rows by number'}</span
-          >
+      </section>
+    {/key}
+    {#if step === 4}
+      <section class="sequence-panel" aria-label="Sequence editor">
+        {@render sessions()}
+        <div class="grid-toolbar" data-testid="grid-toolbar">
+          <div class="toolbar-line">
+            <button
+              class="generate"
+              disabled={!plan ||
+                !project.sessions.some((s) => !s.fixed && s.unknowns.length)}
+              onclick={requestGenerate}>Generate</button
+            >
+            <button
+              disabled={session.fixed || !session.rows.length}
+              onclick={markAsRun}>Mark as run</button
+            >
+            {#if session.fixed}<button onclick={unlock}>Unlock</button>{/if}
+            <span class="toast" role="status" aria-live="polite">{message}</span
+            >
+            <span class="toolbar-spacer"></span>
+            <button
+              class="primary"
+              disabled={!session.rows.length}
+              onclick={() => exportSequence('xls')}>Export .xls</button
+            >
+            <button
+              disabled={!session.rows.length}
+              onclick={() => exportSequence('xlsx')}>.xlsx</button
+            ><button
+              disabled={!session.rows.length}
+              onclick={() => exportSequence('csv')}>.csv</button
+            >
+            <button disabled={!session.rows.length} onclick={copy}
+              >Copy for Qtegra</button
+            >
+            <button onclick={saveProject}>Save project</button>
+          </div>
+          <div class="toolbar-line row-tools">
+            <button disabled={session.fixed} onclick={() => insert('above')}
+              >Insert above</button
+            ><button disabled={session.fixed} onclick={() => insert('below')}
+              >Insert below</button
+            >
+            <button
+              disabled={session.fixed || !selected.length}
+              onclick={removeRows}>Delete rows</button
+            >
+            <button
+              title="Alt+↑"
+              disabled={session.fixed || !selected.length}
+              onclick={() => move(-1)}>Move up</button
+            ><button
+              title="Alt+↓"
+              disabled={session.fixed || !selected.length}
+              onclick={() => move(1)}>Move down</button
+            >
+            <span class="selection-count"
+              >{selected.length
+                ? `${selected.length} selected`
+                : session.fixed
+                  ? 'Read-only'
+                  : 'Select rows by number'}</span
+            >
+          </div>
         </div>
-      </div>
-      {#if error || planError}<div class="app-error" role="alert">
-          {error || planError}<button
-            aria-label="Dismiss error"
-            onclick={() => {
-              error = '';
-            }}>×</button
+        {#if !session.rows.length}
+          <div class="empty-state">
+            <h2>Build your run sequence</h2>
+            <p>Add unknowns, check the pools, then Generate.</p>
+            <p>Generate plans all open sessions together.</p>
+            <small>Go Back to change the inputs.</small>
+          </div>
+        {:else}
+          <SequenceGrid
+            bind:this={grid}
+            {session}
+            standards={project.standards}
+            {selected}
+            onselect={(rows) => {
+              selected = rows;
+            }}
+            onedit={cell}
+          />
+        {/if}
+        <footer class="status-strip">
+          <div class="counts" data-testid="counts">
+            <strong>{session.rows.length} rows</strong><span
+              >{counts.structure.chunks.reduce((sum, n) => sum + n, 0)} unknowns</span
+            >{#each project.standards as s, i (i)}<span
+                >{s.name} {counts.used[s.name]?.length ?? 0}</span
+              >{/each}
+          </div>
+          <div class="legend">
+            <span class="kind-unknown">Unknown</span><span class="kind-primary"
+              >Primary</span
+            ><span class="kind-secondary">Secondary</span><span
+              class="kind-reference">Reference</span
+            ><span class="hint">{saved}</span>
+          </div>
+          <div
+            class="warnings"
+            data-testid="warnings"
+            aria-label="Sequence warnings"
           >
-        </div>{/if}
-      {#if !session.rows.length}
-        <div class="empty-state">
-          <h2>Build your run sequence</h2>
-          <p>Add unknowns, check the pools, then Generate.</p>
-          <p>Generate plans all open sessions together.</p>
-          <button onclick={() => load(exampleProject())}>Open example</button
-          ><small>Today's three-session experiment, ready to generate.</small>
-        </div>
-      {:else}
-        <SequenceGrid
-          bind:this={grid}
-          {session}
-          standards={project.standards}
-          {selected}
-          onselect={(rows) => {
-            selected = rows;
-          }}
-          onedit={cell}
-        />
-      {/if}
-      <footer class="status-strip">
-        <div class="counts" data-testid="counts">
-          <strong>{session.rows.length} rows</strong><span
-            >{counts.structure.chunks.reduce((sum, n) => sum + n, 0)} unknowns</span
-          >{#each project.standards as s, i (i)}<span
-              >{s.name} {counts.used[s.name]?.length ?? 0}</span
-            >{/each}
-        </div>
-        <div class="legend">
-          <span class="kind-unknown">Unknown</span><span class="kind-primary"
-            >Primary</span
-          ><span class="kind-secondary">Secondary</span><span
-            class="kind-reference">Reference</span
-          ><span class="hint">{saved}</span>
-        </div>
-        <div
-          class="warnings"
-          data-testid="warnings"
-          aria-label="Sequence warnings"
-        >
-          {#if !warnings.length}<span class="no-warnings">No warnings</span
-            >{/if}
-          {#each warnings as warning, i (i)}<div class="warning-item">
-              <button class="warning-link" onclick={() => warningRows(warning)}
-                >{warning.message}</button
-              >{#if warning.locations}{#each [...new Set(warning.locations.map((l) => l.session))].filter((n) => n !== session.number) as number (number)}<button
-                    onclick={() => warningRows(warning, number)}
-                    >Show Session {number}</button
-                  >{/each}{/if}
-            </div>{/each}
-        </div>
-      </footer>
-    </section>
+            {#if !warnings.length}<span class="no-warnings">No warnings</span
+              >{/if}
+            {#each warnings as warning, i (i)}<div class="warning-item">
+                <button
+                  class="warning-link"
+                  onclick={() => warningRows(warning)}>{warning.message}</button
+                >{#if warning.locations}{#each [...new Set(warning.locations.map((l) => l.session))].filter((n) => n !== session.number) as number (number)}<button
+                      onclick={() => warningRows(warning, number)}
+                      >Show Session {number}</button
+                    >{/each}{/if}
+              </div>{/each}
+          </div>
+        </footer>
+      </section>
+    {/if}
   </div>
+  <footer class="wizard-footer">
+    {#if step > 1}<button onclick={() => setStep((step - 1) as Step)}
+        >Back</button
+      >{/if}
+    <span class="toolbar-spacer"></span>
+    {#if blocking}<button class="blocking-message" onclick={focusProblem}
+        >{blocking}</button
+      >{/if}
+    {#if step < 4}<button
+        class="primary"
+        disabled={!!blocking}
+        onclick={nextStep}
+        >{step === 1
+          ? 'Next: unknowns'
+          : step === 2
+            ? 'Next: bracketing'
+            : 'Generate and review'}</button
+      >{/if}
+  </footer>
 </main>
+
+{#snippet sessions()}
+  <nav class="session-tabs" aria-label="Sessions">
+    {#each project.sessions as s (s.number)}<button
+        class:active={s.number === session.number}
+        aria-current={s.number === session.number ? 'page' : undefined}
+        onclick={() => chooseSession(s.number)}
+        >Session {s.number}{s.fixed
+          ? s.source
+            ? ' · imported'
+            : ' · run'
+          : ''}</button
+      >{/each}
+    <button
+      aria-label="New session from current"
+      title="Mark this session as run and add a new session"
+      onclick={addSession}>+</button
+    >
+  </nav>
+{/snippet}
 
 <dialog bind:this={regenerateDialog} aria-labelledby="regenerate-title">
   <h2 id="regenerate-title">Replace manual edits?</h2>
@@ -816,6 +1101,11 @@
     <button
       bind:this={cancelRegenerate}
       onclick={() => regenerateDialog.close()}>Cancel</button
+    ><button
+      onclick={() => {
+        regenerateDialog.close();
+        setStep(4);
+      }}>Keep my edits</button
     ><button class="primary" onclick={generate}>Regenerate</button>
   </div>
 </dialog>
