@@ -254,10 +254,20 @@ string }`. The format stays at version 1, and old files load as before.
 
 ## Measurements
 
-Filled in at milestone 6. These are the figures before and after the wizard:
+Before is c111a1a (2026-11-04); after is the wizard (2026-11-06). Both were
+built on the same Mac. The start times are medians of six warm launches,
+measured from process start to the first on-screen window (the window opens
+only after the page is set up). The time to the app shell is from navigation
+to the first `<h1>`, the median of seven `file://` loads at 1280 × 800.
 
-|                                        | Before (c111a1a) | After |
-| -------------------------------------- | ---------------- | ----- |
-| `dist/windows/bracketeer.exe`          | 3,709,440 B      | —     |
-| `dist/bracketeer.html`                 | 688,323 B        | —     |
-| Cold start (macOS app, to first paint) | —                | —     |
+|                                     | Before      | After                |
+| ----------------------------------- | ----------- | -------------------- |
+| `dist/windows/bracketeer.exe`       | 3,709,440 B | 3,726,848 B (+17 KB) |
+| `dist/bracketeer.html`              | 688,323 B   | 742,720 B (+54 KB)   |
+| macOS app, launch to window         | 245 ms      | 254 ms               |
+| Single file, to app shell, Chromium | 36 ms       | 39 ms                |
+| Single file, to app shell, WebKit   | 45 ms       | 49 ms                |
+
+The exe could not be timed on Windows from this Mac. Its Chromium-based
+WebView2 loads the same page, which reaches the app shell in about 40 ms in
+Chromium.

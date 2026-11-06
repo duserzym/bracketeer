@@ -1,11 +1,16 @@
 # bracketeer — plan (2026-11-04)
 
-## Status (2026-11-04)
+## Status (2026-11-06)
 
-Milestones 1–5 are done. Golden tests verify generated sessions 2 and 3 cell
-for cell, including values and cell types. Playwright verifies the UI,
-including 1440 × 900 and 1280 × 800 layouts and the offline single-file
-build. The Mac app opens.
+Milestones 1–5 are done (2026-11-04). On 2026-11-06 the single page became
+a four-step wizard (1 Mineral, 2 Unknowns, 3 Bracketing, 4 Review), specified
+in `docs/wizard.md`, at Yiming's request to make the app easier to navigate
+and harder to get wrong. Unknowns, pools and used spots now take
+non-contiguous lists (`1-30, 35, 40-42`); a project stores its mineral and
+the step it was left on. Golden tests verify generated sessions 2 and 3 cell
+for cell, including values and cell types, from the example project and typed
+through the wizard. Playwright runs in Chromium and WebKit and checks every
+step at 1440 × 900 and 1280 × 800, plus the offline single-file build.
 
 Not yet verified: the executable on the instrument PC, and native file
 dialogs and clipboard access clicked by hand.
