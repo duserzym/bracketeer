@@ -24,3 +24,4 @@ Thumbs.db
 *.csv
 !fixtures/**
 /.claude/
+__pycache__/
