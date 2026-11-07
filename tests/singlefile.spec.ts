@@ -1,4 +1,7 @@
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { importWorkbook, importText } from '../src/lib/engine/import';
+import { parseProject } from '../src/lib/engine/project';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { expect, test } from '@playwright/test';
@@ -13,7 +16,7 @@ test.skip(
 test('single-file web build opens the offline example and generates 332 rows from file://', async ({
   page,
   context,
-}) => {
+}, testInfo) => {
   const requests: string[] = [];
   const errors: string[] = [];
   page.on('request', (request) => requests.push(request.url()));
@@ -54,6 +57,31 @@ test('single-file web build opens the offline example and generates 332 rows fro
   await expect(
     page.getByRole('button', { name: '4 Review', exact: true }),
   ).toHaveAttribute('aria-current', 'step');
+  const project = parseProject(
+    await readFile('fixtures/session-1.bracketeer.json', 'utf8'),
+  );
+  const expected = importWorkbook(
+    await readFile('fixtures/session-2.xls'),
+    project.standards,
+  );
+  for (const format of ['xls', 'xlsx', 'csv']) {
+    const downloading = page.waitForEvent('download');
+    await page
+      .getByRole('button', {
+        name: format === 'xls' ? 'Export .xls' : `.${format}`,
+        exact: true,
+      })
+      .click();
+    const download = await downloading;
+    const output = testInfo.outputPath(`offline-session-2.${format}`);
+    await download.saveAs(output);
+    const bytes = await readFile(output);
+    const imported =
+      format === 'csv'
+        ? importText(bytes.toString('utf8'), project.standards)
+        : importWorkbook(bytes, project.standards);
+    expect(imported).toEqual(expected);
+  }
   expect(errors).toEqual([]);
   expect(
     requests.filter(

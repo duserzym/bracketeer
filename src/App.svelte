@@ -4,13 +4,8 @@
   import UpdatesPanel from './lib/updates/UpdatesPanel.svelte';
   import { startScheduler } from './lib/updates/updater.svelte';
   let updatesPanel: UpdatesPanel;
-  import { exportWorkbook, toCSV, toTSV } from './lib/engine/export';
-  import {
-    deriveSession,
-    importText,
-    importWorkbook,
-    type ImportResult,
-  } from './lib/engine/import';
+  import { deriveSession } from './lib/engine/derive';
+  import type { ImportResult } from './lib/engine/import';
   import {
     parseProject,
     serializeProject,
@@ -38,7 +33,6 @@
     moveRows,
   } from './lib/ui/model';
   import Step3Bracketing from './lib/ui/Step3Bracketing.svelte';
-  import QtegraPaste from './lib/ui/QtegraPaste.svelte';
   import SequenceGrid from './lib/ui/SequenceGrid.svelte';
   import Step1Mineral from './lib/ui/Step1Mineral.svelte';
   import Step2Unknowns from './lib/ui/Step2Unknowns.svelte';
@@ -638,14 +632,15 @@
     }
   }
   async function exportSequence(format: 'xls' | 'xlsx' | 'csv') {
+    const rows = session.rows;
+    const name = `${fileStem(project.experiment.name)}_${session.number}.${format}`;
     try {
+      const { exportWorkbook, toCSV } = await import('./lib/engine/export');
       await platform.saveFile(
-        `${fileStem(project.experiment.name)}_${session.number}.${format}`,
-        format === 'csv'
-          ? toCSV(session.rows)
-          : exportWorkbook(session.rows, format),
+        name,
+        format === 'csv' ? toCSV(rows) : exportWorkbook(rows, format),
       );
-      notify(`Exported ${session.rows.length} rows`);
+      notify(`Exported ${rows.length} rows`);
     } catch (e) {
       fail(e);
     }
@@ -654,6 +649,7 @@
     const rows = session.rows;
     const startedAt = actionNumber;
     try {
+      const { toTSV } = await import('./lib/engine/export');
       await platform.copyText(toTSV(rows));
       if (startedAt !== actionNumber) return;
       clearTimeout(noticeTimer);
@@ -711,6 +707,8 @@
     try {
       const file = await platform.openFile('.xls,.xlsx,.csv,.tsv,.txt');
       if (!file) return;
+      const { importWorkbook, importText } =
+        await import('./lib/engine/import');
       acceptImport(
         /\.(xls|xlsx)$/iu.test(file.name)
           ? importWorkbook(file.bytes, project.standards)
@@ -721,8 +719,9 @@
       importError = e instanceof Error ? e.message : String(e);
     }
   }
-  function pastedSequence() {
+  async function pastedSequence() {
     try {
+      const { importText } = await import('./lib/engine/import');
       acceptImport(importText(importPaste, project.standards), 'pasted text');
     } catch (e) {
       importError = e instanceof Error ? e.message : String(e);
@@ -1059,7 +1058,11 @@
             <button onclick={() => setStep(3)}>Back to bracketing</button>
           </div>
         {:else if reviewView === 'paste'}
-          <QtegraPaste rows={session.rows} {copy} />
+          {#await import('./lib/ui/QtegraPaste.svelte') then { default: QtegraPaste }}
+            <QtegraPaste rows={session.rows} {copy} />
+          {:catch e}
+            <p class="error">{e instanceof Error ? e.message : String(e)}</p>
+          {/await}
         {:else}
           <SequenceGrid
             bind:this={grid}

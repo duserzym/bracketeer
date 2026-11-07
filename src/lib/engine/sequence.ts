@@ -1,6 +1,6 @@
 import { calculateBudget, type BracketLayout } from './plan';
 import { parseLabel } from './labels';
-import { deriveSession } from './import';
+import { deriveSession } from './derive';
 import { createDrawer } from './pools';
 import type {
   Block,

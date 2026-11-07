@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { scheduleUpdateChecks } from './scheduler';
 import {
   loadPrefs,
   savePrefs,
@@ -145,8 +146,7 @@ export async function install() {
 /** Start once from onMount; disposal also handles an in-flight support probe. */
 export function startScheduler(): () => void {
   let disposed = false;
-  let first: ReturnType<typeof setTimeout>;
-  let every: ReturnType<typeof setInterval>;
+  let stopChecks: (() => void) | undefined;
   if (!isTauri) {
     if (!preview()) send({ type: 'unsupported', reason: WEB_REASON });
   } else {
@@ -169,8 +169,7 @@ export function startScheduler(): () => void {
           send({ type: 'check', manual: false });
           send({ type: 'result', info, checkedAt: Date.now() });
         }
-        first = setTimeout(() => void check(), 8000);
-        every = setInterval(() => void check(), 6 * 3600_000);
+        stopChecks = scheduleUpdateChecks(() => void check());
       })
       .catch((error) => {
         if (!disposed) {
@@ -181,8 +180,7 @@ export function startScheduler(): () => void {
   }
   return () => {
     disposed = true;
-    clearTimeout(first);
-    clearInterval(every);
+    stopChecks?.();
     clearTimeout(flashTimer);
   };
 }

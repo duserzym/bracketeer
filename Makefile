@@ -9,7 +9,10 @@ dev:
 	pnpm dev
 
 test: check
+	$(MAKE) build
+	pnpm build:desktop
 	$(MAKE) web
+	node scripts/check-budgets.mjs
 	$(MAKE) e2e
 
 check:
@@ -25,7 +28,7 @@ rust-check: icons
 	cargo test --manifest-path src-tauri/Cargo.toml
 
 e2e:
-	pnpm e2e
+	pnpm e2e $(E2E_ARGS)
 
 build: public/favicon.svg
 	pnpm build

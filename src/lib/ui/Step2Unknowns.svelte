@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import { deriveSession } from '../engine/import';
+  import { deriveSession } from '../engine/derive';
   import { formatSpots, parseSpotList, spotRuns } from '../engine/parse';
   import type { Project, Session } from '../engine/types';
   import {
