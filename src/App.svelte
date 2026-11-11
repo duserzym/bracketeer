@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
   import VersionChip from './lib/updates/VersionChip.svelte';
+  import CheckUpdatesButton from './lib/updates/CheckUpdatesButton.svelte';
   import UpdatesPanel from './lib/updates/UpdatesPanel.svelte';
   import { startScheduler } from './lib/updates/updater.svelte';
   let updatesPanel: UpdatesPanel;
@@ -890,6 +891,7 @@
           ><option value="system">System</option></select
         ></label
       >
+      <CheckUpdatesButton onopen={() => updatesPanel.open()} />
       <div class="menu-wrap">
         <button
           aria-expanded={menuOpen}

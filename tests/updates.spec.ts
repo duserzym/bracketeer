@@ -105,7 +105,11 @@ for (const viewport of [
 
 for (const [state, chipText, panelText] of [
   ['downloading', 'Downloading 43%', 'Downloading 0.2.0, 43%'],
-  ['error', 'Check failed', 'Update check failed: Could not reach GitHub'],
+  [
+    'error',
+    'Check failed',
+    "Can't reach the update server. Check your internet connection and try again.",
+  ],
   [
     'unsupported',
     'Update available',

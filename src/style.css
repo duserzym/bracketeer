@@ -571,10 +571,9 @@ dialog p {
 @media (max-width: 1100px) {
   .top-line {
     gap: 7px;
-    flex-wrap: wrap;
   }
   .experiment-title {
-    flex-basis: 200px;
+    flex-basis: 120px;
     max-width: none;
   }
   .theme-control {

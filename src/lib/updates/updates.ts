@@ -65,6 +65,80 @@ export type UpdateStatus =
   | { kind: 'error'; message: string }
   | { kind: 'unsupported'; reason: string; info?: UpdateInfo };
 
+export function friendlyUpdateError(raw: string): string {
+  if (/pubkey|public key|base64|decode|not configured/i.test(raw))
+    return 'Updates are not configured for this build yet.';
+  if (
+    /404|release JSON|Could not fetch a valid release|not found|no assets/i.test(
+      raw,
+    )
+  )
+    return 'No release has been published yet.';
+  if (
+    /error sending request|dns|connect|timed out|timeout|offline|network|failed to fetch|ENOTFOUND|URLError/i.test(
+      raw,
+    )
+  )
+    return "Can't reach the update server. Check your internet connection and try again.";
+  const message = raw.trim();
+  return `The update check failed: ${message.length > 120 ? `${message.slice(0, 119)}…` : message}`;
+}
+
+/** Presentation only: all state changes and actions stay in the shared updater. */
+export function checkButtonView(
+  status: UpdateStatus,
+  version: string,
+  autoDownload = true,
+): {
+  text: string;
+  action: 'download' | 'install' | 'link' | null;
+  badge: boolean;
+  busy: boolean;
+} {
+  const badge =
+    status.kind === 'available' ||
+    status.kind === 'ready' ||
+    (status.kind === 'unsupported' && !!status.info);
+  const busy = ['checking', 'downloading', 'installing'].includes(status.kind);
+  let text: string;
+  let action: 'download' | 'install' | 'link' | null = null;
+  switch (status.kind) {
+    case 'idle':
+      text = `Check for updates (v${version})`;
+      break;
+    case 'checking':
+      text = 'Checking for updates…';
+      break;
+    case 'none':
+      text = `Up to date (v${version})`;
+      break;
+    case 'available':
+      text = `Update available: v${status.info.version}`;
+      action = autoDownload ? null : 'download';
+      break;
+    case 'downloading':
+      text = `Downloading v${status.info.version}…${status.pct === null ? '' : ` ${status.pct}%`}`;
+      break;
+    case 'ready':
+      text = `v${status.info.version} is ready`;
+      action = 'install';
+      break;
+    case 'installing':
+      text = `Installing v${status.info.version} and restarting…`;
+      break;
+    case 'error':
+      text = friendlyUpdateError(status.message);
+      break;
+    case 'unsupported':
+      text = status.info
+        ? `Update available: v${status.info.version}`
+        : status.reason;
+      action = status.info ? 'link' : null;
+      break;
+  }
+  return { text, action, badge, busy };
+}
+
 export type UpdateEvent =
   | { type: 'check'; manual: boolean }
   | { type: 'result'; info: UpdateInfo | null; checkedAt: number }

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   compareVersions,
+  friendlyUpdateError,
+  checkButtonView,
   pickEndpoint,
   transition,
   loadPrefs,
@@ -20,6 +22,137 @@ const info: UpdateInfo = {
   ready: false,
 };
 const ready = { ...info, ready: true };
+describe('friendlyUpdateError', () => {
+  it.each([
+    'PUBKEY missing',
+    'invalid public key',
+    'Base64',
+    'decode failed',
+    'not configured',
+  ])('explains configuration errors: %s', (raw) => {
+    expect(friendlyUpdateError(raw)).toBe(
+      'Updates are not configured for this build yet.',
+    );
+  });
+  it.each([
+    '404',
+    'release JSON invalid',
+    'Could not fetch a valid release',
+    'Not Found',
+    'no assets',
+  ])('explains missing releases: %s', (raw) => {
+    expect(friendlyUpdateError(raw)).toBe('No release has been published yet.');
+  });
+  it.each([
+    'error sending request',
+    'DNS lookup',
+    'connect refused',
+    'timed out',
+    'TIMEOUT',
+    'offline',
+    'Network error',
+    'Failed to fetch',
+    'ENOTFOUND',
+    'URLError',
+  ])('explains network errors: %s', (raw) => {
+    expect(friendlyUpdateError(raw)).toBe(
+      "Can't reach the update server. Check your internet connection and try again.",
+    );
+  });
+  it('prioritizes configuration and release errors over network wording', () => {
+    expect(friendlyUpdateError('Network: public key not configured')).toBe(
+      'Updates are not configured for this build yet.',
+    );
+    expect(friendlyUpdateError('error sending request: 404 not found')).toBe(
+      'No release has been published yet.',
+    );
+  });
+  it('trims unknown errors and caps the raw detail at 120 characters', () => {
+    expect(friendlyUpdateError('  Unexpected response  ')).toBe(
+      'The update check failed: Unexpected response',
+    );
+    expect(friendlyUpdateError('x'.repeat(200))).toBe(
+      `The update check failed: ${'x'.repeat(119)}…`,
+    );
+  });
+});
+
+describe('checkButtonView', () => {
+  const cases: [
+    UpdateStatus,
+    string,
+    'download' | 'install' | 'link' | null,
+    boolean,
+    boolean,
+  ][] = [
+    [{ kind: 'idle' }, 'Check for updates (v0.1.0)', null, false, false],
+    [{ kind: 'checking' }, 'Checking for updates…', null, false, true],
+    [{ kind: 'none', checkedAt: 1 }, 'Up to date (v0.1.0)', null, false, false],
+    [
+      { kind: 'available', info },
+      'Update available: v0.2.0',
+      'download',
+      true,
+      false,
+    ],
+    [
+      { kind: 'downloading', info, pct: 43 },
+      'Downloading v0.2.0… 43%',
+      null,
+      false,
+      true,
+    ],
+    [
+      { kind: 'downloading', info, pct: null },
+      'Downloading v0.2.0…',
+      null,
+      false,
+      true,
+    ],
+    [{ kind: 'ready', info: ready }, 'v0.2.0 is ready', 'install', true, false],
+    [
+      { kind: 'installing', info: ready },
+      'Installing v0.2.0 and restarting…',
+      null,
+      false,
+      true,
+    ],
+    [
+      { kind: 'error', message: 'offline' },
+      "Can't reach the update server. Check your internet connection and try again.",
+      null,
+      false,
+      false,
+    ],
+    [
+      { kind: 'unsupported', reason: 'Browser build' },
+      'Browser build',
+      null,
+      false,
+      false,
+    ],
+    [
+      { kind: 'unsupported', reason: 'Portable', info },
+      'Update available: v0.2.0',
+      'link',
+      true,
+      false,
+    ],
+  ];
+  it.each(cases)('renders %j', (status, text, action, badge, busy) => {
+    expect(checkButtonView(status, '0.1.0', false)).toEqual({
+      text,
+      action,
+      badge,
+      busy,
+    });
+  });
+  it('leaves automatic downloads to the shared updater', () => {
+    expect(
+      checkButtonView({ kind: 'available', info }, '0.1.0').action,
+    ).toBeNull();
+  });
+});
 describe('compareVersions', () => {
   it.each([
     ['0.10.0', '0.9.9', 1],

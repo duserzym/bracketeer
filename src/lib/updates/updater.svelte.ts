@@ -29,6 +29,8 @@ export const updater = $state({
   justChecked: false,
 });
 let flashTimer: ReturnType<typeof setTimeout>;
+let previewTimer: ReturnType<typeof setTimeout>;
+let previewOutcome: UpdateStatus | undefined;
 let support: Promise<boolean> | undefined;
 const supported = () =>
   (support ??= isTauri
@@ -38,12 +40,9 @@ function send(event: UpdateEvent) {
   updater.status = transition(updater.status, event);
 }
 function failure(error: unknown) {
-  const message = String(error);
   send({
     type: 'failure',
-    message: /pubkey|public key|base64|decode/i.test(message)
-      ? 'Updates are not configured for this build yet'
-      : message,
+    message: String(error),
   });
 }
 export function setPrefs(prefs: Partial<UpdatePrefs>) {
@@ -55,11 +54,22 @@ function record(result: string) {
 }
 
 export async function check(manual = false) {
-  if (!isTauri) return;
+  if (!isTauri && !previewOutcome) return;
   const next = transition(updater.status, { type: 'check', manual });
   if (next === updater.status) return;
   updater.justChecked = false;
   updater.status = next;
+  if (previewOutcome) {
+    const outcome = previewOutcome;
+    previewTimer = setTimeout(() => {
+      updater.status =
+        outcome.kind === 'idle'
+          ? { kind: 'none', checkedAt: Date.now() }
+          : outcome;
+      updater.justChecked = manual && updater.status.kind === 'none';
+    }, 600);
+    return;
+  }
   try {
     const canInstall = await supported();
     let endpoint = STABLE_ENDPOINT;
@@ -182,6 +192,8 @@ export function startScheduler(): () => void {
     disposed = true;
     stopChecks?.();
     clearTimeout(flashTimer);
+    clearTimeout(previewTimer);
+    previewOutcome = undefined;
   };
 }
 function preview(): boolean {
@@ -194,6 +206,12 @@ function preview(): boolean {
     ready: false,
   };
   switch (value) {
+    case 'idle':
+      updater.status = { kind: 'idle' };
+      break;
+    case 'checking':
+      updater.status = { kind: 'checking' };
+      break;
     case 'none':
       updater.status = { kind: 'none', checkedAt: Date.now() };
       updater.justChecked = true;
@@ -208,7 +226,10 @@ function preview(): boolean {
       updater.status = { kind: 'ready', info: { ...info, ready: true } };
       break;
     case 'error':
-      updater.status = { kind: 'error', message: 'Could not reach GitHub' };
+      updater.status = {
+        kind: 'error',
+        message: 'Network error: Could not reach GitHub',
+      };
       break;
     case 'unsupported':
       updater.status = { kind: 'unsupported', reason: PORTABLE_REASON, info };
@@ -216,5 +237,6 @@ function preview(): boolean {
     default:
       return false;
   }
+  previewOutcome = updater.status;
   return true;
 }

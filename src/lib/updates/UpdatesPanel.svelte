@@ -7,7 +7,7 @@
     setPrefs,
     isTauri,
   } from './updater.svelte';
-  import type { Channel } from './updates';
+  import { friendlyUpdateError, type Channel } from './updates';
   let dialog: HTMLDialogElement;
   export function open() {
     dialog.showModal();
@@ -33,7 +33,7 @@
               : status.kind === 'installing'
                 ? 'Installing and restarting'
                 : status.kind === 'error'
-                  ? `Update check failed: ${status.message}`
+                  ? friendlyUpdateError(status.message)
                   : status.kind === 'unsupported'
                     ? status.reason
                     : 'Checks run automatically in the background.',
