@@ -1,4 +1,4 @@
-.PHONY: setup dev test check rust-check e2e build web icons desktop windows mac-app
+.PHONY: setup dev test check rust-check e2e build web icons desktop windows mac-app clean-build
 
 WINDOWS_PATH := /opt/homebrew/opt/llvm/bin:/opt/homebrew/opt/lld/bin:$(PATH)
 
@@ -60,3 +60,13 @@ mac-app: desktop
 	mkdir -p dist/macos
 	ditto src-tauri/target/release/bundle/macos/bracketeer.app dist/macos/bracketeer.app
 	cp src-tauri/target/release/bundle/dmg/*.dmg dist/macos/
+
+# After a major update (AGENTS.md): drop compilation output once the app is
+# installed. A Windows build only in target/ is first copied to dist/windows/.
+WIN_EXE := src-tauri/target/x86_64-pc-windows-msvc/release/bracketeer.exe
+clean-build:
+	@if pgrep -f "$(CURDIR)/src-tauri/target/" >/dev/null; then echo "A build is writing to $(CURDIR)/src-tauri/target; not cleaning."; exit 1; fi
+	@df -h / | awk 'NR==2 {print "Free on /: " $$4 " (before)"}'
+	@if [ -f $(WIN_EXE) ] && ! cmp -s $(WIN_EXE) dist/windows/bracketeer.exe; then mkdir -p dist/windows && cp $(WIN_EXE) dist/windows/bracketeer.exe && echo "Kept the Windows build as dist/windows/bracketeer.exe"; fi
+	rm -rf ./src-tauri/target
+	@df -h / | awk 'NR==2 {print "Free on /: " $$4 " (after)"}'
