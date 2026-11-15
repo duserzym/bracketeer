@@ -50,7 +50,7 @@ each milestone as a separate prompt; do only that milestone.
   `import.ts` (read a sequence workbook back, milestone 2). Every exported
   function has unit tests next to it (`*.test.ts`).
 
-## UX conventions (shared with grainatlas, laicpmsdb, UPb Studio)
+## UX conventions (shared with grainatlas, UPbDB, UPb Studio)
 
 - Light theme by default; a three-way **Light / Dark / System** switch;
   nothing stored means light; the choice lives in

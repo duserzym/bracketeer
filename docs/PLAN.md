@@ -20,7 +20,7 @@ spot ranges into a bracketed LA-ICP-MS run sequence, lets the user edit the
 result in a table, and exports a sheet that pastes straight into the Qtegra
 LabBook sample list.
 
-Fifth app of the lab workflow (grainatlas, laicpmsdb, UPb Studio, UPbRPy
+Fifth app of the lab workflow (grainatlas, UPbDB, UPb Studio, UPbRPy
 Studio). House style: one lowercase word, light theme by default, fits a
 14-inch laptop, same UX conventions as the others
 (`~/Github/grainatlas/docs/ux-conventions.md`, rules 1, 3, 7 apply here).
