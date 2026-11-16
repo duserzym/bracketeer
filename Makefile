@@ -46,9 +46,15 @@ src-tauri/icons/icon.png: src-tauri/assets-icon.svg
 	rm -rf src-tauri/icons/android src-tauri/icons/ios
 	touch src-tauri/build.rs
 
+# Sign macOS builds with the lab's code-signing certificate when this Mac has it
+# ("UPb Lab Code Signing" in the login keychain; ~/Github/lab-builds/SIGNING.md), so
+# keychain permissions survive rebuilds and updates. Elsewhere builds stay ad hoc.
+LAB_SIGNING_IDENTITY ?= $(shell security find-identity -p codesigning 2>/dev/null | grep -q '"UPb Lab Code Signing"' && echo 'UPb Lab Code Signing')
+SIGN_ENV = $(if $(LAB_SIGNING_IDENTITY),APPLE_SIGNING_IDENTITY="$(LAB_SIGNING_IDENTITY)")
+
 desktop: icons
 	pnpm build:desktop
-	CI=true cargo tauri build --bundles app,dmg
+	CI=true $(SIGN_ENV) cargo tauri build --bundles app,dmg
 
 windows: icons
 	pnpm build:desktop
