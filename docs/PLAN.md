@@ -1,5 +1,32 @@
 # bracketeer — plan (2026-11-04)
 
+## Status (2026-11-18)
+
+The design-count update is built (milestones 1–4; see [design-count.md](design-count.md)).
+New projects and Reset recipe start with Chunk target 18. Step 2 has
+Begin / End / Count, automatic numbering, hand marks and GrainAtlas spot
+checks. Step 3 holds Standard spots, Placed / needed and each standard's
+arithmetic. Chunk target and Chunk count support every/odd/even secondaries
+and an opening bracket. A run can have several mineral groups, with shared
+references and separate primary budgets and rotations.
+
+Verified here: formatting, lint, type checks, 446 unit tests and 4 Rust tests.
+The unit tests reproduce the four saved Ablation Station designs' counts and
+row totals, numbering and hand values, mineral groups, and GrainAtlas parsing
+and warnings. The example still matches sessions 2 and 3 cell for cell;
+export hashes for CSV, TSV, XLS and XLSX match the earlier version. The
+regenerated screenshots show the current steps. Browser tests cover the wizard
+at 1440 × 900 and 1280 × 800 in Chromium and WebKit.
+
+The docs-only check found that `make test` stops at the existing JavaScript
+budget: 253,416 bytes, above the 250,000-byte limit. A separate Playwright run
+could not start because the sandbox denied Vite's local listener at
+`127.0.0.1:4173`. Browser tests were not rerun here; no code or test limit was
+changed.
+
+Not yet verified: the exe on the instrument PC, and a real GrainAtlas export
+from the lab's mount. GrainAtlas tests use small test inputs.
+
 ## Status (2026-11-06)
 
 Milestones 1–5 are done (2026-11-04). On 2026-11-06 the single page became
@@ -42,14 +69,25 @@ Studio). House style: one lowercase word, light theme by default, fits a
   46 %, sample type `UNKNOWN`, comment `<Comment>`, identifier `<Identifier>`,
   evaluate TRUE (a boolean cell, as in the template), dilution 1).
 - **Unknowns**: a list of rows `name, size tag (optional: S / L / xs / anything), spot from, spot to`
-  in run order. Example: `SYN-H3, S, 1, 30`. Rows can be reordered; a
+  in run order. Step 2 shows Begin, End and editable Count. New rows number
+  automatically across sessions; typed endpoints stay, marked with an accent
+  bar, until Auto is chosen. Example: `SYN-H3, S, 1, 30`. Rows can be reordered; a
   paste-from-clipboard box accepts lines like `SYN-H3 S 1-30` (the format Yiming
   writes by hand) and fills the table.
 - **Standards**: rows `name, role, spot from, spot to` with roles
-  **primary** (one; e.g. S513), **secondary** (several, rotated; 91500,
+  **primary** (one per mineral group; e.g. S513), **secondary** (rotating pairs or every/odd/even; 91500,
   Seiland, PL, LTSE), **reference** (NIST610, NIST612: opening, mid and
   closing blocks only). A standard's pool can be several ranges
-  (NIST610 848–856 and 866–874).
+  (NIST610 848–856 and 866–874). Step 3 holds the Standard spots table:
+  Begin, End, Placed / needed (available after used and spare), Used, Spare
+  and + range, with the formula under each standard. In design modes,
+  automatic standard ranges follow the unknowns and fill to the count.
+- **Several minerals**: add another mineral in step 1; choose each session's
+  mineral in step 2. Each group has its own primary, secondaries, budget and
+  rotation. Reference glasses are shared; the recipe applies to every group.
+- **GrainAtlas**: Load GrainAtlas spots in step 2 reads its laser CSV or a
+  list of names. It warns about unplaced positions and the total distinct
+  spot count across unknowns and standard ranges.
 - **Used spots**: each standard shows the spots already consumed, either
   typed in or taken from an **imported** earlier sequence (`.xls`/`.xlsx`
   of the same column layout, or paste). This is how session 2 knows what
@@ -64,11 +102,19 @@ Studio). House style: one lowercase word, light theme by default, fits a
   - mid block: NIST610 × 3, NIST612 × 3 in bracket floor((k + 1) / 2)
     (before that bracket's secondaries);
   - closing block after the last bracket: NIST612 × 3, NIST610 × 3;
-  - **Auto from budget** (default): plan all remaining sessions together so
-    the standards last exactly: bracket count from the primary supply,
+  - **Auto from budget** (when spots are already placed): plan each mineral
+    group’s remaining sessions together: bracket count from the primary supply,
     shared between sessions by their unknowns, secondary pairs spread
     evenly over the brackets; "keep N spare" per standard (default 0);
-  - or a **chunk target** (unknowns per chunk, e.g. 18);
+  - **Chunk target 18** is the default for new projects and Reset recipe;
+    **Chunk count** sets the chunks per session. Both show needed counts
+    before spots are placed and keep chunks balanced;
+  - in either design mode, choose rotating pairs or **Every, odd or even**
+    with a count per secondary. Cadence starts at bracket 1 in each session;
+  - optional **Opening bracket**: a full bracket after the opening block,
+    before unknowns, counted as bracket 1. It adds to the opening block's
+    primary draws. Both cadence and the opening bracket are unavailable in
+    Auto from budget;
   - option *bracket at sample boundaries* (off by default; on, each sample is
     chunked on its own like today's template).
 - Draw order from a pool: ascending through the unused spots; the user can
@@ -99,9 +145,11 @@ Studio). House style: one lowercase word, light theme by default, fits a
 - Svelte 5 + TypeScript + Vite, pnpm, Vitest for the engine, Playwright for
   the UI incl. the 1440 × 900 and 1280 × 800 size check.
 - Engine in `src/lib/engine/` as pure functions (`plan.ts`, `pools.ts`,
-  `sequence.ts`, `export.ts`): inputs → rows; no DOM. This is what tests hit.
-- Excel: `xlsx` (SheetJS) for read (`.xls` BIFF8 and `.xlsx`) and write;
-  if `.xls` writing is not available, `.xlsx` only.
+  `sequence.ts`, `export.ts`, `count.ts`, `numbering.ts`, `checks.ts`,
+  `grainatlas.ts`, `groups.ts`): inputs → counts and rows; no DOM. This is
+  what tests hit.
+- Excel: SheetJS 0.20.3 from its official tarball reads and writes `.xls`
+  (BIFF8) and `.xlsx`. `.xls` is the default export.
 - Desktop: Tauri 2, one window, light theme default with Light/Dark/System
   switch, window geometry remembered in the config folder, opens at
   1280 × 800 and never below 1024 × 640; file dialogs via the Tauri dialog
@@ -171,4 +219,4 @@ commits, pushes, and moves to the next:
    warnings, export, project file; theme switch; size check;
 4. Tauri 2 desktop, icon, geometry; Windows build (cross or CI) and the
    single-file web build;
-5. docs: `README.md` (use at the instrument in five steps), `docs/recipe.md`.
+5. docs: `README.md` (use at the instrument in four steps), `docs/recipe.md`.

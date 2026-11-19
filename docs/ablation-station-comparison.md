@@ -117,7 +117,7 @@ opening, middle and closing NIST blocks of 3 each. A fifth file
   same counts and row totals as the page.
 - **Per-session primary and standards**, which is how one run carries several
   minerals or recipes.
-- Its two duplicate checks (same spot, same label) across sessions.
+- Duplicate spot checks within a session and across sessions. With bracketeer’s generated labels, a duplicate label also means a duplicate spot.
 
 ## What bracketeer does not copy, and why
 

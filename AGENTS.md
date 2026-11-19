@@ -47,7 +47,10 @@ each milestone as a separate prompt; do only that milestone.
   `plan.ts` (chunking, budget, bracket layout), `pools.ts` (pools, used
   spots, draw), `sequence.ts` (rows, labels, validation/warnings),
   `parse.ts` (pasted text), `export.ts` (TSV/CSV/XLSX/XLS bytes),
-  `import.ts` (read a sequence workbook back, milestone 2). Every exported
+  `import.ts` (read a sequence workbook back), `count.ts` (design counts and
+  formulas), `numbering.ts` (automatic ranges and hand edits), `checks.ts`
+  (mount spot checks), `grainatlas.ts` (placed-spot import), `groups.ts`
+  (mineral groups and their rotation). Every exported
   function has unit tests next to it (`*.test.ts`).
 
 ## UX conventions (shared with grainatlas, UPbDB, UPb Studio)
@@ -103,11 +106,18 @@ order, inclusive, ascending spots) and its rows. A session is either
 **planned** (rows come from Generate) or **fixed** (imported from an earlier
 sequence, or marked as run): fixed sessions are never regenerated and their
 standard spots count as used. Standards: `name, role, ranges[], used[],
-spare` with role `primary` (exactly one), `secondary` (several, rotated in
-table order; today Seiland, 91500, PL, LTSE), `reference` (only in the
+spare` with role `primary` (exactly one per mineral group), `secondary`
+(several, rotated in table order or selected by cadence; today Seiland,
+91500, PL, LTSE), `reference` (only in the
 opening, mid and closing blocks). `used` holds spots typed in by hand; the
 spots in fixed sessions are added to it automatically. `spare` (default 0)
 is how many spots of that standard to leave unused ("keep N spare").
+
+New projects and Reset recipe use **Chunk target 18** (`size`). Existing
+projects keep their saved mode; the acceptance example uses Auto from budget.
+Each session belongs to a mineral group, with its own primary, secondaries,
+budget and rotation. References are shared across groups and drawn in run
+order. `@primary` in a block means the session group's primary.
 
 Blocks (defaults = today's template):
 
@@ -123,9 +133,9 @@ Blocks (defaults = today's template):
 
 Chunking modes (`recipe.chunking`):
 
-1. **`budget`** ("Auto from budget", the default): plan all planned
-   sessions of the project together so that the standards last exactly.
-   - S = number of planned sessions; n_i = unknowns of session i.
+1. **`budget`** ("Auto from budget", for spots already placed): plan each
+   mineral group’s planned sessions together from its available supply.
+   - S = number of planned sessions in the group; n_i = unknowns of session i.
    - available_s = pool_s − used_s − spare_s, where used_s includes all
      fixed sessions.
    - Fixed use per session: f_s = count of s in opening + mid + closing.
@@ -139,13 +149,29 @@ Chunking modes (`recipe.chunking`):
    - Split K over the sessions in proportion to n_i by the largest-remainder
      method (floors first, the leftover brackets to the largest fractional
      parts, ties to the earlier session); every session gets ≥ 1.
-   - Number the brackets of the whole run j = 1 … K in session order.
+   - Number the group’s brackets j = 1 … K in session order.
      Bracket j gets floor(j·P/K) − floor((j−1)·P/K) pairs.
    - Warn when a reference standard cannot cover S·f_s, or when K < S.
-2. **`size`** (target unknowns per chunk, e.g. 18): per session
-   k = ceil(n / size); every bracket gets `secondaryPairsPerBracket` pairs
-   (default 1).
-3. **`count`**: k given per session; `secondaryPairsPerBracket` pairs.
+2. **`size`** ("Chunk target", default 18): per session
+   k = ceil(n / size); in rotate mode every bracket gets
+   `secondaryPairsPerBracket` pairs (default 1).
+3. **`count`** ("Chunk count"): k given per session;
+   `secondaryPairsPerBracket` pairs in rotate mode.
+
+In `size` and `count`, `recipe.secondaries` can be `rotate` (default) or
+`cadence`. Cadence draws each secondary's `perBracket` spots (default
+`spotsPerSecondary`) on `every`, `odd` or `even` brackets, in table order;
+parity restarts at 1 per session. `recipe.openingBracket` (default false)
+adds a full bracket after the opening block, before unknowns; it is bracket 1.
+It adds to any primary already in the opening block. Both options are
+unavailable in budget mode. The mid block stays after chunk floor((k + 1) / 2).
+
+Step 3 shows each standard's needed count and formula. Automatic numbering is
+opt-in (`auto.from`, `auto.to`): unknowns chain across sessions, then standard
+ranges chain in table order after the highest unknown. Hand values stay.
+In design modes the last automatic standard End fills to needed plus spare,
+skipping used spots; in budget mode it stays as entered. See
+`docs/design-count.md` for the full rules.
 
 In every mode: chunks within a session are equal ±1, the larger first
 (q = floor(n / k), r = n mod k, the first r chunks get q + 1); chunks run

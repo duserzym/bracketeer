@@ -6,17 +6,31 @@ bracketeer turns unknowns and standard spot ranges into a standard-bracketed LA-
 
 Open bracketeer: on Windows, double-click `bracketeer.exe`; on Mac, open the app; or open `bracketeer.html` in Edge. The step bar at the top shows where you are (**1 Mineral, 2 Unknowns, 3 Bracketing, 4 Review**). **Back** never loses what you typed, and **Next** stays disabled until the step is complete, with the reason shown beside it.
 
-1. **Mineral.** Click the mineral you are dating. Its standards appear below in three groups: the primary, the secondaries (their order is the rotation) and the reference glasses. Zircon starts with S513 as primary, Seiland, 91500, PL and LTSE as secondaries, and NIST610 and NIST612. Tick, rename, reorder or add standards; your list is remembered for that mineral. **Continue**, **Recent projects** and **Open project** are on the same panel.
+1. **Mineral.** Click the mineral you are dating. Its primary, secondaries and reference glasses appear below. Zircon starts with S513 as primary, Seiland, 91500, PL and LTSE as secondaries, and NIST610 and NIST612. Tick, rename, reorder or add standards; your list is remembered for that mineral. **Continue**, **Recent projects** and **Open project** are on the same panel.
 
-   ![Step 1](docs/screenshots/wizard-1440-1-mineral.png)
+   ![Step 1: choose a mineral and its standards](docs/screenshots/wizard-1440-1-mineral.png)
 
-2. **Unknowns.** One row per sample: name, optional tag, and spots as any mix of ranges and single numbers, for example `1-30, 35, 40-42`. The app sorts them, removes duplicates and shows the result with the count. You can also paste one sample per line (`SYN-H3 S 1-30`). Fill in each standard's **Pool** and **Used** spots in the same way. Overlapping spots, spots inside a standard pool and duplicate names are flagged on their row. **Import sequence** brings in an earlier session.
+   Use **Another mineral in this run → Add** for a second group of standards. Each mineral has its own primary and secondaries; the reference glasses are shared. Choose each session's mineral in step 2.
 
-   ![Step 2](docs/screenshots/wizard-1440-2-unknowns.png)
+   ![Step 1: apatite added to a zircon run](docs/screenshots/wizard-1440-1-two-minerals.png)
 
-3. **Bracketing.** Check the recipe: **Auto from budget** (the default, uses the standards up exactly), **Chunk target** or **Chunk count**, keep-spare, blocks. The summary on the right updates as you change values: sessions, chunks, brackets, secondary pairs and what each standard has left. Click **Generate and review**.
+2. **Unknowns.** Use **Add sample**, enter a name and optional tag, then **Count**. **Begin** follows the previous **End**, across sessions too; Count fills End. Type Begin or End to keep a hand value. The accent bar marks it; **Auto** lets it follow again. Later automatic values move when a row changes, while hand values stay. You can also paste `SYN-H3 S 1-30, 35, 40-42`; each range becomes a row, with pasted numbers kept as hand values. **Import sequence** brings in an earlier fixed session.
 
-   ![Step 3](docs/screenshots/wizard-1440-3-bracketing.png)
+   ![Step 2: automatic numbering and hand marks](docs/screenshots/wizard-1440-2-numbering.png)
+
+   **Load GrainAtlas spots…** reads a laser CSV or a text list of spot names. It checks the whole project's unknown and standard ranges against the placed spots, and warns about missing positions or too many spots. It does not fill the unknowns table.
+
+   ![Step 2: loaded GrainAtlas spots and mount warnings](docs/screenshots/wizard-1440-2-grainatlas.png)
+
+3. **Bracketing.** New projects start with **Chunk target 18**: set the design, read the count, then place the standard spots. The **Standard spots** table is here, with **Begin**, **End**, **Placed / needed**, **Used**, **Spare** and **+ range**. Each standard shows its arithmetic underneath. Placed / needed uses the available count after used spots and spare. Automatic standard ranges follow the unknowns and fill to the needed count; type a Begin to move a range and its automatic End follows.
+
+   ![Step 3: count from the design and automatic standard ranges](docs/screenshots/wizard-1440-3-design.png)
+
+   Choose **Chunk count** for a set number of chunks. With either design mode, **Secondaries → Every, odd or even** gives each secondary its own spots per bracket and cadence. **Opening bracket** adds secondaries and primary after the opening block, before the first unknown. It counts as bracket 1 for cadence.
+
+   When the spots are already placed, choose **Auto from budget** and enter the ranges. It derives the bracket count from the available supply and rotates secondary pairs. The summary updates as values change. Click **Generate and review**.
+
+   ![Step 3: Auto from budget with the example's placed pools](docs/screenshots/wizard-1440-3-bracketing.png)
 
 4. **Review.** Edit rows if needed and check the warnings below the grid (click one to select its rows). Then click **Export .xls**, or **Copy for Qtegra** and paste into the LabBook sample list. **Qtegra paste** shows exactly the rows that are copied (no header). **Start another session** marks this one as run and takes you to step 2 for the next.
 
@@ -28,11 +42,13 @@ Open bracketeer: on Windows, double-click `bracketeer.exe`; on Mac, open the app
 
 **Generate** plans all open (planned) sessions together. If any have manual edits, it asks before replacing them. Imported sessions are fixed. **Mark as run** fixes the current rows and moves the secondary rotation past their last pair. Fixed sessions count their standard spots as used and are not regenerated. **Unlock** makes a fixed session editable again.
 
-**Start another session** (step 4) marks the current session as run and adds an empty next session; **+ Session** (step 2) adds an open session that is planned together with the others. The standards, used spots and recipe remain shared. A saved project remembers its mineral and the step it was left on, and opens there.
+**Start another session** (step 4) marks the current session as run and adds an empty next session; **+ Session** (step 2) adds an open session that is planned together with the others. The recipe is shared; each session uses its mineral group’s standards and the shared references. A saved project remembers its minerals and the step it was left on, and opens there.
 
 ## Recipe
 
-The default recipe opens with reference standards and the primary, then follows every chunk of unknowns with secondary pairs and the primary, adding a mid block and a closing block. **Auto from budget** shares the available standards across planned sessions; **Chunk target** and **Chunk count** let you choose the spacing instead (see [the recipe](docs/recipe.md)).
+The default recipe uses **Chunk target 18**. It opens with reference standards and the primary, follows every chunk with rotating secondary pairs and the primary, and adds mid and closing reference blocks. Chunk target and Chunk count also support every/odd/even secondaries and an opening bracket. **Auto from budget** plans from the placed supply (see [the recipe](docs/recipe.md)).
+
+**Coming from Ablation Station.** Set the chunk target, each secondary's count and Every / Odd / Even rule, and the opening bracket, then read each standard's count before placing spots. bracketeer keeps balanced chunks and exports the full Qtegra sheet. See [the comparison](docs/ablation-station-comparison.md) and its saved designs.
 
 ## Downloads and builds
 

@@ -1,5 +1,9 @@
 # bracketeer: count from the design, start and end spots (2026-11-18)
 
+**Status:** built 2026-11-18, milestones 1–4 complete. Engine, UI, tests,
+docs and screenshots are in place. The exe on the instrument PC and a real
+GrainAtlas export from the lab's mount are not yet verified.
+
 Yiming's request: take over the flexibility of Boise's Ablation Station
 (`docs/ablation-station-comparison.md`), above all that it **counts how many
 standard spots a design needs**, and make the details smarter: spot numbers
@@ -47,6 +51,8 @@ interface Project { …as today; grainatlas?: { file: string; spots: SpotRange[]
   serializes as before. `parseProject` validates each new field (types,
   positive integers, known enums; an `auto.to` range may be empty,
   `to = from − 1`, nothing else may have `to < from`).
+- Old files with no chunking mode still load as budget mode. The new
+  Chunk target default applies to new projects and Reset recipe.
 - An empty auto range (`to = from − 1`) holds no spots. Every helper that
   walks ranges (`availableSpots`, `rangeSpots`, pool checks) treats it as
   empty.
@@ -86,7 +92,8 @@ interface Project { …as today; grainatlas?: { file: string; spots: SpotRange[]
   `secondaryPairsPerBracket` and the rotation are not used.
 - In **Auto from budget** both options are unavailable; `planProject`
   reports an input problem ("Every, odd or even secondaries and the opening
-  bracket need Chunk target or Chunk count") instead of planning.
+  bracket need Chunk target or Chunk count") instead of planning. Choosing
+  Auto from budget in the UI clears both options before disabling them.
 
 With `opening = [NIST610 × 3, NIST612 × 3]`, `openingBracket`, cadence, mid
 and closing NIST blocks of 3, and Chunk target `g`, a session gives the same
@@ -147,12 +154,17 @@ it, a hand value stays and the chain continues from it.
   already cover it the range becomes empty. In Auto from budget an auto `to`
   is left as it is (the pools are what the budget reads).
 - A standard with **no ranges** in Chunk target or Chunk count gets one fully
-  auto range when it needs spots. A range with both values auto that needs no
-  spots and is the standard's only range is removed again.
+  auto range when `needed + spare > 0`. A sole range with both endpoints auto
+  is removed again when both needed and spare are zero.
 - `resolveAuto(project): Project` runs the unknowns chain, then
   `countStandards`, then the standards chain. It returns the **same object**
-  when nothing changes, is idempotent, and leaves a project without auto
-  flags deep-equal (unit test on the example project).
+  when nothing changes and is idempotent. Hand endpoints stay unchanged;
+  the example project remains deep-equal and serializes as before.
+- If the plan cannot be computed (missing primary or secondary, or an invalid
+  recipe), `resolveAuto` does not throw that planning error. It still resolves
+  unknowns and automatic standard Begins, leaves standard Ends as they are,
+  and does not create demand-based ranges. Invalid ranges are excluded from
+  the count input but kept in the project for checks to report.
 
 Edits (pure functions returning a resolved project; the UI calls these):
 
@@ -164,8 +176,11 @@ Edits (pure functions returning a resolved project; the UI calls these):
 | type a standard **begin** | `from` hand; an auto `to` fills from the count                                                                                | as above                      |
 | type a standard **end**   | `to` hand; placed changes                                                                                                     | as above                      |
 | **Auto** on a hand value  | that value auto again                                                                                                         | as above                      |
-| **Add sample**            | new entry, `from` auto (previous `to` + 1), count from the user                                                               |                               |
-| **+ range** on a standard | new last range: `from` = highest spot on the mount + 1 (hand), `to` auto; the old last range's `to` becomes hand at its value |                               |
+| **Add sample**            | new entry, `from` and `to` auto, count 1 in the UI; typing Count fills End                                                    |                               |
+| **+ range** on a standard | drop an empty auto last range; otherwise keep its End as hand; append `from` = highest known mount spot + 1 (hand), `to` auto |                               |
+
+The highest known mount spot for + range includes unknowns, standard ranges,
+typed used spots, sequence rows and loaded GrainAtlas positions.
 
 ### 1.6 Checks
 
@@ -181,6 +196,10 @@ standard range (name, index). Errors block Next; warnings do not.
   overlap (today), a begin or end is missing or not a whole number.
 - Warnings: a standard is short (`S513: needs 80, 78 available (2 short).`);
   a used spot outside its pool (today); GrainAtlas, below.
+- If the plan cannot be computed, `checkSpots` does not throw that planning
+  error. Range, overlap, used-spot and GrainAtlas checks still run; shortage
+  checks wait until the count is available. The recipe shows the planning
+  problem separately.
 
 ### 1.7 GrainAtlas spots
 
@@ -259,8 +278,10 @@ block)`. Both are disabled in Auto from budget with the reason beside them.
 
 - Hand marks and `Auto` work as in step 2. Everything recomputes live on each
   committed value (blur, Enter, or 300 ms after the last keystroke).
-- Next (`Generate and review`) additionally needs every standard of an open
-  group to have a valid range and no blocking check.
+- Next (`Generate and review`) needs valid inputs, a computable plan and no
+  blocking check. Standards in an open group, and shared references, need
+  ranges; in design modes a zero-demand standard needs no range. An empty
+  auto range is valid. Shortages and GrainAtlas warnings do not block Next.
 
 ### Step 4
 
@@ -276,9 +297,11 @@ Unchanged.
   per group; a single-mineral project unchanged).
 - Unit (`numbering.test.ts`): chains, the edit table above, hand values never
   move, empty ranges, budget mode leaves auto ends, idempotence, the example
-  project unchanged.
-- Unit (`checks.test.ts`) and GrainAtlas parsing (CSV with quotes, plain list,
-  `{sample}_S_{n}`, bad lines).
+  project unchanged; incomplete plans keep numbering; + range drops an empty
+  automatic last range before appending.
+- Unit (`checks.test.ts`): overlaps, shortages and used spots, including
+  incomplete plans that cannot be counted. GrainAtlas parsing covers CSV with
+  quotes, a plain list, `{sample}_S_{n}` and bad lines.
 - Export bytes (`export-bytes.test.ts`): SHA-256 of the example project's
   sessions 2 and 3 as `.csv`, TSV, `.xls`, `.xlsx`, equal to commit `eb5c6c3`:
 

@@ -1,11 +1,9 @@
 # bracketeer: the four-step wizard (2026-11-06)
 
-Yiming's request, in their words: "make it more navigatable and more idiot
-proof … a stepwise manner". The single page with the inputs column and the grid
-becomes four steps. The engine, the recipe, the exports and the project file
-keep working as before. Sessions 2 and 3 must still equal `fixtures/` cell for
-cell when they are generated through the wizard. One engine change is allowed,
-in boundary mode only (see "Non-contiguous spots").
+The app has four steps. Sessions 2 and 3 of the example still equal the
+fixtures cell for cell, including cell types.
+
+Changed 2026-11-18: design counts, automatic Begin / End / Count, standard spots in step 3, cadence, an opening bracket, several minerals and GrainAtlas checks.
 
 ```
 ┌ bracketeer ── (1 Mineral)─(2 Unknowns)─(3 Bracketing)─(4 Review) ── Theme  Menu ┐
@@ -71,6 +69,10 @@ glass style, centred, at most 1180 px wide.
   the web build and in the Tauri webview alike, so no store plugin is needed.
   `Restore list` puts back that mineral's seeds. A project never depends on the
   catalogue: the standards it uses are copied into `project.standards`.
+- **Another mineral in this run** adds a second standards list with its own
+  primary and secondaries, rename, reorder and remove controls, and
+  `Remove <mineral>`. References appear only in the main list and are shared.
+  Step 2 lets each session choose its mineral.
 - **Recent projects** (right-hand column of the panel):
   - `Continue: <name>, step N` for the project that was open when the app was
     last closed. This is the old autosave, so nothing is lost.
@@ -87,7 +89,7 @@ glass style, centred, at most 1180 px wide.
   (reached with Back), choosing another mineral asks "Switch to Apatite?
   Unknowns are kept; the standards list changes." Standards that keep the same
   name keep their pools and used spots.
-- **Next is enabled when** a mineral is chosen, exactly one primary is checked,
+- **Next is enabled when** a mineral is chosen, exactly one primary per mineral is checked,
   and every checked name is non-empty and unique. Otherwise the bottom bar says
   "Choose a mineral" or "Add your primary standard".
 - **Applying the selection** (on Next): `project.standards` becomes the checked
@@ -115,71 +117,91 @@ question for Yiming.
 
 ## Step 2: Unknowns
 
-- **Session strip** (as today's session tabs): one tab per session. Imported
-  and run sessions are marked and read-only. `+ Session` adds an empty open
-  session. All open sessions are planned together in step 3.
-- **Unknowns table** for the selected session, one row per sample: `Name`,
-  `Tag` (optional), `Spots`, a read-only `Normalized` cell, `Count`, and
-  ↑ ↓ ×. The `Spots` field takes any mix of ranges and single numbers:
-  `1-30, 35, 40-42`, `1–30 35 40–42` or `40-42,1-30`. When the field is
-  committed, the value is parsed, deduplicated and sorted. The Normalized cell
-  then shows `1–30, 35, 40–42 · 34 spots`. Run order is the table order, and
-  ascending spots within a sample.
-- **Paste box**: lines like `SYN-H3 S 1-30`, `SYN-H3, S, 1-30, 35, 40-42`, or the
-  4-column `name, tag, from, to`. It shows line errors as today and fills
-  the table. The session total is shown under the table.
-- **Standards' spots** for the standards chosen in step 1: one card each with
-  `Pool` and `Used` (both non-contiguous lists, e.g. `848-856, 866-874`), the
-  normalized list and count beside each, and the spots used by fixed sessions
-  shown underneath as today.
-- **Import sequence…** (from `.xls`, `.xlsx`, `.csv` or a paste, as today)
-  sits here. It can import a new fixed session or add to the used spots only.
-- **Next is enabled when** all of these hold:
-  1. at least one open session has at least one unknown;
-  2. every unknown row has a name and at least one spot, and its spot text
-     parses;
-  3. no two rows of a session have the same name and tag;
-  4. no spot is in two unknown rows (across all sessions of the project);
-  5. no unknown spot is in a standard's pool;
-  6. every standard in use has a non-empty pool, and no two pools overlap.
-
-  A used spot outside its pool, and an open session with no unknowns, are only
-  warnings. Every blocking problem is shown on its row in red. The first one
-  goes in the bottom bar, as in "Row 4, SYN-H5: spot 56 is in the S513 pool."
+- **Session strip**: one tab per session. Imported and run sessions are marked
+  and read-only. `+ Session` adds an empty planned session. All open sessions
+  are planned together in step 3, within their mineral groups.
+- **Unknowns table**: `Row`, `Name`, optional `Tag`, `Begin`, `End`, editable
+  `Count`, and ↑ ↓ ×. Each range has its own row. Consecutive entries with the
+  same name and tag show `↳ continued` and count as one sample for sample
+  boundaries.
+- **Add sample** starts a row with automatic Begin (previous End + 1) and
+  count 1, then focuses Name. Type Count to fill End. The unknown chain
+  continues across sessions in number order; fixed sessions keep their
+  values and pass their End to the next entry.
+- **Hand values** have an accent bar and the tooltip
+  `Typed by hand; kept when rows above change.` Focus or hover to show
+  `Auto`, which returns that endpoint to automatic numbering. Typing Begin
+  keeps an automatic End at the same count; typing End makes it hand;
+  typing Count makes End automatic again. Later automatic values follow,
+  while hand values stay. A legend explains the mark.
+- **Mineral** appears in the session header when the project has several
+  mineral groups. A fixed session's mineral cannot be changed.
+- **Paste unknowns** accepts `SYN-H3 S 1-30`,
+  `SYN-H3, S, 1-30, 35, 40-42`, or `name, tag, from, to`. Parsed ranges are
+  sorted and deduplicated within a pasted sample. Each range becomes an
+  entry; pasted endpoints are hand values. The session total is shown below.
+- **Import sequence…** reads an earlier sheet (`.xls`, `.xlsx`, `.csv` or
+  paste) as a fixed session or used spots only.
+- **Load GrainAtlas spots…** reads a laser CSV or a text list of names.
+  The status shows the file name and unique spot count, with `Remove`.
+  It checks the project's unknown and standard ranges against those spots;
+  missing positions and an excessive total are warnings, and do not block
+  Next. It does not import sample rows.
+- **Next** needs unknowns in at least one open session, names, valid whole
+  endpoints and no overlap between unknown entries across the project.
+  The same name and tag may continue on adjacent rows, but cannot reappear
+  later as a separate sample. Standard-pool problems are handled in step 3.
+  Blocking problems appear on their rows and the first is in the bottom bar.
 
 ### Non-contiguous spots in the project file
 
-The project format does not change for unknowns. A sample whose spots are
-`1–30, 35, 40–42` is stored as consecutive `Unknown` entries with the same name
-and tag (`{SYN-H3,S,1,30}`, `{SYN-H3,S,35,35}`, `{SYN-H3,S,40,42}`). The table shows
-consecutive entries with the same name and tag as one row. Labels, warnings and
-the draw already work per entry. The engine change is in
-**bracket-at-sample-boundaries** mode only: consecutive entries with equal name
-and tag count as one sample (in `planChunks` and the per-sample minimum of the
-budget). This leaves every existing project unchanged, because none has
-adjacent entries with the same name and tag. Unit tests cover this, and the
-golden tests show that the fixtures still match.
+A sample with `1–30, 35, 40–42` is stored as consecutive Unknown entries with
+that name and tag. The table now shows each entry separately. Labels and
+warnings work per entry. In bracket-at-sample-boundaries mode, consecutive
+entries with the same name and tag share one sample's chunk allocation.
+The project format stays at version 1; optional auto flags record which
+endpoints may move. Old files have no such flags, so their numbers stay.
 
 ## Step 3: Bracketing
 
-- **Recipe** (the same controls as today): chunking mode (Auto from budget,
-  Chunk target, Chunk count) with its number, max or fixed pairs per
-  bracket, bracket at sample boundaries, the opening, mid and closing blocks,
-  and Keep spare per standard. Sheet defaults (duration, laser output, sample
-  type, dilution, comment, identifier, evaluate) are under a collapsed
-  "Sheet columns" section.
-- **Live summary** (right-hand column), recomputed by `planProject` on every
-  change:
-  - the number of sessions;
-  - per session, the chunk sizes, brackets and mid-block bracket;
-  - total brackets K and secondary pairs P, and which brackets are doubled;
-  - a table per standard: available, needed, left after;
-  - the engine's advisories and warnings.
-- **Next ("Generate and review")** is enabled when `planProject` does not
-  throw and every number input is valid. It runs Generate:
-  - With no manual edits in step 4, it regenerates and goes to step 4.
-  - With manual edits, it asks first, with three choices: `Keep my edits`
-    (goes to 4 without regenerating), `Regenerate`, or `Cancel`.
+- **Recipe**: new projects and Reset recipe use Chunk target 18. Chunk count
+  sets the number per session. Auto from budget reads placed pools instead;
+  the example keeps that saved mode. The panel also holds primary and
+  secondary counts, sample boundaries, each group's rotation start, and
+  opening, mid and closing blocks. Sheet defaults are under `Sheet columns`.
+- **Secondaries**: Rotate pairs, or Every, odd or even. In cadence mode,
+  each secondary's Per bracket and Every / Odd / Even controls appear in the
+  Standard spots table. Cadence starts at 1 in each session; rotation and
+  pair counts are not used.
+- **Opening bracket**: after the opening block, before the first unknown,
+  draw secondaries then primary. It is bracket 1 and adds to any primary in
+  the opening block. The mid block stays after chunk floor((k + 1) / 2).
+  Choosing Auto from budget clears cadence and the opening bracket, disables
+  both controls and shows why they need a design mode.
+- **Live summary**: session counts, chunk sizes, brackets, mid-block bracket,
+  and, in rotation mode, secondary pairs and doubled brackets. It updates
+  with committed inputs and shows planning problems and advisories.
+- **Standard spots**: one row per standard range, with Standard, Begin, End,
+  Placed / needed, Used, Spare and + range. Each standard shows its arithmetic
+  underneath, plus fixed-session use. Placed / needed is available after
+  used spots and spare, compared with the planned demand; shortages are red.
+  Extra ranges show `↳`; several minerals show the group beside the role.
+- **Automatic ranges** start after the highest unknown spot, then follow the
+  previous standard range in table order. In design modes, the last auto End
+  fills to needed plus spare, skipping used spots. In budget mode, Ends stay
+  as entered. Hand marks and Auto work as in step 2. + range keeps the old
+  End as hand, drops an empty auto last range, and adds a new hand Begin above
+  the highest known mount spot, with an automatic End. See
+  [the recipe](recipe.md#automatic-numbering) for the two chains.
+- Values commit on blur, Enter, or 300 ms after typing. Incomplete designs
+  keep numbering and spot checks working while the planning problem is shown.
+- **Generate and review** needs valid inputs, a computable plan, no blocking
+  spot checks, and ranges for standards used by open groups. A standard with
+  zero demand in a design mode needs no range. Shortages and GrainAtlas
+  warnings do not block generation.
+- With no manual edits in step 4, Generate replaces the planned rows and
+  opens step 4. With edits, it asks: `Keep my edits` (open step 4 without
+  regenerating), `Regenerate`, or `Cancel`.
 
 ## Step 4: Review and export
 
@@ -196,13 +218,15 @@ golden tests show that the fixtures still match.
 - **Start another session** marks the shown session as run (rotation carried
   forward, as `newSessionFrom` does) and adds an empty session. It then opens
   **step 2** on that new session, with pools and used spots carried forward.
-  The request said step 3, but a new session has no unknowns, so step 3 could
-  not generate it. Step 2 is the first step with something to fill in.
 
 ## Project file: step and mineral
 
-`Project` gets one optional field, `wizard: { step: 1 | 2 | 3 | 4, mineral:
+`Project` has the optional field `wizard: { step: 1 | 2 | 3 | 4, mineral:
 string }`. The format stays at version 1, and old files load as before.
+Optional mineral fields on sessions and standards record extra groups;
+references are shared.
+Auto flags and loaded GrainAtlas spots also live in the project, as described
+in [design-count.md](design-count.md).
 
 - `parseProject` validates the field when it is present and keeps it;
   `serializeProject` writes it.
