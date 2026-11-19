@@ -13,11 +13,7 @@
     serializeProject,
     newSessionFrom,
   } from './lib/engine/project';
-  import {
-    planProject,
-    validate,
-    type ProjectPlan,
-  } from './lib/engine/sequence';
+  import { planProject, type ProjectPlan } from './lib/engine/sequence';
   import {
     DEFAULT_RECIPE,
     type Project,
@@ -35,10 +31,9 @@
     moveRows,
   } from './lib/ui/model';
   import CommitInput from './lib/ui/CommitInput.svelte';
-  import Step3Bracketing from './lib/ui/Step3Bracketing.svelte';
-  import SequenceGrid from './lib/ui/SequenceGrid.svelte';
+  import type Review from './lib/ui/Step4Review.svelte';
+  import { afterPaintIdle, loadOnce } from './lib/ui/lazy';
   import Step1Mineral from './lib/ui/Step1Mineral.svelte';
-  import Step2Unknowns from './lib/ui/Step2Unknowns.svelte';
   import { resolveAuto } from './lib/engine/numbering';
   import {
     applySelection,
@@ -61,6 +56,28 @@
     type Recent,
   } from './lib/ui/recent';
   import { designProblem, type Problem } from './lib/ui/navigation';
+
+  const loadUnknowns = loadOnce(() => import('./lib/ui/Step2Unknowns.svelte'));
+  const loadBracketing = loadOnce(
+    () => import('./lib/ui/Step3Bracketing.svelte'),
+  );
+  const loadReview = loadOnce(() => import('./lib/ui/Step4Review.svelte'));
+  let Step2Unknowns =
+    $state<Awaited<ReturnType<typeof loadUnknowns>>['default']>();
+  let Step3Bracketing =
+    $state<Awaited<ReturnType<typeof loadBracketing>>['default']>();
+  let Step4Review = $state<Awaited<ReturnType<typeof loadReview>>['default']>();
+  let mountedSteps = $state.raw<Step[]>([]);
+  // Project state changes synchronously; only presentation waits for a chunk.
+  let renderedStep = $state<Step>(1);
+  let stepLoadError = $state('');
+  let stepLoadAttempt = $state(0);
+
+  async function prepareStep(target: Step) {
+    if (target === 2) Step2Unknowns = (await loadUnknowns()).default;
+    if (target === 3) Step3Bracketing = (await loadBracketing()).default;
+    if (target === 4) Step4Review = (await loadReview()).default;
+  }
 
   type Theme = 'light' | 'dark' | 'system';
   type Snapshot = {
@@ -105,7 +122,7 @@
   let importDialog: HTMLDialogElement;
   let regenerateDialog: HTMLDialogElement;
   let cancelRegenerate: HTMLButtonElement;
-  let grid: SequenceGrid | undefined = $state();
+  let grid: Review | undefined = $state();
   let importMode = $state('session');
   let importPaste = $state('');
   let importError = $state('');
@@ -233,8 +250,8 @@
     entries = next;
     saveCatalogue(mineral, next);
   }
-  function syncSelections(next: Project, chosen: string) {
-    entries = selectionFromProject(
+  function projectSelections(next: Project, chosen: string) {
+    const entries = selectionFromProject(
       {
         ...next,
         standards: next.standards.filter(
@@ -243,7 +260,7 @@
       },
       chosen,
     );
-    extras = Object.fromEntries(
+    const extras = Object.fromEntries(
       [
         ...new Set(
           next.standards
@@ -266,6 +283,12 @@
         ).filter((e) => e.role !== 'reference'),
       ]),
     );
+    return { entries, extras };
+  }
+  function syncSelections(next: Project, chosen: string) {
+    const selection = projectSelections(next, chosen);
+    entries = selection.entries;
+    extras = selection.extras;
   }
   function changeExtra(id: string, list: Entry[]) {
     remember();
@@ -354,7 +377,7 @@
   }
   async function checkInputs() {
     await tick();
-    if (step !== 2 && step !== 3) return;
+    if (step !== renderedStep || (step !== 2 && step !== 3)) return;
     const field = document.querySelector<HTMLInputElement>(
       `${step === 2 ? '.unknowns-step' : '.bracketing-step'} input:invalid`,
     );
@@ -383,16 +406,6 @@
   const session = $derived(
     project.sessions.find((s) => s.number === active) ?? project.sessions[0]!,
   );
-  const warnings = $derived(
-    validate(
-      session.rows,
-      project.standards,
-      session.unknowns,
-      project.sessions.filter((s) => s.number !== session.number),
-      session.number,
-    ),
-  );
-  const counts = $derived(deriveSession(session.rows, project.standards));
   const replaceCount = $derived(
     project.sessions
       .filter((s) => !s.fixed)
@@ -488,16 +501,14 @@
     selected = selectionBySession[number] ?? [];
   }
   function load(next: Project, blank = false) {
-    remember();
     const chosen = next.wizard?.mineral ?? guessMineral(next);
-    if (blank) {
-      entries = [];
-      extras = {};
-    } else syncSelections(next, chosen);
+    const selection = blank
+      ? { entries: [], extras: {} }
+      : projectSelections(next, chosen);
     let target: Step = blank ? 1 : (next.wizard?.step ?? deriveStep(next));
     let problem = '';
     if (!blank && target > 1) {
-      problem = selectionProblem(chosen, entries);
+      problem = selectionProblem(chosen, selection.entries);
       if (problem) target = 1;
       else if (target > 2) {
         problem = designProblem(next)?.message ?? '';
@@ -514,6 +525,9 @@
         }
       }
     }
+    remember();
+    entries = selection.entries;
+    extras = selection.extras;
     project = blank
       ? next
       : { ...next, wizard: { mineral: chosen, step: target } };
@@ -940,6 +954,35 @@
     };
   });
   $effect(() => {
+    const target = step;
+    const attempt = stepLoadAttempt; // Retry without changing project state.
+    let current = true;
+    stepLoadError = '';
+    void prepareStep(target).then(
+      () => {
+        if (!current || step !== target || stepLoadAttempt !== attempt) return;
+        mountedSteps = [...new Set([...mountedSteps, target])];
+        renderedStep = target;
+        void checkInputs();
+      },
+      (e: unknown) => {
+        if (!current || step !== target || stepLoadAttempt !== attempt) return;
+        stepLoadError = `Could not load ${stepNames[target - 1]!.toLowerCase()}. ${e instanceof Error ? e.message : String(e)}`;
+      },
+    );
+    return () => {
+      current = false;
+    };
+  });
+  $effect(() => {
+    if (!ready || renderedStep !== step || renderedStep === 4) return;
+    const next = (renderedStep + 1) as Step;
+    return afterPaintIdle(() => {
+      // A prefetch failure is silent; navigation retries and reports failures.
+      void prepareStep(next).catch(() => {});
+    });
+  });
+  $effect(() => {
     document.documentElement.dataset.theme =
       theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
   });
@@ -1038,8 +1081,17 @@
         }}>×</button
       >
     </div>{/if}
+  {#if stepLoadError}
+    <div class="app-error" role="alert">
+      {stepLoadError}<button
+        onclick={() => {
+          stepLoadAttempt += 1;
+        }}>Retry</button
+      >
+    </div>
+  {/if}
   <div class="wizard-body">
-    {#if step === 1}
+    {#if renderedStep === 1}
       <Step1Mineral
         {mineral}
         {entries}
@@ -1055,178 +1107,76 @@
         restore={() => changeEntries(restoreSeeds(mineral))}
         open={openProject}
         openExample={() => {
-          load(exampleProject());
-          recent = recordRecent(project);
+          try {
+            load(exampleProject());
+            recent = recordRecent(project);
+          } catch (e) {
+            fail(e);
+          }
         }}
         {resume}
       />
     {/if}
-    <section
-      hidden={step !== 2}
-      class="unknowns-step"
-      aria-label="Unknowns"
-      oninput={checkInputs}
-      onchange={checkInputs}
-    >
-      {@render sessions()}
-      {#key unknownsEpoch}
-        <Step2Unknowns
-          {project}
-          {session}
-          bind:paste={unknownPaste}
-          {edit}
-          importSequence={() => {
-            importError = '';
-            importDialog.showModal();
-          }}
-        />
-      {/key}
-    </section>
-    {#key inputsEpoch}
+    {#if Step2Unknowns && mountedSteps.includes(2)}
       <section
-        hidden={step !== 3}
-        class="bracketing-step"
-        aria-label="Bracketing"
+        hidden={renderedStep !== 2}
+        class="unknowns-step"
+        aria-label="Unknowns"
         oninput={checkInputs}
         onchange={checkInputs}
       >
-        <Step3Bracketing {project} {plan} {planError} {edit} {resetRecipe} />
-      </section>
-    {/key}
-    {#if step === 4}
-      <section class="sequence-panel" aria-label="Sequence editor">
         {@render sessions()}
-        <div class="grid-toolbar" data-testid="grid-toolbar">
-          <div class="toolbar-line">
-            <button
-              disabled={session.fixed || !session.rows.length}
-              onclick={markAsRun}>Mark as run</button
-            >
-            {#if session.fixed}<button onclick={unlock}>Unlock</button>{/if}
-            <span class="toolbar-spacer"></span>
-            <button
-              class="primary"
-              disabled={!session.rows.length}
-              onclick={() => exportSequence('xls')}>Export .xls</button
-            >
-            <button
-              disabled={!session.rows.length}
-              onclick={() => exportSequence('xlsx')}>.xlsx</button
-            ><button
-              disabled={!session.rows.length}
-              onclick={() => exportSequence('csv')}>.csv</button
-            >
-            <button disabled={!session.rows.length} onclick={copy}
-              >Copy for Qtegra</button
-            >
-            <button onclick={saveProject}>Save project</button>
-          </div>
-          <div class="toolbar-line row-tools">
-            <div class="view-toggle" role="group" aria-label="Sequence view">
-              <button
-                aria-pressed={reviewView === 'grid'}
-                onclick={() => {
-                  reviewView = 'grid';
-                }}>Grid</button
-              >
-              <button
-                aria-pressed={reviewView === 'paste'}
-                onclick={() => {
-                  reviewView = 'paste';
-                }}>Qtegra paste</button
-              >
-            </div>
-            <button disabled={session.fixed} onclick={() => insert('above')}
-              >Insert above</button
-            ><button disabled={session.fixed} onclick={() => insert('below')}
-              >Insert below</button
-            >
-            <button
-              disabled={session.fixed || !selected.length}
-              onclick={removeRows}>Delete rows</button
-            >
-            <button
-              title="Alt+↑"
-              disabled={session.fixed || !selected.length}
-              onclick={() => move(-1)}>Move up</button
-            ><button
-              title="Alt+↓"
-              disabled={session.fixed || !selected.length}
-              onclick={() => move(1)}>Move down</button
-            >
-            <span class="toolbar-spacer"></span>
-            <button disabled={!session.rows.length} onclick={addSession}
-              >Start another session</button
-            >
-            <span class="selection-count"
-              >{selected.length
-                ? `${selected.length} selected`
-                : session.fixed
-                  ? 'Read-only'
-                  : 'Select rows by number'}</span
-            >
-          </div>
-          <div class="toast" role="status" aria-live="polite">
-            {copied || message}
-          </div>
-        </div>
-        {#if !session.rows.length}
-          <div class="empty-state">
-            <h2>Nothing generated yet</h2>
-            <button onclick={() => setStep(3)}>Back to bracketing</button>
-          </div>
-        {:else if reviewView === 'paste'}
-          {#await import('./lib/ui/QtegraPaste.svelte') then { default: QtegraPaste }}
-            <QtegraPaste rows={session.rows} {copy} />
-          {:catch e}
-            <p class="error">{e instanceof Error ? e.message : String(e)}</p>
-          {/await}
-        {:else}
-          <SequenceGrid
-            bind:this={grid}
+        {#key unknownsEpoch}
+          <Step2Unknowns
+            {project}
             {session}
-            standards={project.standards}
-            {selected}
-            onselect={(rows) => {
-              selected = rows;
+            bind:paste={unknownPaste}
+            {edit}
+            importSequence={() => {
+              importError = '';
+              importDialog.showModal();
             }}
-            onedit={cell}
           />
-        {/if}
-        <footer class="status-strip">
-          <div class="counts" data-testid="counts">
-            <strong>{session.rows.length} rows</strong><span
-              >{counts.structure.chunks.reduce((sum, n) => sum + n, 0)} unknowns</span
-            >{#each project.standards as s, i (i)}<span
-                >{s.name} {counts.used[s.name]?.length ?? 0}</span
-              >{/each}
-          </div>
-          <div class="legend">
-            <span class="kind-unknown">Unknown</span><span class="kind-primary"
-              >Primary</span
-            ><span class="kind-secondary">Secondary</span><span
-              class="kind-reference">Reference</span
-            ><span class="hint">{saved}</span>
-          </div>
-          <div
-            class="warnings"
-            data-testid="warnings"
-            aria-label="Sequence warnings"
-          >
-            {#if !warnings.length}<span class="no-warnings">No warnings</span
-              >{/if}
-            {#each warnings as warning, i (i)}<div class="warning-item">
-                <button
-                  class="warning-link"
-                  onclick={() => warningRows(warning)}>{warning.message}</button
-                >{#if warning.locations}{#each [...new Set(warning.locations.map((l) => l.session))].filter((n) => n !== session.number) as number (number)}<button
-                      onclick={() => warningRows(warning, number)}
-                      >Show Session {number}</button
-                    >{/each}{/if}
-              </div>{/each}
-          </div>
-        </footer>
+        {/key}
       </section>
+    {/if}
+    {#if Step3Bracketing && mountedSteps.includes(3)}
+      {#key inputsEpoch}
+        <section
+          hidden={renderedStep !== 3}
+          class="bracketing-step"
+          aria-label="Bracketing"
+          oninput={checkInputs}
+          onchange={checkInputs}
+        >
+          <Step3Bracketing {project} {plan} {planError} {edit} {resetRecipe} />
+        </section>
+      {/key}
+    {/if}
+    {#if renderedStep === 4 && Step4Review}
+      <Step4Review
+        bind:this={grid}
+        {project}
+        {session}
+        bind:selected
+        bind:reviewView
+        tabs={sessions}
+        {copied}
+        {message}
+        {saved}
+        {markAsRun}
+        {unlock}
+        {exportSequence}
+        {copy}
+        {saveProject}
+        {insert}
+        {removeRows}
+        {move}
+        {addSession}
+        {cell}
+        {warningRows}
+        backToBracketing={() => setStep(3)}
+      />
     {/if}
   </div>
   <footer class="wizard-footer">
@@ -1265,7 +1215,7 @@
             : ' · run'
           : ''}</button
       >{/each}
-    {#if step === 2}
+    {#if renderedStep === 2}
       <button onclick={addOpenSession}>+ Session</button>
     {/if}
   </nav>

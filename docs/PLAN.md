@@ -10,19 +10,16 @@ arithmetic. Chunk target and Chunk count support every/odd/even secondaries
 and an opening bracket. A run can have several mineral groups, with shared
 references and separate primary budgets and rotations.
 
-Verified here: formatting, lint, type checks, 446 unit tests and 4 Rust tests.
-The unit tests reproduce the four saved Ablation Station designs' counts and
-row totals, numbering and hand values, mineral groups, and GrainAtlas parsing
-and warnings. The example still matches sessions 2 and 3 cell for cell;
-export hashes for CSV, TSV, XLS and XLSX match the earlier version. The
-regenerated screenshots show the current steps. Browser tests cover the wizard
-at 1440 × 900 and 1280 × 800 in Chromium and WebKit.
-
-The docs-only check found that `make test` stops at the existing JavaScript
-budget: 253,416 bytes, above the 250,000-byte limit. A separate Playwright run
-could not start because the sandbox denied Vite's local listener at
-`127.0.0.1:4173`. Browser tests were not rerun here; no code or test limit was
-changed.
+Verified on the Mac with `make test`: formatting, lint, type checks, the unit
+tests and 4 Rust tests, the size budgets and every Playwright test in Chromium
+and WebKit. The unit tests reproduce the four saved Ablation Station designs'
+counts and row totals, numbering and hand values, mineral groups, and
+GrainAtlas parsing and warnings. The example still matches sessions 2 and 3
+cell for cell, and the CSV, TSV, XLS and XLSX bytes equal those of `eb5c6c3`.
+Browser tests cover the wizard at 1440 × 900, 1280 × 800 and the instrument
+PC's 1536 × 864. The new tables pushed the entry JavaScript over its 250 KB
+budget, so steps 2–4 now load on demand (entry about 165 KB; see
+[performance.md](performance.md)).
 
 Not yet verified: the exe on the instrument PC, and a real GrainAtlas export
 from the lab's mount. GrainAtlas tests use small test inputs.
