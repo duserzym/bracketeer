@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { exampleProject } from './model';
-import { unknownsProblem } from './navigation';
+import { designProblem, unknownsProblem } from './navigation';
 
 describe('unknowns navigation validation', () => {
   it('accepts the example, including fixed sessions', () => {
@@ -43,5 +43,46 @@ describe('unknowns navigation validation', () => {
     });
     project.standards[0]!.ranges = [{ from: 728, to: 757 }];
     expect(unknownsProblem(project)?.message).toContain('pools overlap');
+  });
+});
+
+describe('design wizard validation', () => {
+  it('allows absent or overlapping pools in Unknowns and catches them in Bracketing', () => {
+    const project = exampleProject();
+    project.standards[0]!.ranges = [];
+    expect(designProblem(project)).toBeNull();
+    expect(designProblem(project, true)).toEqual({
+      message: 'Add a pool for S513',
+      label: 'S513 begin',
+    });
+    project.standards[0]!.ranges = [{ from: 1, to: 1000 }];
+    expect(designProblem(project)).toBeNull();
+    expect(designProblem(project, true)?.message).toContain('pool');
+  });
+  it('numbers every continued entry, permits adjacent identities, and focuses errors in later sessions', () => {
+    const project = exampleProject();
+    project.sessions[1]!.unknowns.splice(1, 0, {
+      name: 'SYN-H3',
+      tag: 'S',
+      from: 1000,
+      to: 1001,
+    });
+    expect(designProblem(project)).toBeNull();
+    project.sessions[2]!.unknowns[0]!.from = 0;
+    expect(designProblem(project)).toMatchObject({
+      session: 3,
+      label: 'Unknown 1 begin',
+    });
+    project.sessions[2]!.unknowns[0]!.from = 235;
+    project.sessions[1]!.unknowns[3]!.name = 'SYN-H3';
+    expect(designProblem(project)?.label).toBe('Unknown 4 name');
+  });
+  it('accepts zero-demand standards without pools in design modes, but requires pools for demand', () => {
+    const project = exampleProject();
+    project.recipe.chunking = { mode: 'size', size: 1000 };
+    project.standards.find((s) => s.name === 'LTSE')!.ranges = [];
+    expect(designProblem(project, true)).toBeNull();
+    project.standards[0]!.ranges = [];
+    expect(designProblem(project, true)?.message).toBe('Add a pool for S513');
   });
 });

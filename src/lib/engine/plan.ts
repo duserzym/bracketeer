@@ -1,3 +1,4 @@
+import { countText } from '../text';
 import { remainingCounts } from './pools';
 import { parseLabel } from './labels';
 import { groupRecipe, groupStandards, mineralGroup } from './groups';
@@ -308,7 +309,7 @@ export function calculateBudget(
     const fresh = remainingCounts([{ ...s, spare: 0 }])[s.name]!;
     if (s.spare > fresh)
       advisories.push(
-        `${s.name}: keep ${s.spare} spare exceeds ${fresh} unused spots.`,
+        `${s.name}: keep ${s.spare} spare exceeds ${countText(fresh, 'unused spot')}.`,
       );
   }
   const totals = unknowns.map((samples) =>
@@ -362,7 +363,7 @@ export function calculateBudget(
     const minimum = minima.reduce((a, b) => a + b, 0);
     if (K < minimum)
       advisories.push(
-        `Budget has ${K} brackets for ${active} sessions${recipe.bracketAtSampleBoundaries ? ` and ${minimum} samples` : ''}; emitting at least one bracket per ${recipe.bracketAtSampleBoundaries ? 'sample' : 'session'} with shortage warnings.`,
+        `Budget has ${countText(K, 'bracket')} for ${countText(active, 'session')}${recipe.bracketAtSampleBoundaries ? ` and ${countText(minimum, 'sample')}` : ''}; emitting at least one bracket per ${recipe.bracketAtSampleBoundaries ? 'sample' : 'session'} with shortage warnings.`,
       );
     const counts = largestRemainder(Math.max(K, minimum), totals, minima);
     chunks = unknowns.map((samples, i) =>
@@ -424,7 +425,7 @@ export function calculateBudget(
       const need = needed[s.name]!;
       if (need > available[s.name]!)
         advisories.push(
-          `${s.name} needs ${need} spots; ${available[s.name]} available after used spots and spare.`,
+          `${s.name} needs ${countText(need, 'spot')}; ${available[s.name]} available after used spots and spare.`,
         );
       return [
         s.name,
@@ -527,12 +528,12 @@ export function projectLayouts(
       const fresh = remainingCounts([{ ...s, spare: 0 }])[s.name]!;
       if (s.spare > fresh)
         advisories.push(
-          `${s.name}: keep ${s.spare} spare exceeds ${fresh} unused spots.`,
+          `${s.name}: keep ${s.spare} spare exceeds ${countText(fresh, 'unused spot')}.`,
         );
       const need = needed[s.name]!;
       if (need > available[s.name]!)
         advisories.push(
-          `${s.name} needs ${need} spots; ${available[s.name]} available after used spots and spare.`,
+          `${s.name} needs ${countText(need, 'spot')}; ${available[s.name]} available after used spots and spare.`,
         );
       return [
         s.name,

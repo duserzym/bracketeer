@@ -57,6 +57,16 @@ describe('native platform', () => {
     ]);
   });
 
+  it('opens GrainAtlas CSV and text files with the requested native filters', async () => {
+    native.open.mockResolvedValue('/runs/mount.csv');
+    native.invoke.mockResolvedValue([]);
+    const { platform } = await import('./platform');
+    expect((await platform.openFile('.csv,.txt'))?.name).toBe('mount.csv');
+    expect(native.open.mock.calls[0]![0].filters).toEqual([
+      { name: 'GrainAtlas spots', extensions: ['csv', 'txt'] },
+    ]);
+  });
+
   it('cancels dialogs without reading or writing files', async () => {
     native.open.mockResolvedValue(null);
     native.save.mockResolvedValue(null);

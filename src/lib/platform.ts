@@ -86,7 +86,15 @@ const desktop: Platform = {
       directory: false,
       filters: accept.includes('.json')
         ? [{ name: 'bracketeer project', extensions: ['bracketeer.json'] }]
-        : [{ name: 'Sequence', extensions: ['xls', 'xlsx', 'csv'] }],
+        : [
+            {
+              name: accept === '.csv,.txt' ? 'GrainAtlas spots' : 'Sequence',
+              extensions:
+                accept === '.csv,.txt'
+                  ? ['csv', 'txt']
+                  : ['xls', 'xlsx', 'csv'],
+            },
+          ],
     });
     if (path === null) return null;
     const bytes = await invoke<ArrayBuffer | number[]>('read_file', { path });

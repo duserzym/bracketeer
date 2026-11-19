@@ -51,6 +51,29 @@ describe('spot checks', () => {
     expect(p).toEqual(before);
     expect(checkSpots(project())).toEqual([]);
   });
+  it.each([
+    'budget without pools',
+    'no primary',
+    'no secondary',
+    'invalid recipe',
+  ])('continues checking an incomplete design with %s', (problem) => {
+    const p = project();
+    if (problem === 'budget without pools') {
+      p.recipe.chunking = { mode: 'budget' };
+      p.standards.forEach((s) => {
+        s.ranges = [];
+      });
+    }
+    if (problem === 'no primary') p.standards[0]!.role = 'secondary';
+    if (problem === 'no secondary') p.standards.pop();
+    if (problem === 'invalid recipe') p.recipe.primaryPerBracket = -1;
+    p.standards[0]!.used = [99];
+    expect(() => checkSpots(p)).not.toThrow();
+    expect(messages(p)).toContain('S513: used spot 99 outside its pool.');
+    expect(messages(p).some((m) => m.includes('short'))).toBe(
+      problem === 'budget without pools',
+    );
+  });
   it('names identical entry ranges and keeps separate continued entries valid', () => {
     const p = project();
     p.sessions[0]!.unknowns.push(
@@ -239,4 +262,16 @@ describe('GrainAtlas checks', () => {
       'Not placed in GrainAtlas: X0 1, X1 2, X2 3, X3 4, X4 5, X5 6, X6 7, X7 8, and 3 more.',
     );
   });
+});
+
+it('uses singular spot wording in GrainAtlas and identical-range messages', () => {
+  const p = project();
+  p.standards = [];
+  p.sessions[0]!.unknowns = [{ name: 'A', tag: '', from: 1, to: 1 }];
+  p.grainatlas = { file: 'mount.csv', spots: [] };
+  expect(messages(p)).toContain(
+    'This run uses 1 spot; GrainAtlas placed 0 (mount.csv).',
+  );
+  p.sessions[0]!.unknowns.push({ name: 'A', tag: '', from: 1, to: 1 });
+  expect(messages(p)).toContain('Rows 1 and 2, A: the same spot 1.');
 });

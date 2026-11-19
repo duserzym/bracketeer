@@ -63,6 +63,52 @@ describe('automatic numbering', () => {
     expect(p.recipe.chunking).toEqual({ mode: 'budget' });
   });
 
+  it.each(['budget', 'primary', 'secondary', 'recipe'])(
+    'resolves begins and unknowns when %s prevents counting',
+    (problem) => {
+      const p = design();
+      p.sessions[0]!.unknowns = [auto('X', 10, 13), auto('Y', 20, 22)];
+      p.standards[0]!.ranges = [
+        { from: 50, to: 60, auto: { from: true, to: true } },
+      ];
+      if (problem === 'budget') {
+        p.recipe.chunking = { mode: 'budget' };
+        p.standards[0]!.ranges[0]!.to = 0;
+      }
+      if (problem === 'primary') p.standards[0]!.role = 'secondary';
+      if (problem === 'secondary')
+        p.standards = p.standards.filter((s) => s.role !== 'secondary');
+      if (problem === 'recipe') p.recipe.primaryPerBracket = -1;
+      const next = resolveAuto(p);
+      expect(positions(next)).toEqual([
+        [1, 4],
+        [5, 7],
+      ]);
+      expect(next.standards[0]!.ranges[0]).toMatchObject({
+        from: 8,
+        to: problem === 'budget' ? 0 : 60,
+      });
+      expect(() => checkSpots(next)).not.toThrow();
+      expect(checkSpots(next).some((i) => i.message.includes('short'))).toBe(
+        false,
+      );
+      expect(resolveAuto(next)).toBe(next);
+    },
+  );
+
+  it('drops an empty automatic last range before appending a range', () => {
+    const p = design();
+    p.standards[0]!.ranges = [
+      { from: 20, to: 23 },
+      { from: 90, to: 89, auto: { to: true } },
+    ];
+    const next = addStandardRange(p, 'P');
+    expect(next.standards[0]!.ranges).toHaveLength(2);
+    expect(next.standards[0]!.ranges[1]!.auto?.to).toBe(true);
+    expect(checkSpots(next).filter((i) => i.severity === 'error')).toEqual([]);
+    expect(p.standards[0]!.ranges[1]!.to).toBe(89);
+  });
+
   it('walks sessions in number order, retains fixed values and chains through hand endpoints', () => {
     const p = design();
     p.sessions = [

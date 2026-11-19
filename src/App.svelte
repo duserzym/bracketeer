@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
+  import { SvelteSet } from 'svelte/reactivity';
   import VersionChip from './lib/updates/VersionChip.svelte';
   import CheckUpdatesButton from './lib/updates/CheckUpdatesButton.svelte';
   import UpdatesPanel from './lib/updates/UpdatesPanel.svelte';
@@ -33,11 +34,12 @@
     rowsDiffer,
     moveRows,
   } from './lib/ui/model';
+  import CommitInput from './lib/ui/CommitInput.svelte';
   import Step3Bracketing from './lib/ui/Step3Bracketing.svelte';
   import SequenceGrid from './lib/ui/SequenceGrid.svelte';
   import Step1Mineral from './lib/ui/Step1Mineral.svelte';
   import Step2Unknowns from './lib/ui/Step2Unknowns.svelte';
-  import { validateUnknowns, type UnknownsState } from './lib/ui/unknowns';
+  import { resolveAuto } from './lib/engine/numbering';
   import {
     applySelection,
     catalogue,
@@ -58,11 +60,7 @@
     recordRecent,
     type Recent,
   } from './lib/ui/recent';
-  import {
-    unknownsProblem,
-    problemLabel,
-    type Problem,
-  } from './lib/ui/navigation';
+  import { designProblem, type Problem } from './lib/ui/navigation';
 
   type Theme = 'light' | 'dark' | 'system';
   type Snapshot = {
@@ -71,6 +69,7 @@
     active: number;
     selected: number[];
     entries: Entry[];
+    extras: Record<string, Entry[]>;
   };
   function blankProject(): Project {
     const next = emptyProject();
@@ -79,12 +78,13 @@
   }
   let project = $state.raw<Project>(blankProject());
   let entries = $state.raw<Entry[]>([]);
+  let extras = $state.raw<Record<string, Entry[]>>({});
   let recent = $state.raw<Recent[]>([]);
   let continuation = $state.raw<Recent | null>(null);
   let unknownPaste = $state('');
-  let unknownsState = $state<UnknownsState>({ sessions: {}, standards: {} });
   let inputsEpoch = $state(0);
-  let invalidInput = $state<Problem | null>(null);
+  let unknownsEpoch = $state(0);
+  let invalidFields = $state<Partial<Record<2 | 3, Problem>>>({});
   let active = $state(1);
   let dirty = $state.raw<number[]>([]);
   let selected = $state.raw<number[]>([]);
@@ -112,57 +112,80 @@
   let noticeTimer: ReturnType<typeof setTimeout>;
   let actionNumber = 0;
   const step = $derived(project.wizard?.step ?? 1);
+  const invalidInput = $derived(
+    step === 2 ? invalidFields[2] : invalidFields[3],
+  );
   const mineral = $derived(project.wizard?.mineral ?? '');
   const resolvedDark = $derived(
     theme === 'dark' || (theme === 'system' && systemDark),
   );
-  const mineralProblem = $derived(selectionProblem(mineral, entries));
-  const inputValidation = $derived(
-    validateUnknowns(
-      step === 1 && !mineralProblem
-        ? applySelection(project, mineral, entries)
-        : project,
-      unknownsState,
-    ),
-  );
-  const inputProblem = $derived.by(() => {
-    const problem = inputValidation.errors[0];
-    return problem
-      ? {
-          message: problem.message,
-          label: problemLabel(problem),
-          session: problem.session ?? undefined,
-        }
-      : null;
+  const mineralProblem = $derived.by(() => {
+    const main = selectionProblem(mineral, entries);
+    if (main) return main;
+    const names = new SvelteSet(
+      entries.filter((e) => e.checked).map((e) => e.name.trim()),
+    );
+    for (const [id, list] of Object.entries(extras)) {
+      const problem = selectionProblem(id, list);
+      if (problem)
+        return `${minerals.find((m) => m.id === id)?.name ?? id}: ${problem}`;
+      for (const entry of list.filter(
+        (e) => e.checked && e.role !== 'reference',
+      )) {
+        if (names.has(entry.name.trim()))
+          return `Two standards are called ${entry.name.trim()}`;
+        names.add(entry.name.trim());
+      }
+    }
+    return '';
   });
+  function selectedProject(): Project {
+    const next = applySelection(project, mineral, entries);
+    for (const [id, list] of Object.entries(extras)) {
+      const selected = applySelection(
+        project,
+        id,
+        list.filter((e) => e.role !== 'reference'),
+      );
+      next.standards.push(
+        ...selected.standards.map((standard) => ({ ...standard, mineral: id })),
+      );
+    }
+    return next;
+  }
+  const inputProblem = $derived(designProblem(project));
+  const standardProblem = $derived(designProblem(project, true));
   const blocking = $derived(
     step === 1
       ? mineralProblem
       : step === 2
-        ? inputProblem?.message || ''
+        ? invalidInput?.message || inputProblem?.message || ''
         : step === 3
           ? invalidInput?.message ||
-            planError ||
             mineralProblem ||
             inputProblem?.message ||
+            standardProblem?.message ||
+            planError ||
             ''
           : '',
   );
   const stepNames = ['Mineral', 'Unknowns', 'Bracketing', 'Review'];
 
   function setStep(next: Step) {
-    if (next === 1 && step !== 1)
-      entries = selectionFromProject(project, mineral);
+    if (next === 1 && step !== 1) syncSelections(project, mineral);
     project = {
       ...project,
       wizard: { mineral: mineral || guessMineral(project), step: next },
     };
+    void checkInputs();
   }
   function reachProblem(target: number): string {
     if (target <= step) return '';
     if (target > 1 && mineralProblem) return mineralProblem;
+    if (target > 2 && invalidFields[2]) return invalidFields[2].message;
     if (target > 2 && inputProblem) return inputProblem.message;
-    if (target > 3 && invalidInput) return invalidInput.message;
+    if (target > 3 && invalidFields[3]) return invalidFields[3].message;
+    if (target > 3 && standardProblem) return standardProblem.message;
     if (target > 3 && planError) return planError;
     return '';
   }
@@ -173,7 +196,7 @@
     }
     if (reachProblem(target)) return;
     if (step === 1) {
-      const next = applySelection(project, mineral, entries);
+      const next = resolveAuto(selectedProject());
       if (
         JSON.stringify([next.standards, next.recipe]) !==
         JSON.stringify([project.standards, project.recipe])
@@ -202,12 +225,73 @@
     remember();
     entries = catalogue(id);
     project = { ...project, wizard: { mineral: id, step: 1 } };
+    extras = {};
     error = '';
   }
   function changeEntries(next: Entry[]) {
     remember();
     entries = next;
     saveCatalogue(mineral, next);
+  }
+  function syncSelections(next: Project, chosen: string) {
+    entries = selectionFromProject(
+      {
+        ...next,
+        standards: next.standards.filter(
+          (s) => s.role === 'reference' || !s.mineral || s.mineral === chosen,
+        ),
+      },
+      chosen,
+    );
+    extras = Object.fromEntries(
+      [
+        ...new Set(
+          next.standards
+            .filter(
+              (s) =>
+                s.role !== 'reference' && s.mineral && s.mineral !== chosen,
+            )
+            .map((s) => s.mineral!),
+        ),
+      ].map((id) => [
+        id,
+        selectionFromProject(
+          {
+            ...next,
+            standards: next.standards.filter(
+              (s) => s.role !== 'reference' && s.mineral === id,
+            ),
+          },
+          id,
+        ).filter((e) => e.role !== 'reference'),
+      ]),
+    );
+  }
+  function changeExtra(id: string, list: Entry[]) {
+    remember();
+    extras = { ...extras, [id]: list };
+    saveCatalogue(id, list);
+  }
+  function addMineral(id: string) {
+    changeExtra(
+      id,
+      catalogue(id).filter((e) => e.role !== 'reference'),
+    );
+  }
+  function removeMineral(id: string) {
+    remember();
+    extras = Object.fromEntries(
+      Object.entries(extras).filter(([key]) => key !== id),
+    );
+    const next = structuredClone(project);
+    next.standards = next.standards.filter(
+      (s) => s.role === 'reference' || s.mineral !== id,
+    );
+    next.sessions.forEach((session) => {
+      if (session.mineral === id && !session.fixed) delete session.mineral;
+    });
+    project = resolveAuto(next);
+    refreshPlan();
   }
   function newProject() {
     load(blankProject(), true);
@@ -222,9 +306,9 @@
     }
   }
   async function focusProblem() {
-    if (step === 3 && !invalidInput && !planError) {
+    if (step === 3 && !invalidInput) {
       if (mineralProblem) setStep(1);
-      else if (inputProblem) setStep(2);
+      else if (inputProblem || standardProblem?.session) setStep(2);
       await tick();
     }
     if (step === 1) {
@@ -250,13 +334,17 @@
       }
       return;
     }
-    const problem = step === 2 ? inputProblem : invalidInput;
+    const problem =
+      invalidInput ??
+      (step === 2 ? inputProblem : (standardProblem ?? inputProblem));
     if (problem?.session) chooseSession(problem.session);
     await tick();
     const field = problem?.label
-      ? document.querySelector<HTMLElement>(
-          `${step === 2 ? '.step-two' : '.bracketing-step'} [aria-label="${CSS.escape(problem.label)}"]`,
-        )
+      ? [
+          ...document.querySelectorAll<HTMLElement>(
+            `${step === 2 ? '.step-two' : '.bracketing-step'} [aria-label="${CSS.escape(problem.label)}"]`,
+          ),
+        ].find((field) => !field.closest('[hidden]'))
       : document.querySelector<HTMLElement>(
           '.bracketing-step :invalid, .bracketing-step [aria-invalid="true"]',
         );
@@ -266,18 +354,31 @@
   }
   async function checkInputs() {
     await tick();
+    if (step !== 2 && step !== 3) return;
     const field = document.querySelector<HTMLInputElement>(
-      '.bracketing-step input:invalid, .bracketing-step input[aria-invalid="true"]',
+      `${step === 2 ? '.unknowns-step' : '.bracketing-step'} input:invalid`,
     );
-    invalidInput = field
+    const problem: Problem | undefined = field
       ? {
           message: `Enter a valid value for ${field.getAttribute('aria-label') || field.closest('label')?.textContent?.trim() || 'this input'}`,
+          ...(field.closest<HTMLElement>('[data-unknown-session]')
+            ? {
+                session: Number(
+                  field.closest<HTMLElement>('[data-unknown-session]')!.dataset
+                    .unknownSession,
+                ),
+              }
+            : {}),
           label:
             field.getAttribute('aria-label') ||
             field.closest('label')?.textContent?.trim() ||
             '',
         }
-      : null;
+      : undefined;
+    const next = { ...invalidFields };
+    if (problem) next[step] = problem;
+    else delete next[step];
+    invalidFields = next;
   }
   const session = $derived(
     project.sessions.find((s) => s.number === active) ?? project.sessions[0]!,
@@ -325,7 +426,7 @@
     }
   }
   function snapshot(): Snapshot {
-    return { project, dirty, active, selected, entries };
+    return { project, dirty, active, selected, entries, extras };
   }
   function remember() {
     undo = [...undo.slice(-49), snapshot()];
@@ -335,8 +436,10 @@
     try {
       const next = structuredClone(project);
       change(next);
+      const resolved = resolveAuto(next);
+      if (JSON.stringify(resolved) === JSON.stringify(project)) return true;
       remember();
-      project = next;
+      project = resolved;
       error = '';
       if (replan) {
         refreshPlan();
@@ -354,7 +457,9 @@
       ? { ...s.project, wizard: { ...s.project.wizard, step: currentStep } }
       : s.project;
     entries = s.entries;
+    extras = s.extras;
     if (mineral) saveCatalogue(mineral, entries);
+    for (const [id, list] of Object.entries(extras)) saveCatalogue(id, list);
     dirty = s.dirty;
     active = s.active;
     selected = s.selected;
@@ -385,17 +490,22 @@
   function load(next: Project, blank = false) {
     remember();
     const chosen = next.wizard?.mineral ?? guessMineral(next);
-    entries = blank ? [] : selectionFromProject(next, chosen);
+    if (blank) {
+      entries = [];
+      extras = {};
+    } else syncSelections(next, chosen);
     let target: Step = blank ? 1 : (next.wizard?.step ?? deriveStep(next));
     let problem = '';
     if (!blank && target > 1) {
       problem = selectionProblem(chosen, entries);
       if (problem) target = 1;
       else if (target > 2) {
-        problem = unknownsProblem(next)?.message ?? '';
+        problem = designProblem(next)?.message ?? '';
         if (problem) target = 2;
         else if (target > 3) {
           try {
+            const issue = designProblem(next, true);
+            if (issue) throw new Error(issue.message);
             planProject(next);
           } catch (e) {
             problem = e instanceof Error ? e.message : String(e);
@@ -409,16 +519,16 @@
       : { ...next, wizard: { mineral: chosen, step: target } };
     reviewView = 'grid';
     unknownPaste = '';
-    unknownsState = { sessions: {}, standards: {} };
+    unknownsEpoch += 1;
     inputsEpoch += 1;
-    invalidInput = null;
+    invalidFields = {};
     active =
       next.sessions.find((s) => !s.fixed)?.number ?? next.sessions[0]!.number;
     selected = [];
     selectionBySession = {};
     dirty = [];
     error = problem;
-    const firstProblem = target === 2 ? unknownsProblem(project) : null;
+    const firstProblem = target === 2 ? designProblem(project) : null;
     if (firstProblem?.session) active = firstProblem.session;
     refreshPlan();
     dirty = next.sessions
@@ -759,7 +869,7 @@
   }
   function resetRecipe() {
     inputsEpoch += 1;
-    invalidInput = null;
+    invalidFields = {};
     edit((p) => {
       p.recipe = structuredClone(DEFAULT_RECIPE);
       for (const block of ['opening', 'mid', 'closing'] as const)
@@ -854,16 +964,18 @@
   <header class="topbar" data-testid="topbar">
     <div class="top-line">
       <h1>bracketeer</h1>
-      <input
-        class="experiment-title"
-        aria-label="Experiment title"
-        value={project.experiment.name}
-        placeholder="Untitled experiment"
-        oninput={(e) =>
-          edit((p) => {
-            p.experiment.name = e.currentTarget.value;
-          })}
-      />
+      <div class="experiment-title">
+        <CommitInput
+          label="Experiment title"
+          type="text"
+          value={project.experiment.name}
+          commit={(value) =>
+            edit((p) => {
+              p.experiment.name = value;
+            })}
+        />
+      </div>
+
       <nav class="step-bar" aria-label="Wizard steps">
         {#each stepNames as name, i (name)}
           <button
@@ -931,6 +1043,10 @@
       <Step1Mineral
         {mineral}
         {entries}
+        {extras}
+        {changeExtra}
+        {addMineral}
+        {removeMineral}
         dark={resolvedDark}
         {recent}
         {continuation}
@@ -948,23 +1064,23 @@
     <section
       hidden={step !== 2}
       class="unknowns-step"
-      aria-label="Unknowns and pools"
+      aria-label="Unknowns"
+      oninput={checkInputs}
+      onchange={checkInputs}
     >
       {@render sessions()}
-      <Step2Unknowns
-        {project}
-        {session}
-        bind:state={unknownsState}
-        problems={inputValidation.errors}
-        warnings={inputValidation.warnings}
-        bind:paste={unknownPaste}
-        {edit}
-        changeStandards={() => setStep(1)}
-        importSequence={() => {
-          importError = '';
-          importDialog.showModal();
-        }}
-      />
+      {#key unknownsEpoch}
+        <Step2Unknowns
+          {project}
+          {session}
+          bind:paste={unknownPaste}
+          {edit}
+          importSequence={() => {
+            importError = '';
+            importDialog.showModal();
+          }}
+        />
+      {/key}
     </section>
     {#key inputsEpoch}
       <section

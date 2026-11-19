@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import * as XLSX from 'xlsx';
 import { QTEGRA_COLUMNS } from '../src/lib/engine/types';
-import { startZircon } from './helpers';
+import { commitCell, startZircon } from './helpers';
 
 function cells(bytes: Uint8Array) {
   const sheet = XLSX.read(bytes, { type: 'array' }).Sheets.Sheet1!;
@@ -54,24 +54,26 @@ test('sessions typed through all four steps export the exact fixtures', async ({
       await page
         .getByRole('button', { name: '+ Session', exact: true })
         .click();
-    await page
-      .getByRole('textbox', { name: 'Paste unknowns', exact: true })
-      .fill(text);
-    await page
-      .getByRole('button', { name: 'Add pasted unknowns', exact: true })
-      .click();
-  }
-  for (const [name, [pool, used]] of Object.entries(spots)) {
-    for (const [field, value] of [
-      ['ranges', pool],
-      ['used', used],
-    ] as const) {
+    for (const [row, line] of text.split('\n').entries()) {
+      const [name, tag, range] = line.split(' ');
+      const [begin, end] = range!.split('-');
+      await page
+        .getByRole('button', { name: 'Add sample', exact: true })
+        .click();
       const input = page.getByRole('textbox', {
-        name: `${name} ${field}`,
+        name: `Unknown ${row + 1} name`,
         exact: true,
       });
-      await input.fill(value);
+      await input.fill(name!);
       await input.press('Tab');
+      const tagInput = page.getByRole('textbox', {
+        name: `Unknown ${row + 1} tag`,
+        exact: true,
+      });
+      await tagInput.fill(tag!);
+      await tagInput.press('Tab');
+      await commitCell(page, `Unknown ${row + 1} begin`, begin!);
+      await commitCell(page, `Unknown ${row + 1} end`, end!);
     }
   }
   await page
@@ -80,6 +82,24 @@ test('sessions typed through all four steps export the exact fixtures', async ({
   await page
     .getByRole('combobox', { name: 'Chunking', exact: true })
     .selectOption('budget');
+  for (const [name, [pool, used]] of Object.entries(spots)) {
+    const [begin, end] = pool.split('-');
+    await commitCell(page, `${name} begin`, begin!);
+    await commitCell(page, `${name} end`, end!);
+    const input = page.getByRole('textbox', {
+      name: `${name} used`,
+      exact: true,
+    });
+    await input.fill(used);
+    await input.press('Tab');
+  }
+  // NIST610 has two available runs around its typed used spots.
+  await commitCell(page, 'NIST610 end', '856');
+  await page
+    .getByRole('button', { name: 'NIST610 + range', exact: true })
+    .click();
+  await commitCell(page, 'NIST610 range 2 begin', '866');
+  await commitCell(page, 'NIST610 range 2 end', '874');
   await expect(page.getByTestId('budget')).toHaveText(
     '37 brackets for 2 sessions (19 + 18), 40 secondary pairs. Doubled brackets: 13, 25, 37.',
   );

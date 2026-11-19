@@ -183,6 +183,7 @@ export function applySelection(
         const name = entry.name.trim();
         const existing = project.standards.find((s) => s.name === name);
         return {
+          ...structuredClone(existing ?? {}),
           name,
           role,
           ranges: structuredClone(existing?.ranges ?? []),

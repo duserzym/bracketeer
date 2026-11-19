@@ -15,6 +15,7 @@ async function pageFits(page: Page) {
 for (const viewport of [
   { width: 1440, height: 900 },
   { width: 1280, height: 800 },
+  { width: 1536, height: 864 },
 ]) {
   test(`all four wizard steps fit ${viewport.width} × ${viewport.height}`, async ({
     page,
@@ -80,7 +81,7 @@ for (const viewport of [
       .click();
     await page.getByRole('button', { name: '2 Unknowns', exact: true }).click();
     await pageFits(page);
-    for (const name of ['samples-panel', 'spots-panel']) {
+    for (const name of ['samples-panel']) {
       const panel = page.getByTestId(name);
       const bounds = (await panel.boundingBox())!;
       expect(bounds.x).toBeGreaterThanOrEqual(0);
@@ -92,7 +93,7 @@ for (const viewport of [
         await panel.evaluate((el) => el.clientWidth),
       );
     }
-    for (const name of ['samples-scroll', 'spots-scroll']) {
+    for (const name of ['samples-scroll']) {
       const scroll = page.getByTestId(name);
       expect(
         await scroll.evaluate((el) => el.scrollHeight > el.clientHeight),
@@ -110,6 +111,29 @@ for (const viewport of [
       .getByRole('button', { name: 'Next: bracketing', exact: true })
       .click();
     await expect(page.getByTestId('budget')).toContainText('37 brackets');
+    for (const mode of ['budget', 'size']) {
+      await page
+        .getByRole('combobox', { name: 'Chunking', exact: true })
+        .selectOption(mode);
+      if (mode === 'size')
+        await page
+          .getByRole('combobox', { name: 'Secondaries', exact: true })
+          .selectOption('cadence');
+      const table = page.getByRole('table', {
+        name: 'Standard spots',
+        exact: true,
+      });
+      for (const header of await table.getByRole('columnheader').all()) {
+        const bounds = (await header.boundingBox())!;
+        expect(bounds.x).toBeGreaterThanOrEqual(0);
+        expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+      }
+      await pageFits(page);
+    }
+    await page
+      .getByRole('combobox', { name: 'Chunking', exact: true })
+      .selectOption('budget');
+
     await pageFits(page);
     for (const id of ['recipe-scroll', 'plan-summary']) {
       const panel = page.getByTestId(id);

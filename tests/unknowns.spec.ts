@@ -1,14 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
-import { startZircon } from './helpers';
+import { addCountSample, commitCell, startZircon } from './helpers';
 import type { Project } from '../src/lib/engine/types';
-import { formatSpots } from '../src/lib/engine/parse';
-import { groupUnknowns, rangeSpots } from '../src/lib/ui/unknowns';
 
 const next = (page: Page) =>
   page.getByRole('button', { name: 'Next: bracketing', exact: true });
-const field = (page: Page, row: number, name: string) =>
-  page.getByRole('textbox', { name: `Unknown ${row} ${name}`, exact: true });
 async function pasteSamples(page: Page, text: string) {
   await page
     .getByRole('textbox', { name: 'Paste unknowns', exact: true })
@@ -23,39 +19,39 @@ async function exampleUnknowns(page: Page) {
   await page.getByRole('button', { name: '2 Unknowns', exact: true }).click();
 }
 
-test('three samples accept spot lists, persist runs immediately and keep invalid text through navigation', async ({
+test('paste makes separate continued entries and keeps hand values in the project', async ({
   page,
 }) => {
   await startZircon(page);
-  for (const [i, name, spots] of [
-    [1, 'SYN-H3', '1-30, 35, 40-42'],
-    [2, 'SYN-H4', '50-55'],
-    [3, 'SYN-H5', '60-65'],
-  ] as const) {
-    await page.getByRole('button', { name: 'Add sample', exact: true }).click();
-    await expect(field(page, i, 'name')).toBeFocused();
-    await field(page, i, 'name').fill(name);
-    await field(page, i, 'tag').fill('S');
-    await field(page, i, 'spots').fill(spots);
-    await field(page, i, 'spots').press('Enter');
+  await pasteSamples(page, 'SYN-H3, S, 1-30, 35, 40-42\nHH4 S 50-55\nHH5,S,60,65');
+  await expect(
+    page
+      .getByRole('table', { name: 'Unknowns', exact: true })
+      .getByText('↳ continued'),
+  ).toHaveCount(2);
+  await expect(page.getByTestId('unknown-total')).toHaveText(
+    '46 unknowns in this session',
+  );
+  for (const [i, begin, end] of [
+    [1, 1, 30],
+    [2, 35, 35],
+    [3, 40, 42],
+    [4, 50, 55],
+    [5, 60, 65],
+  ]) {
+    await expect(
+      page.getByRole('spinbutton', { name: `Unknown ${i} begin`, exact: true }),
+    ).toHaveValue(String(begin));
+    await expect(
+      page.getByRole('spinbutton', { name: `Unknown ${i} end`, exact: true }),
+    ).toHaveValue(String(end));
   }
-  await expect(
-    page.getByRole('cell', { name: '1–30, 35, 40–42 · 34 spots', exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByTestId('samples-panel').getByTestId('unknown-total'),
-  ).toContainText('46 unknowns');
   await expect
     .poll(() =>
       page.evaluate(
         () =>
-          (
-            JSON.parse(
-              localStorage.getItem('bracketeer.project') ?? 'null',
-            ) as {
-              sessions: { unknowns: unknown[] }[];
-            } | null
-          )?.sessions[0]?.unknowns,
+          JSON.parse(localStorage.getItem('bracketeer.project') ?? 'null')
+            ?.sessions[0]?.unknowns,
       ),
     )
     .toEqual([
@@ -65,106 +61,84 @@ test('three samples accept spot lists, persist runs immediately and keep invalid
       { name: 'SYN-H4', tag: 'S', from: 50, to: 55 },
       { name: 'SYN-H5', tag: 'S', from: 60, to: 65 },
     ]);
-  await field(page, 2, 'spots').fill('55-50');
-  await field(page, 2, 'spots').press('Tab');
-  await expect(field(page, 2, 'spots')).toHaveAttribute('aria-invalid', 'true');
-  await expect(next(page)).toBeDisabled();
-  await page.getByRole('button', { name: '+ Session', exact: true }).click();
-  await expect(
-    page.getByRole('button', { name: 'Session 1', exact: true }),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Session 1', exact: true }).click();
-  await expect(field(page, 2, 'spots')).toHaveValue('55-50');
+  await expect(next(page)).toBeEnabled();
   await page.getByRole('button', { name: 'Back', exact: true }).click();
   await page
     .getByRole('button', { name: 'Next: unknowns', exact: true })
     .click();
-  await expect(field(page, 1, 'name')).toHaveValue('SYN-H3');
-  await expect(field(page, 2, 'name')).toHaveValue('SYN-H4');
-  await expect(field(page, 3, 'name')).toHaveValue('SYN-H5');
-  await expect(field(page, 2, 'spots')).toHaveValue('55-50');
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          JSON.parse(localStorage.getItem('bracketeer.project') ?? 'null')
-            ?.sessions[0]?.unknowns[3]?.from,
-      ),
-    )
-    .toBe(50);
+  await expect(
+    page.getByRole('spinbutton', { name: 'Unknown 3 begin', exact: true }),
+  ).toHaveValue('40');
 });
 
-test('overlaps disable Next with the row message and focus its field across session tabs', async ({
+test('overlaps block and focus the numbered field across session tabs', async ({
   page,
 }) => {
   await exampleUnknowns(page);
-  await field(page, 3, 'spots').fill('31-32, 56-83');
-  await field(page, 3, 'spots').press('Enter');
+  await commitCell(page, 'Unknown 3 begin', '31');
+  await commitCell(page, 'Unknown 3 end', '32');
   const message = page.locator('.wizard-footer').getByRole('button', {
     name: 'Row 3, SYN-H5: spots 31–32 are also in row 2, SYN-H4.',
     exact: true,
   });
   await expect(next(page)).toBeDisabled();
-  await expect(message).toBeVisible();
   await page.getByRole('button', { name: 'Session 3', exact: true }).click();
   await message.click();
   await expect(
     page.getByRole('button', { name: 'Session 2', exact: true }),
   ).toHaveAttribute('aria-current', 'page');
-  await expect(field(page, 3, 'spots')).toBeFocused();
-  await field(page, 3, 'spots').fill('56-83');
-  await field(page, 3, 'spots').press('Enter');
+  await expect(
+    page.getByRole('spinbutton', { name: 'Unknown 3 begin', exact: true }),
+  ).toBeFocused();
+  await commitCell(page, 'Unknown 3 end', '83');
+  await commitCell(page, 'Unknown 3 begin', '56');
   await expect(next(page)).toBeEnabled();
 });
 
-test('unknown spots in standard pools and duplicate names block; drafts and counts are shown on cards', async ({
+test('invalid endpoints and duplicate separated names block; pool checks belong to Bracketing', async ({
   page,
 }) => {
   await exampleUnknowns(page);
-  await field(page, 3, 'spots').fill('56-83, 650');
-  await field(page, 3, 'spots').press('Enter');
+  await commitCell(page, 'Unknown 3 begin', '84');
   await expect(next(page)).toBeDisabled();
   await expect(page.locator('.wizard-footer')).toContainText(
-    'Row 3, SYN-H5: spot 650 is in the S513 pool.',
+    'Row 3, SYN-H5: end must be at least begin.',
   );
-  await field(page, 3, 'spots').fill('56-83');
-  await field(page, 3, 'spots').press('Enter');
-  await field(page, 3, 'name').fill('SYN-H3');
-  await expect(next(page)).toBeDisabled();
-  await expect(page.locator('.wizard-footer')).toContainText(
-    'Row 3, SYN-H3: this name and tag are also in row 1.',
-  );
-  await field(page, 3, 'name').fill('SYN-H5');
-  // Adjacent duplicates are also blocked while being edited, rather than silently merging.
-  await field(page, 2, 'name').fill('SYN-H3');
-  await expect(next(page)).toBeDisabled();
-  await expect(field(page, 2, 'name')).toHaveAttribute('aria-invalid', 'true');
-  await field(page, 2, 'name').fill('SYN-H4');
-  const pool = page.getByRole('textbox', {
-    name: 'NIST610 ranges',
+  await commitCell(page, 'Unknown 3 begin', '56');
+  const name = page.getByRole('textbox', {
+    name: 'Unknown 3 name',
     exact: true,
   });
-  await pool.fill('848-856, 866-874');
-  await pool.press('Enter');
-  const card = page.locator('.spot-card').filter({
-    has: page.getByRole('heading', {
-      name: 'NIST610 reference',
-      exact: true,
-    }),
-  });
-  await expect(card).toContainText('848–856, 866–874 · 18 spots');
-  await expect(card).toContainText('Session 1 used: 857–865');
-  await pool.fill('874-848');
-  await pool.press('Tab');
+  await name.fill('SYN-H3');
+  await name.press('Tab');
   await expect(next(page)).toBeDisabled();
+  await expect(page.locator('.wizard-footer')).toContainText(
+    'this name and tag are also in row 1',
+  );
+  await name.fill('SYN-H5');
+  await name.press('Tab');
+  await expect(next(page)).toBeEnabled();
+  await expect(page.getByTestId('spots-panel')).toBeHidden();
+  await next(page).click();
+  await expect(page.getByTestId('standard-NIST610')).toContainText(
+    'Session 1 used: 857–865',
+  );
+  await commitCell(page, 'NIST610 end', '847');
+  await expect(page.getByTestId('standard-NIST610')).toContainText(
+    'end must be at least begin',
+  );
+  await expect(
+    page.getByRole('button', { name: 'Generate and review', exact: true }),
+  ).toBeDisabled();
   await page.getByRole('button', { name: 'Back', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Next: unknowns', exact: true })
-    .click();
-  await expect(pool).toHaveValue('874-848');
+  await expect(next(page)).toBeEnabled();
+  await next(page).click();
+  await expect(
+    page.getByRole('spinbutton', { name: 'NIST610 end', exact: true }),
+  ).toHaveValue('847');
 });
 
-test('paste accepts old formats and spot lists, shows line errors, and shares the experiment title', async ({
+test('paste reports line errors, experiment names commit, and import remains available', async ({
   page,
 }) => {
   await startZircon(page);
@@ -178,19 +152,22 @@ test('paste accepts old formats and spot lists, shows line errors, and shares th
     page.getByRole('button', { name: 'Add pasted unknowns', exact: true }),
   ).toBeDisabled();
   await pasteSamples(page, 'SYN-H3, S, 1-30, 35, 40-42\nHH4 S 50-55\nHH5,S,60,65');
-  await expect(field(page, 3, 'name')).toHaveValue('SYN-H5');
-  await page
-    .getByRole('textbox', { name: 'Experiment name', exact: true })
-    .fill('Mount A');
+  await expect(
+    page.getByRole('textbox', { name: 'Unknown 5 name', exact: true }),
+  ).toHaveValue('SYN-H5');
+  const name = page.getByRole('textbox', {
+    name: 'Experiment name',
+    exact: true,
+  });
+  await name.fill('Mount A');
+  await name.press('Tab');
   await expect(
     page.getByRole('textbox', { name: 'Experiment title', exact: true }),
   ).toHaveValue('Mount A');
   await page
     .getByRole('textbox', { name: 'Experiment title', exact: true })
     .fill('Mount B');
-  await expect(
-    page.getByRole('textbox', { name: 'Experiment name', exact: true }),
-  ).toHaveValue('Mount B');
+  await expect(name).toHaveValue('Mount B');
   await page
     .getByRole('button', { name: 'Import sequence…', exact: true })
     .click();
@@ -199,7 +176,7 @@ test('paste accepts old formats and spot lists, shows line errors, and shares th
   ).toBeVisible();
 });
 
-test('example sessions show every fixture sample; fixed unknowns are read-only and plus leaves sessions open', async ({
+test('all fixture entries stay visible, fixed rows are read-only, and empty sessions remain open', async ({
   page,
 }) => {
   await exampleUnknowns(page);
@@ -210,43 +187,56 @@ test('example sessions show every fixture sample; fixed unknowns are read-only a
     await page
       .getByRole('button', { name: `Session ${number}`, exact: true })
       .click();
-    const expected = groupUnknowns(
-      fixture.sessions.find((s) => s.number === number)!.unknowns,
-    );
+    const expected = fixture.sessions.find(
+      (s) => s.number === number,
+    )!.unknowns;
     await expect(
       page
         .getByRole('table', { name: 'Unknowns', exact: true })
         .locator('tbody input'),
-    ).toHaveCount(expected.length * 3);
+    ).toHaveCount(expected.length * 5);
     for (const [i, sample] of expected.entries()) {
-      await expect(field(page, i + 1, 'name')).toHaveValue(sample.name);
-      await expect(field(page, i + 1, 'tag')).toHaveValue(sample.tag);
-      await expect(field(page, i + 1, 'spots')).toHaveValue(
-        formatSpots(rangeSpots(sample.ranges)),
-      );
+      await expect(
+        page.getByRole('textbox', {
+          name: `Unknown ${i + 1} name`,
+          exact: true,
+        }),
+      ).toHaveValue(sample.name);
+      await expect(
+        page.getByRole('spinbutton', {
+          name: `Unknown ${i + 1} begin`,
+          exact: true,
+        }),
+      ).toHaveValue(String(sample.from));
+      await expect(
+        page.getByRole('spinbutton', {
+          name: `Unknown ${i + 1} end`,
+          exact: true,
+        }),
+      ).toHaveValue(String(sample.to));
     }
     await expect(next(page)).toBeEnabled();
   }
   await page
     .getByRole('button', { name: 'Session 1 · imported', exact: true })
     .click();
-  await expect(field(page, 1, 'spots')).toHaveAttribute('readonly', '');
+  await expect(
+    page.getByRole('spinbutton', { name: 'Unknown 1 begin', exact: true }),
+  ).toHaveAttribute('readonly', '');
   await expect(
     page.getByRole('button', { name: 'Add sample', exact: true }),
   ).toBeDisabled();
   await page.getByRole('button', { name: 'Session 2', exact: true }).click();
   await page.getByRole('button', { name: '+ Session', exact: true }).click();
-  await expect(
-    page.getByRole('button', { name: 'Session 2', exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: 'Session 4', exact: true }),
-  ).toHaveAttribute('aria-current', 'page');
-  await expect(
-    page.getByTestId('samples-panel').getByTestId('unknown-total'),
-  ).toContainText('0 unknowns');
+  await expect(page.getByTestId('unknown-total')).toHaveText(
+    '0 unknowns in this session',
+  );
   await expect(next(page)).toBeEnabled();
   await expect(page.getByTestId('samples-panel')).toContainText(
     'Session 4 has no unknowns.',
   );
+  await addCountSample(page, 'New', 3, 1);
+  await expect(
+    page.getByRole('spinbutton', { name: 'Unknown 1 begin', exact: true }),
+  ).toHaveValue('628');
 });

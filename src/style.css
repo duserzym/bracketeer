@@ -735,12 +735,12 @@ dialog p {
   flex: 0 0 auto;
   accent-color: var(--accent);
 }
-.catalogue-name > input:last-child {
+.catalogue-name .commit-cell input {
   background: transparent;
   border-color: transparent;
   font-size: 12px;
 }
-.catalogue-name > input:last-child:focus {
+.catalogue-name .commit-cell input:focus {
   background: var(--surface);
   border-color: var(--accent);
 }
@@ -840,7 +840,7 @@ dialog p {
   gap: 6px;
   padding: 3px 0;
 }
-.catalogue-name > input:last-child {
+.catalogue-name .commit-cell input {
   flex: 1;
 }
 .catalogue-tools {
@@ -1161,4 +1161,163 @@ dialog p {
   font-weight: 400;
   color: var(--muted);
   background: var(--subtle);
+}
+
+/* Design numbering uses the same controls in both spot chains. */
+.commit-cell {
+  position: relative;
+  min-width: 0;
+}
+.commit-cell input {
+  width: 100%;
+  min-width: 0;
+}
+.commit-cell.hand input {
+  border-left: 3px solid var(--accent);
+}
+.auto-button {
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  padding: 3px 4px;
+  font-size: 10px;
+  visibility: hidden;
+}
+.commit-cell:hover .auto-button,
+.commit-cell:focus-within .auto-button {
+  visibility: visible;
+}
+.commit-cell:focus-within:has(.auto-button) input {
+  padding-right: 40px;
+}
+.hand-legend {
+  font-size: 11px;
+  margin: 8px 0;
+}
+.step-two > .samples-panel {
+  flex: 1;
+}
+.samples-table {
+  min-width: 0;
+}
+.samples-table .sample-name {
+  width: 24%;
+}
+.samples-table .sample-tag {
+  width: 12%;
+}
+.samples-table .actions {
+  width: 100px;
+}
+.samples-panel > .toolbar-line {
+  justify-content: space-between;
+  padding-right: 12px;
+}
+.session-mineral {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bracketing-panels {
+  grid-template-columns: minmax(290px, 0.7fr) minmax(0, 2fr);
+  gap: 14px;
+}
+.standard-spots {
+  margin-top: 20px;
+  min-width: 0;
+}
+.standard-spots-table {
+  width: 100%;
+  table-layout: fixed;
+  font-size: 12px;
+  margin-top: 12px;
+  border-collapse: collapse;
+}
+.standard-spots-table .standard-name {
+  width: 17%;
+}
+.standard-spots-table .endpoint {
+  width: 12%;
+}
+.standard-spots-table .placed {
+  width: 15%;
+}
+.standard-spots-table .used {
+  width: 18%;
+}
+.standard-spots-table .spare {
+  width: 10%;
+}
+.standard-spots-table .range-action {
+  width: 16%;
+}
+.standard-spots-table:has(.cadence) .standard-name {
+  width: 12%;
+}
+.standard-spots-table:has(.cadence) .endpoint {
+  width: 10%;
+}
+.standard-spots-table:has(.cadence) .placed {
+  width: 12%;
+}
+.standard-spots-table:has(.cadence) .used {
+  width: 14%;
+}
+.standard-spots-table:has(.cadence) .spare {
+  width: 8%;
+}
+.standard-spots-table:has(.cadence) .range-action {
+  width: 12%;
+}
+.standard-spots-table .cadence {
+  width: 11%;
+}
+.standard-spots-table th,
+.standard-spots-table td {
+  text-align: left;
+  padding: 4px 3px;
+  vertical-align: top;
+}
+.standard-spots-table input,
+.standard-spots-table select {
+  padding: 6px 3px;
+  font-size: 11px;
+}
+.standard-spots-table small {
+  display: block;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 10px;
+}
+.standard-detail:last-child td {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+.standard-formula {
+  font-size: 11px;
+}
+.short-count {
+  display: block;
+  font-size: 11px;
+}
+.add-range {
+  padding: 6px 3px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.another-mineral {
+  align-items: end;
+  padding: 16px 0;
+}
+.another-mineral label {
+  max-width: 280px;
+}
+.catalogue-name > .commit-cell {
+  flex: 1;
+  min-width: 0;
+}
+
+.experiment-title .commit-cell input {
+  background: transparent;
+  border-color: transparent;
 }

@@ -172,7 +172,7 @@ test('Open example derives step 3, and project menu can start blank', async ({
   ).toHaveValue('');
 });
 
-test('a stored later step with missing pools opens at the first blocking step and focuses the pool', async ({
+test('a stored later step with missing pools opens at the Bracketing step and focuses the pool', async ({
   page,
 }) => {
   await page.goto('/');
@@ -192,16 +192,16 @@ test('a stored later step with missing pools opens at the first blocking step an
     ),
   });
   await expect(
-    page.getByRole('button', { name: '2 Unknowns', exact: true }),
+    page.getByRole('button', { name: '3 Bracketing', exact: true }),
   ).toHaveAttribute('aria-current', 'step');
   await expect(
-    page.getByRole('button', { name: 'Next: bracketing', exact: true }),
+    page.getByRole('button', { name: 'Generate and review', exact: true }),
   ).toBeDisabled();
   await page
     .getByRole('button', { name: 'Add a pool for S513', exact: true })
     .click();
   await expect(
-    page.getByRole('textbox', { name: 'S513 ranges', exact: true }),
+    page.getByRole('spinbutton', { name: 'S513 begin', exact: true }),
   ).toBeFocused();
 });
 
@@ -220,6 +220,7 @@ test('checked secondary order, group changes and Restore list persist in the cat
   await page
     .getByRole('textbox', { name: 'Rename PL', exact: true })
     .fill('Lab PL');
+  await page.keyboard.press('Tab');
   await page
     .getByRole('combobox', { name: 'Lab PL group', exact: true })
     .selectOption('reference');

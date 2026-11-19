@@ -52,3 +52,20 @@ export async function commitCell(page: Page, name: string, value: string) {
   await input.fill(value);
   await input.press('Tab');
 }
+
+export async function addCountSample(
+  page: Page,
+  name: string,
+  count: number,
+  row: number,
+) {
+  await page.getByRole('button', { name: 'Add sample', exact: true }).click();
+  const input = page.getByRole('textbox', {
+    name: `Unknown ${row} name`,
+    exact: true,
+  });
+  await expect(input).toBeFocused();
+  await input.fill(name);
+  await input.press('Tab');
+  await commitCell(page, `Unknown ${row} count`, String(count));
+}

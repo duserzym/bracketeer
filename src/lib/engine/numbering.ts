@@ -1,5 +1,5 @@
 import { countStandards } from './count';
-import { projectLayouts } from './plan';
+import { deriveSession } from './derive';
 import type { Auto, PoolRange, Project, Unknown } from './types';
 
 /** Resolve the two opt-in chains without changing hand values or fixed sessions. */
@@ -34,15 +34,26 @@ export function resolveAuto(project: Project): Project {
       ranges: s.ranges.filter(valid),
     })),
   };
-  const counts = countStandards(countInput);
-  const used = projectLayouts(countInput).standards.map((s) => new Set(s.used));
+  let counts: ReturnType<typeof countStandards> | undefined;
+  try {
+    counts = countStandards(countInput);
+  } catch {
+    // Incomplete designs still participate in both numbering chains.
+  }
+  const fixedUse = next.sessions
+    .filter((s) => s.fixed)
+    .map((s) => deriveSession(s.rows, next.standards).used);
+  const used = next.standards.map(
+    (s) =>
+      new Set([...s.used, ...fixedUse.flatMap((use) => use[s.name] ?? [])]),
+  );
   previous = Math.max(
     0,
     ...next.sessions.flatMap((s) => s.unknowns.map((u) => u.to)),
   );
-  const budget = next.recipe.chunking.mode === 'budget';
+  const budget = next.recipe.chunking.mode === 'budget' || !counts;
   next.standards.forEach((standard, i) => {
-    const target = counts[i]!.needed + standard.spare;
+    const target = (counts?.[i]?.needed ?? 0) + standard.spare;
     if (!budget && !standard.ranges.length && target > 0)
       standard.ranges.push({
         from: previous + 1,
@@ -207,7 +218,8 @@ export function addStandardRange(project: Project, name: string): Project {
   const next = structuredClone(project);
   const standard = standardIn(next, name);
   const last = standard.ranges.at(-1);
-  if (last) setAuto(last, 'to', false);
+  if (last?.auto?.to && last.to === last.from - 1) standard.ranges.pop();
+  else if (last) setAuto(last, 'to', false);
   const highest = Math.max(
     0,
     ...next.sessions.flatMap((s) => s.unknowns.map((u) => u.to)),

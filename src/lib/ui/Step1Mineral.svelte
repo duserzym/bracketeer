@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { minerals, roles, type Entry } from './catalogue';
+  import CatalogueList from './CatalogueList.svelte';
+  import { minerals, type Entry } from './catalogue';
   import type { Recent } from './recent';
   let {
     mineral,
@@ -13,6 +14,10 @@
     open,
     openExample,
     resume,
+    extras,
+    changeExtra,
+    addMineral,
+    removeMineral,
   }: {
     mineral: string;
     entries: Entry[];
@@ -25,53 +30,19 @@
     open: () => void;
     openExample: () => void;
     resume: (entry: Recent) => void;
+    extras: Record<string, Entry[]>;
+    changeExtra: (id: string, entries: Entry[]) => void;
+    addMineral: (id: string) => void;
+    removeMineral: (id: string) => void;
   } = $props();
-  const groupNames = {
-    primary: 'Primary',
-    secondary: 'Secondaries',
-    reference: 'Reference glasses',
-  };
-  let additions = $state({ primary: '', secondary: '', reference: '' });
   const desktop =
     typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
-  function update(index: number, patch: Partial<Entry>) {
-    change(
-      entries.map((entry, i) => ({
-        ...entry,
-        ...(i === index ? patch : {}),
-        ...((patch.checked ||
-          (patch.role === 'primary' && entries[index]?.checked)) &&
-        (patch.role ?? entries[index]?.role) === 'primary' &&
-        entry.role === 'primary' &&
-        i !== index
-          ? { checked: false }
-          : {}),
-      })),
-    );
-  }
-  function nameProblem(index: number): string {
-    const entry = entries[index]!;
-    if (!entry.checked) return '';
-    const name = entry.name.trim();
-    if (!name) return 'Add a name';
-    if (name === '@primary') return 'Choose a name other than @primary';
-    if (
-      entries.some((e, i) => i !== index && e.checked && e.name.trim() === name)
-    )
-      return `Two standards are called ${name}`;
-    return '';
-  }
-  function move(index: number, direction: number) {
-    const group = entries
-      .map((e, i) => ({ ...e, index: i }))
-      .filter((e) => e.role === entries[index]!.role);
-    const target =
-      group[group.findIndex((e) => e.index === index) + direction]?.index;
-    if (target === undefined) return;
-    const next = entries.map((e) => ({ ...e }));
-    [next[index], next[target]] = [next[target]!, next[index]!];
-    change(next);
-  }
+  let another = $state('apatite');
+  $effect(() => {
+    if (another === mineral || extras[another])
+      another =
+        minerals.find((m) => m.id !== mineral && !extras[m.id])?.id ?? '';
+  });
   function tileKey(event: KeyboardEvent, index: number) {
     const delta = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[
       event.key
@@ -123,114 +94,42 @@
         <h3>Standards</h3>
         <button onclick={restore}>Restore list</button>
       </div>
-      <div class="catalogue-groups">
-        {#each roles as role (role)}
-          <section class="catalogue-group" aria-label={groupNames[role]}>
-            <h3>{groupNames[role]}</h3>
-            {#each entries
-              .map((entry, index) => ({ ...entry, index }))
-              .filter((e) => e.role === role) as entry, groupIndex (entry.index)}
-              <div class="catalogue-entry">
-                <div class="catalogue-name">
-                  <input
-                    type={role === 'primary' ? 'radio' : 'checkbox'}
-                    name={role === 'primary' ? 'primary-standard' : undefined}
-                    aria-label={`Use ${entry.name}`}
-                    checked={entry.checked}
-                    onchange={(e) =>
-                      update(entry.index, { checked: e.currentTarget.checked })}
-                  />
-                  {#if role === 'secondary' && entry.checked}<span
-                      class="rotation-number"
-                      aria-label="Rotation number"
-                      >{entries.filter(
-                        (e, i) =>
-                          i <= entry.index &&
-                          e.role === 'secondary' &&
-                          e.checked,
-                      ).length}</span
-                    >{/if}
-                  <input
-                    aria-label={`Rename ${entry.name}`}
-                    aria-invalid={!!nameProblem(entry.index)}
-                    class:invalid={!!nameProblem(entry.index)}
-                    value={entry.name}
-                    oninput={(e) =>
-                      update(entry.index, { name: e.currentTarget.value })}
-                  />
-                </div>
-                <div class="catalogue-tools">
-                  <select
-                    aria-label={`${entry.name} group`}
-                    value={role}
-                    onchange={(e) =>
-                      update(entry.index, {
-                        role: e.currentTarget.value as Entry['role'],
-                      })}
-                  >
-                    {#each roles as r (r)}<option value={r}
-                        >{r === 'primary'
-                          ? 'Primary'
-                          : r === 'secondary'
-                            ? 'Secondary'
-                            : 'Reference'}</option
-                      >{/each}
-                  </select>
-                  <button
-                    aria-label={`Move ${entry.name} up`}
-                    disabled={groupIndex === 0}
-                    onclick={() => move(entry.index, -1)}>↑</button
-                  >
-                  <button
-                    aria-label={`Move ${entry.name} down`}
-                    disabled={groupIndex ===
-                      entries.filter((e) => e.role === role).length - 1}
-                    onclick={() => move(entry.index, 1)}>↓</button
-                  >
-                  <button
-                    aria-label={`Remove ${entry.name}`}
-                    onclick={() =>
-                      change(entries.filter((_, i) => i !== entry.index))}
-                    >×</button
-                  >
-                </div>
-                {#if nameProblem(entry.index)}<small
-                    class="error catalogue-error"
-                    >{nameProblem(entry.index)}</small
-                  >{/if}
-              </div>
-            {/each}
-            <form
-              class="add-standard"
-              onsubmit={(e) => {
-                e.preventDefault();
-                const name = additions[role].trim();
-                if (!name) return;
-                change([
-                  ...entries,
-                  {
-                    name,
-                    role,
-                    checked:
-                      role !== 'primary' ||
-                      !entries.some((e) => e.role === 'primary' && e.checked),
-                  },
-                ]);
-                additions[role] = '';
-              }}
-            >
-              <input
-                aria-label={`Add ${groupNames[role].toLowerCase()} standard`}
-                placeholder="Add standard"
-                bind:value={additions[role]}
-              />
-              <button
-                aria-label={`Add to ${groupNames[role].toLowerCase()}`}
-                disabled={!additions[role].trim()}>Add</button
-              >
-            </form>
-          </section>
-        {/each}
+      <CatalogueList {entries} {change} id={mineral} />
+      {#each Object.entries(extras) as [id, list] (id)}
+        <div class="catalogue-heading">
+          <h3>{minerals.find((m) => m.id === id)?.name ?? id}</h3>
+          <button onclick={() => removeMineral(id)}
+            >Remove {minerals.find((m) => m.id === id)?.name ?? id}</button
+          >
+        </div>
+        <CatalogueList
+          entries={list}
+          change={(next) => changeExtra(id, next)}
+          {id}
+          extra
+        />
+      {/each}
+      <div class="another-mineral toolbar-line">
+        <label
+          >Another mineral in this run<select
+            aria-label="Another mineral in this run"
+            bind:value={another}
+          >
+            {#each minerals.filter((m) => m.id !== mineral && !extras[m.id]) as option (option.id)}<option
+                value={option.id}>{option.name}</option
+              >{/each}
+          </select></label
+        >
+        <button
+          disabled={another === mineral || !!extras[another] || !another}
+          onclick={() => {
+            addMineral(another);
+            another =
+              minerals.find(
+                (m) => m.id !== mineral && m.id !== another && !extras[m.id],
+              )?.id ?? '';
+          }}>Add</button
+        >
       </div>
     {/if}
   </div>

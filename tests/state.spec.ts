@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
+  addCountSample,
   commitCell,
   generatedExample,
   menuAction,
@@ -131,15 +132,15 @@ test('fixed sessions are locked and Start another session advances rotation and 
       }),
     )
     .toBe(1); // 13 pairs from Seiland end on Seiland; 91500 is next.
+  await page
+    .getByRole('button', { name: 'Next: bracketing', exact: true })
+    .click();
   await expect(
-    page.getByRole('textbox', { name: 'S513 ranges', exact: true }),
-  ).toHaveValue('628–727');
-  await expect(
-    page
-      .getByTestId('spots-panel')
-      .getByText('Session 2 used:', { exact: false })
-      .first(),
-  ).toBeVisible();
+    page.getByRole('spinbutton', { name: 'S513 begin', exact: true }),
+  ).toHaveValue('628');
+  await expect(page.getByTestId('standard-S513')).toContainText(
+    'Session 2 used:',
+  );
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -179,6 +180,11 @@ test('imports a workbook into a new fixed session and imports pasted standard us
     .getByRole('button', { name: 'Import pasted sequence', exact: true })
     .click();
   await page.getByRole('button', { name: '2 Unknowns', exact: true }).click();
+  await page.getByRole('button', { name: 'Session 1', exact: true }).click();
+  await addCountSample(page, 'New sample', 1, 1);
+  await page
+    .getByRole('button', { name: 'Next: bracketing', exact: true })
+    .click();
   await expect(
     page.getByRole('textbox', { name: 'S513 used', exact: true }),
   ).toHaveValue('650');

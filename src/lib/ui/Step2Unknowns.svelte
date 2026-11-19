@@ -1,396 +1,367 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import { deriveSession } from '../engine/derive';
-  import { formatSpots, parseSpotList, spotRuns } from '../engine/parse';
   import type { Project, Session } from '../engine/types';
-  import {
-    draftText,
-    parseSamplePaste,
-    rangeSpots,
-    sampleRows,
-    type InputProblem,
-    type SampleRow,
-    type UnknownsState,
-  } from './unknowns';
-
+  import { addSample, autoUnknown, editUnknown } from '../engine/numbering';
+  import { checkSpots } from '../engine/checks';
+  import { parseGrainAtlasSpots } from '../engine/grainatlas';
+  import { spotRuns } from '../engine/parse';
+  import { platform } from '../platform';
+  import { minerals } from './catalogue';
+  import { parseSamplePaste } from './unknowns';
+  import { countText } from '../text';
+  import CommitInput from './CommitInput.svelte';
   let {
     project,
     session,
-    state = $bindable(),
-    problems,
-    warnings,
     paste = $bindable(''),
     edit,
-    changeStandards,
     importSequence,
   }: {
     project: Project;
     session: Session;
-    state: UnknownsState;
-    problems: InputProblem[];
-    warnings: InputProblem[];
     paste?: string;
     edit: (change: (p: Project) => void) => void;
-    changeStandards: () => void;
     importSequence: () => void;
   } = $props();
-  const rows = $derived(sampleRows(session, state));
   const parsed = $derived(parseSamplePaste(paste));
+  const issues = $derived(checkSpots(project));
+  const groups = $derived([
+    ...new Set([
+      project.wizard?.mineral ?? '',
+      ...project.standards
+        .filter((s) => s.role !== 'reference')
+        .map((s) => s.mineral ?? project.wizard?.mineral ?? ''),
+    ]),
+  ]);
   const total = $derived(
-    rows.reduce((sum, r) => sum + rangeSpots(r.ranges).length, 0),
+    session.unknowns.reduce(
+      (n, row) => n + Math.max(0, row.to - row.from + 1),
+      0,
+    ),
   );
-  const fixedUse = $derived(
-    project.sessions
-      .filter((s) => s.fixed)
-      .map((s) => ({
-        number: s.number,
-        used: deriveSession(s.rows, project.standards).used,
-      })),
+  const placed = $derived(
+    project.grainatlas?.spots.reduce(
+      (n, range) => n + range.to - range.from + 1,
+      0,
+    ) ?? 0,
   );
-  function rowProblems(i: number) {
-    return problems.filter(
-      (p) => p.session === session.number && p.row === i + 1,
-    );
-  }
-  function store(nextRows: SampleRow[], commit: boolean) {
-    if (session.fixed) return;
-    const unknowns = nextRows.flatMap((r) =>
-      r.ranges.map((range) => ({ name: r.name, tag: r.tag, ...range })),
-    );
-    state = {
-      ...state,
-      sessions: {
-        ...state.sessions,
-        [session.number]: {
-          signature: JSON.stringify(commit ? unknowns : session.unknowns),
-          rows: nextRows,
-        },
-      },
-    };
-    if (commit && JSON.stringify(unknowns) !== JSON.stringify(session.unknowns))
-      edit((p) => {
-        p.sessions.find((s) => s.number === session.number)!.unknowns =
-          unknowns;
-      });
-  }
-  function patch(index: number, patch: Partial<SampleRow>, commit: boolean) {
-    store(
-      rows.map((r, i) => (i === index ? { ...r, ...patch } : r)),
-      commit,
-    );
-  }
-  function commitSpots(index: number) {
-    const row = rows[index]!;
-    const result = parseSpotList(row.text);
-    if (result.errors.length || !result.spots.length) return;
-    patch(index, { ranges: spotRuns(result.spots) }, true);
-  }
-  async function addSample() {
-    const spot =
-      Math.max(0, ...rows.flatMap((r) => r.ranges.map((r) => r.to))) + 1;
-    store(
-      [
-        ...rows,
-        {
-          key: crypto.randomUUID(),
-          name: '',
-          tag: '',
-          ranges: [{ from: spot, to: spot }],
-          text: String(spot),
-        },
-      ],
-      true,
-    );
+  let loadError = $state('');
+  const apply = (next: Project) => edit((p) => Object.assign(p, next));
+  async function add() {
+    const index = session.unknowns.length;
+    apply(addSample(project, session.number, { name: '', tag: '' }, 1));
     await tick();
-    document
-      .querySelector<HTMLInputElement>(
-        `.step-two [aria-label="Unknown ${rows.length} name"]`,
+    // The active session is the only visible unknown table.
+    const section = document.querySelector<HTMLElement>(
+      `[data-unknown-session="${session.number}"]`,
+    );
+    section
+      ?.querySelector<HTMLInputElement>(
+        `[aria-label="Unknown ${index + 1} name"]`,
       )
       ?.focus();
   }
-  function move(index: number, delta: number) {
-    const next = [...rows];
-    [next[index], next[index + delta]] = [next[index + delta]!, next[index]!];
-    store(next, true);
-  }
-  function standardText(name: string, field: 'pool' | 'used', saved: string) {
-    return draftText(state, `${name}:${field}`, saved);
-  }
-  function typeStandard(
-    name: string,
-    field: 'pool' | 'used',
-    saved: string,
-    text: string,
-  ) {
-    state = {
-      ...state,
-      standards: { ...state.standards, [`${name}:${field}`]: { text, saved } },
-    };
-  }
-  function commitStandard(name: string, field: 'pool' | 'used', text: string) {
-    const parsed = parseSpotList(text);
-    if (parsed.errors.length) return;
-    const saved = formatSpots(parsed.spots);
-    typeStandard(name, field, saved, text);
-    const current = project.standards.find((s) => s.name === name)!;
-    if (
-      formatSpots(
-        field === 'pool' ? rangeSpots(current.ranges) : current.used,
-      ) === saved
-    )
-      return;
+  function move(index: number, direction: number) {
     edit((p) => {
-      const standard = p.standards.find((s) => s.name === name)!;
-      if (field === 'pool') standard.ranges = spotRuns(parsed.spots);
-      else standard.used = parsed.spots;
+      const rows = p.sessions.find(
+        (s) => s.number === session.number,
+      )!.unknowns;
+      [rows[index], rows[index + direction]] = [
+        rows[index + direction]!,
+        rows[index]!,
+      ];
     });
+  }
+  function nameIssue(current: Session, index: number): string {
+    const row = current.unknowns[index]!;
+    const previous = current.unknowns[index - 1];
+    if (previous?.name === row.name && previous.tag === row.tag) return '';
+    const earlier = current.unknowns
+      .slice(0, index)
+      .findIndex(
+        (r) =>
+          r.name.trim() === row.name.trim() && r.tag.trim() === row.tag.trim(),
+      );
+    return earlier < 0
+      ? ''
+      : `Row ${index + 1}, ${row.name}: this name and tag are also in row ${earlier + 1}.`;
+  }
+  async function loadSpots() {
+    try {
+      const file = await platform.openFile('.csv,.txt');
+      if (!file) return;
+      const result = parseGrainAtlasSpots(new TextDecoder().decode(file.bytes));
+      if (result.errors.length) {
+        loadError = result.errors
+          .map((e) => `Line ${e.line}: ${e.reason}`)
+          .join(' ');
+        return;
+      }
+      edit((p) => {
+        p.grainatlas = { file: file.name, spots: spotRuns(result.spots) };
+      });
+      loadError = '';
+    } catch (error) {
+      loadError = error instanceof Error ? error.message : String(error);
+    }
   }
 </script>
 
 <div class="step-two">
   <div class="step-two-heading">
     <label
-      >Experiment name<input
-        aria-label="Experiment name"
+      >Experiment name<CommitInput
+        label="Experiment name"
         value={project.experiment.name}
-        oninput={(e) =>
+        type="text"
+        commit={(value) =>
           edit((p) => {
-            p.experiment.name = e.currentTarget.value;
+            p.experiment.name = value;
           })}
       /></label
     >
     <button onclick={importSequence}>Import sequence…</button>
+    <button onclick={loadSpots}>Load GrainAtlas spots…</button>
   </div>
-  <div class="unknown-panels">
-    <section
-      class="samples-panel"
-      aria-label="Unknown samples"
-      data-testid="samples-panel"
-    >
+  {#if project.grainatlas}
+    <div class="toolbar-line hint">
+      GrainAtlas: {countText(placed, 'spot')} from {project.grainatlas.file}
+      <button
+        onclick={() =>
+          edit((p) => {
+            delete p.grainatlas;
+          })}>Remove</button
+      >
+    </div>
+  {/if}
+  {#if loadError}<p class="error" role="alert">{loadError}</p>{/if}
+  <section
+    class="samples-panel"
+    aria-label="Unknown samples"
+    data-testid="samples-panel"
+  >
+    <div class="toolbar-line">
       <h2>
         Unknowns <small
           >Session {session.number}{session.fixed ? ' · read-only' : ''}</small
         >
       </h2>
-      <div class="samples-scroll" data-testid="samples-scroll">
-        <table class="samples-table" aria-label="Unknowns">
-          <colgroup
-            ><col class="number" /><col class="sample-name" /><col
-              class="sample-tag"
-            /><col class="sample-spots" /><col /><col
-              class="actions"
-            /></colgroup
-          >
-          <thead
-            ><tr
-              ><th scope="col">Row</th><th scope="col">Name</th><th scope="col"
-                >Tag</th
-              ><th scope="col">Spots</th><th scope="col">Normalized</th><th
-                scope="col">Order</th
-              ></tr
-            ></thead
-          >
-          <tbody>
-            {#each rows as row, i (row.key)}
-              <tr>
-                <th scope="row">{i + 1}</th>
-                <td
-                  ><input
-                    aria-label={`Unknown ${i + 1} name`}
-                    readonly={session.fixed}
-                    value={row.name}
-                    aria-invalid={rowProblems(i).some(
-                      (p) => p.field === 'name',
-                    )}
-                    oninput={(e) =>
-                      patch(i, { name: e.currentTarget.value }, true)}
-                  /></td
-                >
-                <td
-                  ><input
-                    aria-label={`Unknown ${i + 1} tag`}
-                    readonly={session.fixed}
-                    value={row.tag}
-                    oninput={(e) =>
-                      patch(i, { tag: e.currentTarget.value }, true)}
-                  /></td
-                >
-                <td
-                  ><input
-                    aria-label={`Unknown ${i + 1} spots`}
-                    readonly={session.fixed}
-                    value={row.text}
-                    aria-invalid={rowProblems(i).some(
-                      (p) => p.field === 'spots',
-                    )}
-                    oninput={(e) =>
-                      patch(i, { text: e.currentTarget.value }, false)}
-                    onchange={() => commitSpots(i)}
-                    onblur={() => commitSpots(i)}
-                    onkeydown={(e) => {
-                      if (e.key === 'Enter') {
-                        commitSpots(i);
-                        e.preventDefault();
-                      }
-                    }}
-                  /></td
-                >
-                <td class="normalized"
-                  >{formatSpots(rangeSpots(row.ranges))} · {rangeSpots(
-                    row.ranges,
-                  ).length} spots</td
-                >
-                <td class="row-actions">
-                  <button
-                    aria-label={`Move unknown ${i + 1} up`}
-                    disabled={session.fixed || i === 0}
-                    onclick={() => move(i, -1)}>↑</button
-                  >
-                  <button
-                    aria-label={`Move unknown ${i + 1} down`}
-                    disabled={session.fixed || i === rows.length - 1}
-                    onclick={() => move(i, 1)}>↓</button
-                  >
-                  <button
-                    aria-label={`Delete unknown ${i + 1}`}
-                    disabled={session.fixed}
-                    onclick={() =>
-                      store(
-                        rows.filter((_, n) => n !== i),
-                        true,
-                      )}>×</button
-                  >
-                </td>
-              </tr>
-              {#if rowProblems(i).length}<tr
-                  ><td></td><td colspan="5"
-                    >{#each rowProblems(i) as problem, n (n)}<div class="error">
-                        {problem.message}
-                      </div>{/each}</td
-                  ></tr
-                >{/if}
-            {/each}
-          </tbody>
-        </table>
-      </div>
-      <div class="sample-paste">
-        <div class="toolbar-line">
-          <button disabled={session.fixed} onclick={addSample}
-            >Add sample</button
-          ><span class="hint" data-testid="unknown-total"
-            >{total} unknowns in this session</span
-          >
-        </div>
-        {#each [...problems, ...warnings].filter((p) => p.session === session.number && !p.row) as problem, i (i)}<p
-            class:error={problems.includes(problem)}
-            class="hint"
-          >
-            {problem.message}
-          </p>{/each}
-        <label class="paste-label"
-          >Paste unknowns<textarea
-            aria-label="Paste unknowns"
-            rows="2"
-            bind:value={paste}
+      {#if groups.length > 1}
+        <label class="session-mineral"
+          >Mineral<select
+            aria-label="Session mineral"
             disabled={session.fixed}
-            placeholder="SYN-H3 S 1-30, 35, 40-42"
-          ></textarea></label
+            value={session.mineral ?? project.wizard?.mineral}
+            onchange={(e) => {
+              const value = e.currentTarget.value;
+              edit((p) => {
+                p.sessions.find((s) => s.number === session.number)!.mineral =
+                  value;
+              });
+            }}
+          >
+            {#each groups as group (group)}<option value={group}
+                >{minerals.find((m) => m.id === group)?.name ?? group}</option
+              >{/each}
+          </select></label
         >
-        {#each parsed.errors as error (error.line)}<p class="error">
-            Line {error.line}: {error.text} — {error.reason}
-          </p>{/each}
-        <button
-          disabled={session.fixed ||
-            !parsed.rows.length ||
-            !!parsed.errors.length}
-          onclick={() => {
-            store(
-              [
-                ...rows,
-                ...parsed.rows.map((r) => ({ ...r, key: crypto.randomUUID() })),
-              ],
-              true,
-            );
-            paste = '';
-          }}>Add pasted unknowns</button
+      {/if}
+    </div>
+    <div class="samples-scroll" data-testid="samples-scroll">
+      {#each project.sessions as current (current.number)}
+        <div
+          hidden={current.number !== session.number}
+          data-unknown-session={current.number}
         >
-      </div>
-    </section>
-    <section
-      class="spots-panel"
-      aria-label="Standards’ spots"
-      data-testid="spots-panel"
-    >
-      <div class="toolbar-line">
-        <h2>Standards’ spots</h2>
-        <button class="text-link" onclick={changeStandards}
-          >Change standards</button
-        >
-      </div>
-      <div class="spots-scroll" data-testid="spots-scroll">
-        {#each project.standards as standard (standard.name)}
-          <article class="spot-card">
-            <h3>{standard.name} <small>{standard.role}</small></h3>
-            {#each ['pool', 'used'] as field (field)}
-              {@const key = field as 'pool' | 'used'}
-              {@const spots =
-                key === 'pool' ? rangeSpots(standard.ranges) : standard.used}
-              {@const saved = formatSpots(spots)}
-              {@const text = standardText(standard.name, key, saved)}
-              {@const issues = problems.filter(
-                (p) => p.standard === standard.name && p.field === key,
-              )}
-              {@const syntax = parseSpotList(text).errors}
-              <label class="spot-field"
-                >{key === 'pool' ? 'Pool' : 'Used'}<input
-                  aria-label={`${standard.name} ${key === 'pool' ? 'ranges' : 'used'}`}
-                  value={text}
-                  aria-invalid={!!issues.length || !!syntax.length}
-                  oninput={(e) =>
-                    typeStandard(
-                      standard.name,
-                      key,
-                      saved,
-                      e.currentTarget.value,
-                    )}
-                  onchange={(e) =>
-                    commitStandard(standard.name, key, e.currentTarget.value)}
-                  onblur={(e) =>
-                    commitStandard(standard.name, key, e.currentTarget.value)}
-                  onkeydown={(e) => {
-                    if (e.key === 'Enter') {
-                      commitStandard(standard.name, key, e.currentTarget.value);
-                      e.preventDefault();
-                    }
-                  }}
-                /><span class="hint"
-                  >{saved || 'None'} · {spots.length} spots</span
-                ></label
-              >
-              {#each issues as issue, i (i)}<div class="error">
-                  {issue.message}
-                </div>{/each}
-              {#if key === 'used'}{#each syntax as issue, i (i)}<div
-                    class="error"
-                  >
-                    {issue.token}: {issue.reason}
-                  </div>{/each}{/if}
-            {/each}
-            {#each fixedUse.filter((s) => s.used[standard.name]?.length) as fixed (fixed.number)}<p
-                class="hint fixed-used"
-              >
-                Session {fixed.number} used: {formatSpots(
-                  fixed.used[standard.name]!,
+          <table class="samples-table" aria-label="Unknowns">
+            <colgroup
+              ><col class="number" /><col class="sample-name" /><col
+                class="sample-tag"
+              /><col /><col /><col /><col class="actions" /></colgroup
+            >
+            <thead
+              ><tr
+                ><th>Row</th><th>Name</th><th>Tag</th><th>Begin</th><th>End</th
+                ><th>Count</th><th>Order</th></tr
+              ></thead
+            >
+            <tbody>
+              {#each current.unknowns as row, i (i)}
+                {@const rowIssues = issues.filter(
+                  (p) =>
+                    p.target.kind === 'unknown' &&
+                    p.target.session === current.number &&
+                    p.target.index === i,
                 )}
-              </p>{/each}
-            {#each warnings.filter((p) => p.standard === standard.name) as warning, i (i)}<p
-                class="hint"
-              >
-                {warning.message}
-              </p>{/each}
-          </article>
-        {/each}
+                <tr>
+                  <th scope="row">{i + 1}</th>
+                  <td
+                    ><CommitInput
+                      label={`Unknown ${i + 1} name`}
+                      value={row.name}
+                      type="text"
+                      readonly={current.fixed}
+                      invalid={!row.name.trim() || !!nameIssue(current, i)}
+                      commit={(value) =>
+                        edit((p) => {
+                          p.sessions.find(
+                            (s) => s.number === current.number,
+                          )!.unknowns[i]!.name = value;
+                        })}
+                    />
+                    {#if i > 0 && row.name === current.unknowns[i - 1]!.name && row.tag === current.unknowns[i - 1]!.tag}<small
+                        class="hint">↳ continued</small
+                      >{/if}
+                  </td>
+                  <td
+                    ><CommitInput
+                      label={`Unknown ${i + 1} tag`}
+                      value={row.tag}
+                      type="text"
+                      readonly={current.fixed}
+                      commit={(value) =>
+                        edit((p) => {
+                          p.sessions.find(
+                            (s) => s.number === current.number,
+                          )!.unknowns[i]!.tag = value;
+                        })}
+                    /></td
+                  >
+                  {#each ['from', 'to', 'count'] as field (field)}
+                    {@const key = field as 'from' | 'to' | 'count'}
+                    {@const label =
+                      key === 'from' ? 'begin' : key === 'to' ? 'end' : 'count'}
+                    <td
+                      ><CommitInput
+                        label={`Unknown ${i + 1} ${label}`}
+                        value={key === 'count'
+                          ? row.to - row.from + 1
+                          : row[key]}
+                        readonly={current.fixed}
+                        min={key === 'count' ? null : 1}
+                        validate={(value) =>
+                          key === 'count' &&
+                          (!Number.isSafeInteger(Number(value)) ||
+                            Number(value) < 1)
+                            ? 'Enter a positive whole number.'
+                            : ''}
+                        hand={key !== 'count' && !row.auto?.[key]}
+                        invalid={key !== 'count' &&
+                          rowIssues.some((p) => p.severity === 'error')}
+                        commit={(value) =>
+                          apply(
+                            editUnknown(
+                              project,
+                              current.number,
+                              i,
+                              key,
+                              Number(value),
+                            ),
+                          )}
+                        automatic={key === 'count'
+                          ? undefined
+                          : () =>
+                              apply(
+                                autoUnknown(project, current.number, i, key),
+                              )}
+                      /></td
+                    >
+                  {/each}
+                  <td class="row-actions">
+                    <button
+                      aria-label={`Move unknown ${i + 1} up`}
+                      disabled={current.fixed || i === 0}
+                      onclick={() => move(i, -1)}>↑</button
+                    >
+                    <button
+                      aria-label={`Move unknown ${i + 1} down`}
+                      disabled={current.fixed ||
+                        i === current.unknowns.length - 1}
+                      onclick={() => move(i, 1)}>↓</button
+                    >
+                    <button
+                      aria-label={`Delete unknown ${i + 1}`}
+                      disabled={current.fixed}
+                      onclick={() =>
+                        edit((p) => {
+                          p.sessions
+                            .find((s) => s.number === current.number)!
+                            .unknowns.splice(i, 1);
+                        })}>×</button
+                    >
+                  </td>
+                </tr>
+                {#if !row.name.trim()}<tr
+                    ><td></td><td colspan="6" class="error"
+                      >Row {i + 1}, unnamed: add a name.</td
+                    ></tr
+                  >{/if}
+                {#if nameIssue(current, i)}<tr
+                    ><td></td><td colspan="6" class="error"
+                      >{nameIssue(current, i)}</td
+                    ></tr
+                  >{/if}
+                {#each rowIssues as issue, n (n)}<tr
+                    ><td></td><td
+                      colspan="6"
+                      class:error={issue.severity === 'error'}
+                      class:hint={issue.severity === 'warning'}
+                      >{issue.message}</td
+                    ></tr
+                  >{/each}
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      {/each}
+    </div>
+    <div class="sample-paste">
+      <p class="hint hand-legend">
+        The accent bar marks a value typed by hand. Auto lets it follow the rows
+        above.
+      </p>
+      <div class="toolbar-line">
+        <button disabled={session.fixed} onclick={add}>Add sample</button>
+        <span class="hint" data-testid="unknown-total"
+          >{countText(total, 'unknown')} in this session</span
+        >
       </div>
-    </section>
-  </div>
+      {#if !session.fixed && !session.unknowns.length}<p class="hint">
+          Session {session.number} has no unknowns.
+        </p>{/if}
+      <label class="paste-label"
+        >Paste unknowns<textarea
+          aria-label="Paste unknowns"
+          rows="2"
+          bind:value={paste}
+          disabled={session.fixed}
+          placeholder="SYN-H3 S 1-30, 35, 40-42"
+        ></textarea></label
+      >
+      {#each parsed.errors as error (error.line)}<p class="error">
+          Line {error.line}: {error.text} — {error.reason}
+        </p>{/each}
+      <button
+        disabled={session.fixed ||
+          !parsed.rows.length ||
+          !!parsed.errors.length}
+        onclick={() => {
+          edit((p) => {
+            p.sessions
+              .find((s) => s.number === session.number)!
+              .unknowns.push(
+                ...parsed.rows.flatMap((r) =>
+                  r.ranges.map((range) => ({
+                    name: r.name,
+                    tag: r.tag,
+                    ...range,
+                  })),
+                ),
+              );
+          });
+          paste = '';
+        }}>Add pasted unknowns</button
+      >
+    </div>
+  </section>
 </div>

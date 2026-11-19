@@ -47,13 +47,7 @@ test('the four-step example plans the shared budget and exports both exact BIFF8
   await expect(page.getByTestId('session-plan-3')).toContainText(
     '18 brackets · Mid block: bracket 9',
   );
-  const primaryBudget = page
-    .getByRole('table', { name: 'Standard budget' })
-    .getByRole('row')
-    .filter({
-      has: page.getByRole('rowheader', { name: 'S513', exact: true }),
-    });
-  await expect(primaryBudget.getByRole('cell')).toHaveText(['78', '78', '0']);
+  await expect(page.getByTestId('placed-S513')).toHaveText('78 / 78');
   await page
     .getByRole('button', { name: 'Generate and review', exact: true })
     .click();
@@ -225,8 +219,8 @@ test('unknown paste shows line errors and fills the editable table', async ({
     page.getByRole('textbox', { name: 'Unknown 1 name', exact: true }),
   ).toHaveValue('SYN-H3');
   await expect(
-    page.getByRole('textbox', { name: 'Unknown 2 spots', exact: true }),
-  ).toHaveValue('31–55');
+    page.getByRole('spinbutton', { name: 'Unknown 2 begin', exact: true }),
+  ).toHaveValue('31');
   await expect(
     page.getByTestId('samples-panel').getByTestId('unknown-total'),
   ).toHaveText('55 unknowns in this session');
@@ -365,6 +359,9 @@ test('live recipe changes, invalid numbers, Sheet columns and Reset recipe work 
     page.getByRole('button', { name: '4 Review', exact: true }),
   ).toBeDisabled();
   await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: '4 Review', exact: true }),
+  ).toBeDisabled();
   await page
     .getByRole('button', { name: 'Next: bracketing', exact: true })
     .click();

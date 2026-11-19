@@ -1,7 +1,10 @@
 <script lang="ts">
+  import CommitInput from './CommitInput.svelte';
+  import StandardSpots from './StandardSpots.svelte';
+  import { countText } from '../text';
   import type { ProjectPlan } from '../engine/sequence';
   import type { Project } from '../engine/types';
-  import { compactChunks, doubledBrackets } from './review';
+  import { compactChunks, bracketingSummary } from './review';
 
   let {
     project,
@@ -19,21 +22,11 @@
   const secondaries = $derived(
     project.standards.filter((s) => s.role === 'secondary'),
   );
-  const planned = $derived(
-    plan?.sessions.filter((s) => !s.fixed && s.chunks.length) ?? [],
+  const sessionCount = $derived(
+    project.sessions.filter((s) => !s.fixed && s.unknowns.length).length,
   );
   function value(event: Event) {
     return (event.currentTarget as HTMLInputElement).value;
-  }
-  function numeric(event: Event, apply: (p: Project, n: number) => void) {
-    const input = event.currentTarget as HTMLInputElement;
-    if (
-      !input.checkValidity() ||
-      !input.value.trim() ||
-      !Number.isFinite(input.valueAsNumber)
-    )
-      return;
-    edit((p) => apply(p, input.valueAsNumber));
   }
 </script>
 
@@ -51,6 +44,10 @@
           onchange={(e) =>
             edit((p) => {
               const mode = value(e);
+              if (mode === 'budget') {
+                delete p.recipe.secondaries;
+                delete p.recipe.openingBracket;
+              }
               p.recipe.chunking =
                 mode === 'size'
                   ? { mode, size: 18 }
@@ -64,32 +61,66 @@
           ><option value="count">Chunk count</option>
         </select></label
       >
+      <label class="span-2"
+        >Secondaries<select
+          aria-label="Secondaries"
+          value={project.recipe.secondaries ?? 'rotate'}
+          disabled={project.recipe.chunking.mode === 'budget'}
+          onchange={(e) => {
+            const value = e.currentTarget.value as 'rotate' | 'cadence';
+            edit((p) => {
+              p.recipe.secondaries = value;
+            });
+          }}
+        >
+          <option value="rotate">Rotate pairs</option><option value="cadence"
+            >Every, odd or even</option
+          >
+        </select></label
+      >
+      <label class="check span-2"
+        ><input
+          type="checkbox"
+          aria-label="Opening bracket"
+          checked={project.recipe.openingBracket ?? false}
+          disabled={project.recipe.chunking.mode === 'budget'}
+          onchange={(e) => {
+            const checked = e.currentTarget.checked;
+            edit((p) => {
+              p.recipe.openingBracket = checked;
+            });
+          }}
+        />
+        Opening bracket (primary and secondaries after the opening block)</label
+      >
+      {#if project.recipe.chunking.mode === 'budget'}<p class="hint span-2">
+          Every, odd or even secondaries and the opening bracket need Chunk
+          target or Chunk count.
+        </p>{/if}
       {#if project.recipe.chunking.mode === 'size'}
         <label class="span-2"
-          >Unknowns per chunk<input
-            aria-label="Unknowns per chunk"
-            type="number"
-            required
-            min="1"
+          >Unknowns per chunk<CommitInput
+            label="Unknowns per chunk"
+            min={1}
             step="1"
             value={project.recipe.chunking.size}
-            onchange={(e) =>
-              numeric(e, (p, n) => {
+            commit={(value) =>
+              edit((p) => {
+                const n = Number(value);
                 p.recipe.chunking = { mode: 'size', size: n };
               })}
           /></label
         >
       {:else if project.recipe.chunking.mode === 'count'}
         <label class="span-2"
-          >Chunks per session<input
-            aria-label="Chunks per session"
-            type="number"
-            required
-            min="1"
+          >Chunks per session<CommitInput
+            label="Chunks per session"
+            min={1}
             step="1"
             value={project.recipe.chunking.count}
-            onchange={(e) =>
-              numeric(e, (p, n) => {
+            commit={(value) =>
+              edit((p) => {
+                const n = Number(value);
                 p.recipe.chunking = { mode: 'count', count: n };
               })}
           /></label
@@ -97,59 +128,55 @@
       {/if}
       {#if project.recipe.chunking.mode === 'budget'}
         <label class="span-2"
-          >Max pairs per bracket<input
-            aria-label="Max pairs per bracket"
-            type="number"
-            required
-            min="1"
+          >Max pairs per bracket<CommitInput
+            label="Max pairs per bracket"
+            min={1}
             step="1"
             value={project.recipe.maxPairsPerBracket}
-            onchange={(e) =>
-              numeric(e, (p, n) => {
+            commit={(value) =>
+              edit((p) => {
+                const n = Number(value);
                 p.recipe.maxPairsPerBracket = n;
               })}
           /></label
         >
-      {:else}
+      {:else if project.recipe.secondaries !== 'cadence'}
         <label class="span-2"
-          >Pairs per bracket<input
-            aria-label="Pairs per bracket"
-            type="number"
-            required
-            min="0"
+          >Pairs per bracket<CommitInput
+            label="Pairs per bracket"
+            min={0}
             step="1"
             value={project.recipe.secondaryPairsPerBracket}
-            onchange={(e) =>
-              numeric(e, (p, n) => {
+            commit={(value) =>
+              edit((p) => {
+                const n = Number(value);
                 p.recipe.secondaryPairsPerBracket = n;
               })}
           /></label
         >
       {/if}
       <label
-        >Spots per secondary<input
-          aria-label="Spots per secondary"
-          type="number"
-          required
-          min="1"
+        >Spots per secondary<CommitInput
+          label="Spots per secondary"
+          min={1}
           step="1"
           value={project.recipe.spotsPerSecondary}
-          onchange={(e) =>
-            numeric(e, (p, n) => {
+          commit={(value) =>
+            edit((p) => {
+              const n = Number(value);
               p.recipe.spotsPerSecondary = n;
             })}
         /></label
       >
       <label
-        >Primary per bracket<input
-          aria-label="Primary per bracket"
-          type="number"
-          required
-          min="1"
+        >Primary per bracket<CommitInput
+          label="Primary per bracket"
+          min={1}
           step="1"
           value={project.recipe.primaryPerBracket}
-          onchange={(e) =>
-            numeric(e, (p, n) => {
+          commit={(value) =>
+            edit((p) => {
+              const n = Number(value);
               p.recipe.primaryPerBracket = n;
             })}
         /></label
@@ -164,19 +191,36 @@
             })}
         />Bracket at sample boundaries</label
       >
-      <label class="span-2"
-        >Rotation start<select
-          aria-label="Rotation start"
-          value={project.recipe.rotationStart}
-          onchange={(e) =>
-            edit((p) => {
-              p.recipe.rotationStart = Number(value(e));
-            })}
-        >
-          {#each secondaries as s, i (i)}<option value={i}>{s.name}</option
-            >{/each}
-        </select></label
-      >
+      {#if project.recipe.secondaries !== 'cadence'}
+        {#each [...new Set(project.standards
+              .filter((s) => s.role !== 'reference')
+              .map((s) => s.mineral ?? project.wizard?.mineral ?? ''))] as group (group)}
+          {@const main = group === (project.wizard?.mineral ?? '')}
+          <label class="span-2"
+            >Rotation start{main ? '' : ` (${group})`}<select
+              aria-label={main ? 'Rotation start' : `${group} rotation start`}
+              value={main
+                ? project.recipe.rotationStart
+                : (project.recipe.rotationStarts?.[group] ?? 0)}
+              onchange={(e) => {
+                const index = Number(e.currentTarget.value);
+                edit((p) => {
+                  if (main) p.recipe.rotationStart = index;
+                  else
+                    p.recipe.rotationStarts = {
+                      ...p.recipe.rotationStarts,
+                      [group]: index,
+                    };
+                });
+              }}
+            >
+              {#each secondaries.filter((s) => (s.mineral ?? project.wizard?.mineral ?? '') === group) as standard, i (i)}<option
+                  value={i}>{standard.name}</option
+                >{/each}
+            </select></label
+          >
+        {/each}
+      {/if}
       {#each ['opening', 'mid', 'closing'] as block (block)}
         {@const key = block as 'opening' | 'mid' | 'closing'}
         <fieldset class="span-2 block-list">
@@ -196,15 +240,14 @@
                     >{s.name}</option
                   >{/each}
               </select>
-              <span>×</span><input
-                aria-label={`${block} count ${i + 1}`}
-                type="number"
-                required
-                min="0"
+              <span>×</span><CommitInput
+                label={`${block} count ${i + 1}`}
+                min={0}
                 step="1"
                 value={entry.count}
-                onchange={(e) =>
-                  numeric(e, (p, n) => {
+                commit={(value) =>
+                  edit((p) => {
+                    const n = Number(value);
                     p.recipe[key][i]!.count = n;
                   })}
               />
@@ -225,95 +268,77 @@
           >
         </fieldset>
       {/each}
-      <fieldset class="span-2 block-list">
-        <legend>Keep spare</legend>
-        <div class="form-grid">
-          {#each project.standards as standard, i (i)}
-            <label
-              >{standard.name}<input
-                aria-label={`${standard.name} keep spare`}
-                type="number"
-                required
-                min="0"
-                step="1"
-                value={standard.spare}
-                onchange={(e) =>
-                  numeric(e, (p, n) => {
-                    p.standards[i]!.spare = n;
-                  })}
-              /></label
-            >
-          {/each}
-        </div>
-      </fieldset>
     </div>
     <details class="sheet-columns">
       <summary>Sheet columns</summary>
       <div class="section-body form-grid">
         <p class="hint span-2">Column defaults for generated rows</p>
         <label
-          >Duration [s]<input
-            aria-label="Duration [s]"
-            type="number"
-            required
+          >Duration [s]<CommitInput
+            label="Duration [s]"
             step="any"
             value={project.experiment.defaults['Duration [s]']}
-            onchange={(e) =>
-              numeric(e, (p, n) => {
+            commit={(value) =>
+              edit((p) => {
+                const n = Number(value);
                 p.experiment.defaults['Duration [s]'] = n;
               })}
           /></label
         >
         <label
-          >Laser output [%]<input
-            aria-label="Laser output [%]"
-            type="number"
-            required
+          >Laser output [%]<CommitInput
+            label="Laser output [%]"
             step="any"
             value={project.experiment.defaults['Laser Output Setting [%]']}
-            onchange={(e) =>
-              numeric(e, (p, n) => {
+            commit={(value) =>
+              edit((p) => {
+                const n = Number(value);
                 p.experiment.defaults['Laser Output Setting [%]'] = n;
               })}
           /></label
         >
         <label
-          >Sample type<input
+          >Sample type<CommitInput
+            label="Sample type"
+            type="text"
             value={project.experiment.defaults['Sample Type']}
-            onchange={(e) =>
+            commit={(value) =>
               edit((p) => {
-                p.experiment.defaults['Sample Type'] = value(e);
+                p.experiment.defaults['Sample Type'] = value;
               })}
           /></label
         >
         <label
-          >Dilution<input
-            aria-label="Dilution"
-            type="number"
-            required
+          >Dilution<CommitInput
+            label="Dilution"
             step="any"
             value={project.experiment.defaults['Dilution Factor']}
-            onchange={(e) =>
-              numeric(e, (p, n) => {
+            commit={(value) =>
+              edit((p) => {
+                const n = Number(value);
                 p.experiment.defaults['Dilution Factor'] = n;
               })}
           /></label
         >
         <label class="span-2"
-          >Comment<input
+          >Comment<CommitInput
+            label="Comment"
+            type="text"
             value={project.experiment.defaults.Comment}
-            onchange={(e) =>
+            commit={(value) =>
               edit((p) => {
-                p.experiment.defaults.Comment = value(e);
+                p.experiment.defaults.Comment = value;
               })}
           /></label
         >
         <label class="span-2"
-          >Identifier<input
+          >Identifier<CommitInput
+            label="Identifier"
+            type="text"
             value={project.experiment.defaults.Identifier}
-            onchange={(e) =>
+            commit={(value) =>
               edit((p) => {
-                p.experiment.defaults.Identifier = value(e);
+                p.experiment.defaults.Identifier = value;
               })}
           /></label
         >
@@ -336,24 +361,20 @@
     data-testid="plan-summary"
   >
     <h2>Live summary</h2>
-    <p>
-      {project.sessions.filter((s) => !s.fixed && s.unknowns.length).length} sessions
-      planned
-    </p>
+    <p>{countText(sessionCount, 'session')} planned</p>
     {#if planError}<p class="error" role="alert">{planError}</p>{/if}
     {#if plan}
       <p class="budget" data-testid="budget">
-        {plan.budget.K} brackets for {planned.length} sessions ({planned
-          .map((s) => s.chunks.length)
-          .join(' + ') || '0'}), {plan.budget.P} secondary pairs. Doubled brackets:
-        {doubledBrackets(plan).join(', ') || 'none'}.
+        {bracketingSummary(project, plan)}
       </p>
     {/if}
     {#each project.sessions as session (session.number)}
       {#if session.fixed}
         <p>
-          Session {session.number}, {session.source ? 'imported' : 'run'}, {session
-            .rows.length} rows, read-only
+          Session {session.number}, {session.source ? 'imported' : 'run'}, {countText(
+            session.rows.length,
+            'row',
+          )}, read-only
         </p>
       {:else}
         {@const generated = plan?.sessions.find(
@@ -367,8 +388,11 @@
           {#if generated?.chunks.length}
             <p>Chunks: {compactChunks(generated.chunks)}</p>
             <p>
-              {generated.chunks.length} brackets · Mid block: {generated.chunks
-                .length < 2 ||
+              {countText(
+                generated.chunks.length +
+                  (project.recipe.openingBracket ? 1 : 0),
+                'bracket',
+              )} · Mid block: {generated.chunks.length < 2 ||
               !project.recipe.mid.some((entry) => entry.count > 0)
                 ? 'none'
                 : `bracket ${Math.floor((generated.chunks.length + 1) / 2)}`}
@@ -377,27 +401,7 @@
         </div>
       {/if}
     {/each}
-    <table class="budget-table" aria-label="Standard budget">
-      <thead
-        ><tr
-          ><th>Standard</th><th>Available</th><th>Needed</th><th>Left after</th
-          ></tr
-        ></thead
-      >
-      <tbody
-        >{#each project.standards as standard (standard.name)}
-          {@const budget = plan?.budget.perStandard[standard.name]}
-          <tr
-            ><th scope="row">{standard.name}</th><td
-              >{budget?.available ?? '—'}</td
-            ><td>{budget?.needed ?? '—'}</td><td
-              class:error={budget && budget.leftAfter < 0}
-              >{budget?.leftAfter ?? '—'}</td
-            ></tr
-          >
-        {/each}</tbody
-      >
-    </table>
+    <StandardSpots {project} {edit} />
     {#if plan}
       {#each plan.advisories as advisory (advisory)}<p class="error">
           {advisory}

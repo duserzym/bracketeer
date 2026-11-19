@@ -1,3 +1,4 @@
+import { countText } from '../text';
 import { countStandards } from './count';
 import { parseLabel } from './labels';
 import { formatSpots } from './parse';
@@ -108,7 +109,7 @@ export function checkSpots(project: Project): SpotIssue[] {
         )
           add(
             'error',
-            `Rows ${earlier.index + 1} and ${index + 1}, ${entry.name}: the same spots ${display([shared])}.`,
+            `Rows ${earlier.index + 1} and ${index + 1}, ${entry.name}: the same ${shared.from === shared.to ? 'spot' : 'spots'} ${display([shared])}.`,
             target,
           );
         else {
@@ -201,14 +202,21 @@ export function checkSpots(project: Project): SpotIssue[] {
   if (
     project.sessions.every((s) => s.unknowns.every(valid)) &&
     project.standards.every((s) => s.ranges.every(valid))
-  )
-    for (const count of countStandards(project))
+  ) {
+    let counts: ReturnType<typeof countStandards> = [];
+    try {
+      counts = countStandards(project);
+    } catch {
+      // Pool and numbering checks remain useful before the design can be planned.
+    }
+    for (const count of counts)
       if (count.short)
         add(
           'warning',
           `${count.name}: needs ${count.needed}, ${count.available} available (${count.short} short).`,
           { kind: 'standard', name: count.name, index: 0 },
         );
+  }
 
   if (project.grainatlas && entries.length) {
     const placed = union(project.grainatlas.spots);
@@ -220,7 +228,7 @@ export function checkSpots(project: Project): SpotIssue[] {
     if (used > total)
       add(
         'warning',
-        `This run uses ${used} spots; GrainAtlas placed ${total} (${project.grainatlas.file}).`,
+        `This run uses ${countText(used, 'spot')}; GrainAtlas placed ${total} (${project.grainatlas.file}).`,
         target,
       );
     const absent = entries.flatMap((entry) => {
