@@ -51,7 +51,10 @@ describe('project persistence', () => {
       ({ name, role, ranges, used }) => ({ name, role, ranges, used }),
     );
     const result = parseProject(JSON.stringify(p));
-    expect(result.recipe).toEqual(DEFAULT_RECIPE);
+    expect(result.recipe).toEqual({
+      ...DEFAULT_RECIPE,
+      chunking: { mode: 'budget' },
+    });
     expect(result.standards.every((s) => s.spare === 0)).toBe(true);
     expect(() => parseProject(text().replace('"budget"', '"auto"'))).toThrow(
       'budget, size, or count',

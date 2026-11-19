@@ -339,7 +339,7 @@ describe('generation options', () => {
       DEFAULT_EXPERIMENT,
       [{ name: 'X', tag: '', from: 1, to: 1 }],
       standards,
-      DEFAULT_RECIPE,
+      { ...DEFAULT_RECIPE, chunking: { mode: 'budget' } },
     );
     const exhausted = result.rows
       .map((row, i) => ({ row, i }))

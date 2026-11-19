@@ -13,6 +13,7 @@ import {
 describe('UI project operations', () => {
   it('starts with one empty planned session, lab pools and nothing used', () => {
     const project = emptyProject();
+    expect(project.recipe.chunking).toEqual({ mode: 'size', size: 18 });
     expect(project.sessions).toEqual([
       { number: 1, fixed: false, unknowns: [], rows: [] },
     ]);

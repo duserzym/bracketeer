@@ -112,7 +112,11 @@ describe('chunk planning', () => {
       );
     }
     const short = SESSION_2_STANDARDS.map((s) => ({ ...s, ranges: [] }));
-    const recipe = { ...DEFAULT_RECIPE, bracketAtSampleBoundaries: true };
+    const recipe = {
+      ...DEFAULT_RECIPE,
+      chunking: { mode: 'budget' as const },
+      bracketAtSampleBoundaries: true,
+    };
     expect(calculateBudget([split], short, recipe).chunks).toEqual([[10, 5]]);
     expect(calculateBudget([split], short, recipe).advisories[0]).toContain(
       '2 samples',
@@ -288,7 +292,7 @@ describe('project budget', () => {
     const result = calculateBudget(
       [SESSION_2_UNKNOWNS, SESSION_3_UNKNOWNS],
       SESSION_2_STANDARDS,
-      DEFAULT_RECIPE,
+      { ...DEFAULT_RECIPE, chunking: { mode: 'budget' } },
     );
     expect(result.budget).toMatchObject({ K: 37, P: 40 });
     expect(result.chunks.map((c) => c.length)).toEqual([19, 18]);
@@ -325,7 +329,13 @@ describe('project budget', () => {
         spare: 0,
       },
     ];
-    const recipe = { ...DEFAULT_RECIPE, opening: [], closing: [], mid: [] };
+    const recipe = {
+      ...DEFAULT_RECIPE,
+      chunking: { mode: 'budget' as const },
+      opening: [],
+      closing: [],
+      mid: [],
+    };
     expect(calculateBudget([samples], standards, recipe).budget).toMatchObject({
       K: 1,
       P: 1,
@@ -344,23 +354,26 @@ describe('project budget', () => {
     );
   });
   it('caps by maxPairsPerBracket, by total unknowns, and includes no mid for one chunk', () => {
-    const r = calculateBudget(
-      [[samples[0]!]],
-      SESSION_2_STANDARDS,
-      DEFAULT_RECIPE,
-    );
+    const r = calculateBudget([[samples[0]!]], SESSION_2_STANDARDS, {
+      ...DEFAULT_RECIPE,
+      chunking: { mode: 'budget' },
+    });
     expect(r.budget).toMatchObject({ K: 5, P: 10 });
     const r2 = calculateBudget(
       [[{ ...samples[0]!, to: 1 }]],
       SESSION_2_STANDARDS,
-      DEFAULT_RECIPE,
+      { ...DEFAULT_RECIPE, chunking: { mode: 'budget' } },
     );
     expect(r2.budget).toMatchObject({ K: 1, P: 2 });
     expect(r2.layouts[0]!.brackets[0]!.mid).toEqual([]);
     const capped = calculateBudget(
       [SESSION_2_UNKNOWNS, SESSION_3_UNKNOWNS],
       SESSION_2_STANDARDS,
-      { ...DEFAULT_RECIPE, maxPairsPerBracket: 1 },
+      {
+        ...DEFAULT_RECIPE,
+        chunking: { mode: 'budget' as const },
+        maxPairsPerBracket: 1,
+      },
     );
     expect(capped.budget).toMatchObject({ K: 37, P: 37 });
   });

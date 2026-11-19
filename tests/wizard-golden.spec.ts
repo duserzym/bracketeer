@@ -77,6 +77,9 @@ test('sessions typed through all four steps export the exact fixtures', async ({
   await page
     .getByRole('button', { name: 'Next: bracketing', exact: true })
     .click();
+  await page
+    .getByRole('combobox', { name: 'Chunking', exact: true })
+    .selectOption('budget');
   await expect(page.getByTestId('budget')).toHaveText(
     '37 brackets for 2 sessions (19 + 18), 40 secondary pairs. Doubled brackets: 13, 25, 37.',
   );

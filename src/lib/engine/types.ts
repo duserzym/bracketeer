@@ -195,7 +195,7 @@ export const DEFAULT_RECIPE: Recipe = {
   secondaryPairsPerBracket: 1,
   spotsPerSecondary: 2,
   primaryPerBracket: 2,
-  chunking: { mode: 'budget' },
+  chunking: { mode: 'size', size: 18 },
   maxPairsPerBracket: 2,
   bracketAtSampleBoundaries: false,
   rotationStart: 0,

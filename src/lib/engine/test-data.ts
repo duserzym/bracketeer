@@ -90,7 +90,7 @@ export const TEST_PROJECT: import('./types').Project = {
   version: 1,
   experiment: { ...DEFAULT_EXPERIMENT, name: 'Zircon_04Nov26_Synthetic' },
   standards: SESSION_2_STANDARDS,
-  recipe: DEFAULT_RECIPE,
+  recipe: { ...DEFAULT_RECIPE, chunking: { mode: 'budget' } },
   sessions: [
     { number: 2, unknowns: SESSION_2_UNKNOWNS, rows: [], fixed: false },
     { number: 3, unknowns: SESSION_3_UNKNOWNS, rows: [], fixed: false },

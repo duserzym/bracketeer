@@ -46,6 +46,7 @@ function mixed(): Project {
     ],
     recipe: {
       ...DEFAULT_RECIPE,
+      chunking: { mode: 'budget' },
       rotationStart: 1,
       rotationStarts: { apatite: 1 },
     },
