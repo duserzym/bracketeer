@@ -4,12 +4,12 @@ import type { Standard } from './types';
 export function availableSpots(standard: Standard): number[] {
   const spots = new Set<number>();
   const used = new Set(standard.used);
-  for (const { from, to } of standard.ranges) {
+  for (const { from, to, auto } of standard.ranges) {
     if (
       !Number.isSafeInteger(from) ||
       !Number.isSafeInteger(to) ||
       from < 1 ||
-      to < from
+      (to < from && !(auto?.to && to === from - 1))
     )
       throw new RangeError(`Invalid range for ${standard.name}.`);
     for (let spot = from; spot <= to; spot++) {

@@ -1,8 +1,11 @@
 import { remainingCounts } from './pools';
+import { parseLabel } from './labels';
+import { groupRecipe, groupStandards, mineralGroup } from './groups';
 import type {
   BlockEntry,
   Budget,
   Chunking,
+  Project,
   Recipe,
   Standard,
   Unknown,
@@ -95,17 +98,18 @@ export function planChunks(
   recipe: Recipe,
   budget: number,
 ): number[] {
-  const sizes = unknowns.map(({ from, to }) => {
+  const sizes = unknowns.map(({ from, to, auto }) => {
     integer(from, 'Sample start');
-    integer(to, 'Sample end');
-    if (to < from) throw new RangeError('Sample ranges must be ascending.');
+    integer(to, 'Sample end', auto?.to ? 0 : 1);
+    if (to < from && !(auto?.to && to === from - 1))
+      throw new RangeError('Sample ranges must be ascending.');
     return to - from + 1;
   });
   const total = sizes.reduce((a, b) => a + b, 0);
   const count = chunkCount(total, recipe.chunking, budget);
   if (!total) return [];
   if (!recipe.bracketAtSampleBoundaries) return chunkSizes(total, count);
-  const grouped = sampleSizes(unknowns, sizes);
+  const grouped = sampleSizes(unknowns, sizes).filter((size) => size > 0);
   return largestRemainder(Math.max(count, grouped.length), grouped).flatMap(
     (k, i) => chunkSizes(grouped[i]!, k),
   );
@@ -148,11 +152,23 @@ function context(standards: readonly Standard[], recipe: Recipe) {
   integer(recipe.primaryPerBracket, 'Primary per bracket');
   integer(recipe.rotationStart, 'Rotation start', 0);
   if (
+    recipe.secondaries !== 'cadence' &&
     (recipe.chunking.mode === 'budget' ||
       recipe.secondaryPairsPerBracket > 0) &&
     !secondaries.length
   )
     throw new Error('A secondary standard is required for secondary pairs.');
+  for (const secondary of secondaries) {
+    integer(
+      secondary.perBracket ?? recipe.spotsPerSecondary,
+      'Secondary per bracket',
+    );
+    if (
+      secondary.cadence !== undefined &&
+      !['every', 'odd', 'even'].includes(secondary.cadence)
+    )
+      throw new Error('Secondary cadence must be every, odd, or even.');
+  }
   const resolve = (entries: readonly BlockEntry[]) =>
     entries.map((entry) => {
       integer(entry.count, 'Block draw count', 0);
@@ -181,6 +197,7 @@ export interface Bracket {
 export interface BracketLayout {
   opening: BlockEntry[];
   brackets: Bracket[];
+  openingBracket?: Bracket;
   closing: BlockEntry[];
   nextRotation: number;
 }
@@ -197,20 +214,39 @@ export function bracketLayout(
   if (pairsPerBracket.length !== chunks.length)
     throw new RangeError('Pair counts must match brackets.');
   let rotation = ctx.start;
-  const brackets = chunks.map((chunkSize, i): Bracket => {
-    integer(pairsPerBracket[i]!, 'Secondary pairs', 0);
+  const makeBracket = (
+    chunkSize: number,
+    i: number,
+    pairs: number,
+    b: number,
+  ): Bracket => {
+    integer(pairs, 'Secondary pairs', 0);
     const secondaries: BlockEntry[] = [];
-    for (let pair = 0; pair < pairsPerBracket[i]!; pair++) {
-      const secondary = ctx.secondaries[rotation];
-      if (!secondary)
-        throw new Error(
-          'A secondary standard is required for secondary pairs.',
-        );
-      secondaries.push({
-        standard: secondary.name,
-        count: recipe.spotsPerSecondary,
-      });
-      rotation = (rotation + 1) % ctx.secondaries.length;
+    if (recipe.secondaries === 'cadence') {
+      for (const secondary of ctx.secondaries) {
+        const cadence = secondary.cadence ?? 'every';
+        if (
+          cadence === 'every' ||
+          (cadence === 'odd' ? b % 2 === 1 : b % 2 === 0)
+        )
+          secondaries.push({
+            standard: secondary.name,
+            count: secondary.perBracket ?? recipe.spotsPerSecondary,
+          });
+      }
+    } else {
+      for (let pair = 0; pair < pairs; pair++) {
+        const secondary = ctx.secondaries[rotation];
+        if (!secondary)
+          throw new Error(
+            'A secondary standard is required for secondary pairs.',
+          );
+        secondaries.push({
+          standard: secondary.name,
+          count: recipe.spotsPerSecondary,
+        });
+        rotation = (rotation + 1) % ctx.secondaries.length;
+      }
     }
     return {
       chunkSize,
@@ -218,10 +254,23 @@ export function bracketLayout(
       secondaries,
       primary: { standard: ctx.primary.name, count: recipe.primaryPerBracket },
     };
-  });
+  };
+  const openingBracket =
+    recipe.openingBracket && chunks.length
+      ? makeBracket(0, -1, recipe.secondaryPairsPerBracket, 1)
+      : undefined;
+  const brackets = chunks.map((chunkSize, i) =>
+    makeBracket(
+      chunkSize,
+      i,
+      pairsPerBracket[i]!,
+      i + (openingBracket ? 2 : 1),
+    ),
+  );
   return {
     opening: chunks.length ? ctx.opening : [],
     brackets,
+    ...(openingBracket ? { openingBracket } : {}),
     closing: chunks.length ? ctx.closing : [],
     nextRotation: rotation,
   };
@@ -235,12 +284,23 @@ export interface ProjectLayout {
   advisories: string[];
 }
 
+function validateChunkingOptions(recipe: Recipe): void {
+  if (
+    recipe.chunking.mode === 'budget' &&
+    (recipe.secondaries === 'cadence' || recipe.openingBracket)
+  )
+    throw new Error(
+      'Every, odd or even secondaries and the opening bracket need Chunk target or Chunk count',
+    );
+}
+
 /** Plan all nonempty planned sessions; standards already include fixed-session use. */
 export function calculateBudget(
   unknowns: readonly (readonly Unknown[])[],
   standards: readonly Standard[],
   recipe: Recipe,
 ): ProjectLayout {
+  validateChunkingOptions(recipe);
   const ctx = context(standards, recipe);
   const available = remainingCounts(standards);
   const advisories: string[] = [];
@@ -290,12 +350,12 @@ export function calculateBudget(
   let chunks: number[][];
   if (recipe.chunking.mode === 'budget') {
     const minima = unknowns.map((samples) =>
-      samples.length
+      samples.some((s) => s.to >= s.from)
         ? recipe.bracketAtSampleBoundaries
           ? sampleSizes(
               samples,
               samples.map((s) => s.to - s.from + 1),
-            ).length
+            ).filter((size) => size > 0).length
           : 1
         : 0,
     );
@@ -336,15 +396,26 @@ export function calculateBudget(
     rotation = layout.nextRotation;
     return layout;
   });
+  if (recipe.chunking.mode !== 'budget') {
+    K += layouts.filter((layout) => layout.openingBracket).length;
+    P =
+      recipe.secondaries === 'cadence'
+        ? 0
+        : K * recipe.secondaryPairsPerBracket;
+    pairsPerBracket.forEach((pairs, i) => {
+      if (layouts[i]!.openingBracket)
+        pairs.unshift(recipe.secondaryPairsPerBracket);
+      if (recipe.secondaries === 'cadence') pairs.fill(0);
+    });
+  }
   const needed = Object.fromEntries(standards.map((s) => [s.name, 0]));
   for (const layout of layouts)
     for (const e of [
       ...layout.opening,
-      ...layout.brackets.flatMap((b) => [
-        ...b.mid,
-        ...b.secondaries,
-        b.primary,
-      ]),
+      ...[
+        ...(layout.openingBracket ? [layout.openingBracket] : []),
+        ...layout.brackets,
+      ].flatMap((b) => [...b.mid, ...b.secondaries, b.primary]),
       ...layout.closing,
     ])
       needed[e.standard]! += e.count;
@@ -371,5 +442,114 @@ export function calculateBudget(
     pairsPerBracket,
     budget: { K, P, perStandard },
     advisories,
+  };
+}
+
+/** The same layouts drive both row generation and design counts. Fixed use is reserved once. */
+export function projectLayouts(
+  project: Project,
+): ProjectLayout & { standards: Standard[] } {
+  validateChunkingOptions(project.recipe);
+  const names = new Set(project.standards.map((s) => s.name));
+  if (
+    names.size !== project.standards.length ||
+    project.standards.some((s) => !s.name || s.name === '@primary')
+  )
+    throw new Error(
+      'Standard names must be nonempty, unique, and not @primary.',
+    );
+  const fixed = project.sessions.filter((s) => s.fixed);
+  const standards = project.standards.map((s) => ({
+    ...s,
+    used: [
+      ...s.used,
+      ...fixed.flatMap((session) =>
+        session.rows.flatMap((row) => {
+          const label = parseLabel(row.Label, project.standards);
+          const spot = row['Laser Scan Position Number'];
+          return label.kind === s.role && label.name === s.name && spot !== null
+            ? [spot]
+            : [];
+        }),
+      ),
+    ],
+  }));
+  const planned = project.sessions.filter((s) => !s.fixed);
+  // Preserve the original algorithm and advisory ordering for a single main mineral.
+  if (
+    standards.every(
+      (s) => s.role === 'reference' || mineralGroup(project, s.mineral) === '',
+    ) &&
+    planned.every((s) => mineralGroup(project, s.mineral) === '')
+  )
+    return {
+      ...calculateBudget(
+        planned.map((s) => s.unknowns),
+        standards,
+        project.recipe,
+      ),
+      standards,
+    };
+  const layouts: BracketLayout[] = [];
+  const chunks: number[][] = [];
+  const pairsPerBracket: number[][] = [];
+  const needed = Object.fromEntries(standards.map((s) => [s.name, 0]));
+  const advisories: string[] = [];
+  let K = 0,
+    P = 0;
+  for (const group of new Set(
+    planned.map((s) => mineralGroup(project, s.mineral)),
+  )) {
+    const indices = planned.flatMap((s, i) =>
+      mineralGroup(project, s.mineral) === group ? [i] : [],
+    );
+    const plan = calculateBudget(
+      indices.map((i) => planned[i]!.unknowns),
+      groupStandards(project, group, standards),
+      groupRecipe(project, group),
+    );
+    indices.forEach((index, i) => {
+      layouts[index] = plan.layouts[i]!;
+      chunks[index] = plan.chunks[i]!;
+      pairsPerBracket[index] = plan.pairsPerBracket[i]!;
+    });
+    K += plan.budget.K;
+    P += plan.budget.P;
+    for (const [name, use] of Object.entries(plan.budget.perStandard))
+      needed[name]! += use.needed;
+    advisories.push(
+      ...plan.advisories.filter((a) => a.startsWith('Budget has ')),
+    );
+  }
+  const available = remainingCounts(standards);
+  const perStandard = Object.fromEntries(
+    standards.map((s) => {
+      const fresh = remainingCounts([{ ...s, spare: 0 }])[s.name]!;
+      if (s.spare > fresh)
+        advisories.push(
+          `${s.name}: keep ${s.spare} spare exceeds ${fresh} unused spots.`,
+        );
+      const need = needed[s.name]!;
+      if (need > available[s.name]!)
+        advisories.push(
+          `${s.name} needs ${need} spots; ${available[s.name]} available after used spots and spare.`,
+        );
+      return [
+        s.name,
+        {
+          available: available[s.name]!,
+          needed: need,
+          leftAfter: available[s.name]! - need,
+        },
+      ];
+    }),
+  );
+  return {
+    layouts,
+    chunks,
+    pairsPerBracket,
+    budget: { K, P, perStandard },
+    advisories,
+    standards,
   };
 }

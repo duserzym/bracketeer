@@ -1,4 +1,5 @@
-import { calculateBudget, type BracketLayout } from './plan';
+import { projectLayouts, type BracketLayout } from './plan';
+import { groupRecipe, mineralGroup } from './groups';
 import { parseLabel } from './labels';
 import { deriveSession } from './derive';
 import { createDrawer } from './pools';
@@ -69,6 +70,10 @@ function emitSession(
   );
   let cursor = 0;
   emit(layout.opening, 'opening');
+  if (layout.openingBracket) {
+    emit(layout.openingBracket.secondaries, 'bracket');
+    emit([layout.openingBracket.primary], 'bracket');
+  }
   for (const bracket of layout.brackets) {
     for (let i = 0; i < bracket.chunkSize; i++) {
       const { sample, spot } = pending[cursor++]!;
@@ -88,31 +93,8 @@ function emitSession(
 
 /** Pure project-wide planning: fixed rows survive, draws and rotation span planned sessions. */
 export function planProject(project: Project): ProjectPlan {
-  const fixed = project.sessions.filter((s) => s.fixed);
-  const standards = project.standards.map((s) => ({
-    ...s,
-    used: [
-      ...s.used,
-      ...fixed.flatMap((session) =>
-        session.rows
-          .filter((row) => {
-            const label = parseLabel(row.Label, project.standards);
-            return label.kind === s.role && label.name === s.name;
-          })
-          .flatMap((row) =>
-            row['Laser Scan Position Number'] === null
-              ? []
-              : [row['Laser Scan Position Number']],
-          ),
-      ),
-    ],
-  }));
-  const planned = project.sessions.filter((s) => !s.fixed);
-  const plan = calculateBudget(
-    planned.map((s) => s.unknowns),
-    standards,
-    project.recipe,
-  );
+  const plan = projectLayouts(project);
+  const standards = plan.standards;
   const drawer = createDrawer(standards);
   let index = 0;
   const sessions: Generation[] = project.sessions.map((session) => {
@@ -151,7 +133,10 @@ export function planProject(project: Project): ProjectPlan {
             ),
         ),
         rotation,
-        nextRotation: project.recipe.rotationStart,
+        nextRotation: groupRecipe(
+          project,
+          mineralGroup(project, session.mineral),
+        ).rotationStart,
         warnings: [],
       };
     }
@@ -169,9 +154,13 @@ export function planProject(project: Project): ProjectPlan {
       ),
       chunks: plan.chunks[i]!,
       pairsPerBracket: plan.pairsPerBracket[i]!,
-      rotation: layout.brackets.flatMap((b) =>
-        b.secondaries.map((e) => e.standard),
-      ),
+      rotation:
+        project.recipe.secondaries === 'cadence'
+          ? []
+          : [
+              ...(layout.openingBracket ? [layout.openingBracket] : []),
+              ...layout.brackets,
+            ].flatMap((b) => b.secondaries.map((e) => e.standard)),
       nextRotation: layout.nextRotation,
       warnings: [],
     };

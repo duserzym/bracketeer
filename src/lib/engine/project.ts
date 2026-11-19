@@ -1,9 +1,12 @@
 import { parseLabel } from './labels';
+import { groupRecipe, groupStandards, mineralGroup } from './groups';
 import { bracketLayout } from './plan';
 import { planProject } from './sequence';
 import {
   DEFAULT_RECIPE,
   QTEGRA_COLUMNS,
+  type Auto,
+  type PoolRange,
   type Block,
   type BlockEntry,
   type Chunking,
@@ -47,19 +50,39 @@ function boolean(value: unknown, path: string): boolean {
     throw new Error(`${path} must be true or false.`);
   return value;
 }
-function range(value: unknown, path: string) {
+function auto(value: unknown, path: string): Auto {
+  const flags = object(value, path);
+  for (const key of ['from', 'to'])
+    if (flags[key] !== undefined && flags[key] !== true)
+      throw new Error(`${path}.${key} must be true when present.`);
+  return {
+    ...(flags.from === true ? { from: true as const } : {}),
+    ...(flags.to === true ? { to: true as const } : {}),
+  };
+}
+function range(value: unknown, path: string, allowAuto = false): PoolRange {
   const r = object(value, path);
+  const flags =
+    allowAuto && r.auto !== undefined
+      ? auto(r.auto, `${path}.auto`)
+      : undefined;
   const from = integer(r.from, `${path}.from`),
-    to = integer(r.to, `${path}.to`);
-  if (to < from) throw new Error(`${path} must be an ascending range.`);
-  return { from, to };
+    to = integer(r.to, `${path}.to`, flags?.to ? 0 : 1);
+  if (to < from && !(flags?.to && to === from - 1))
+    throw new Error(`${path} must be an ascending range.`);
+  return { from, to, ...(flags === undefined ? {} : { auto: flags }) };
+}
+function optionalMineral(value: Record<string, unknown>, path: string) {
+  return value.mineral === undefined
+    ? {}
+    : { mineral: string(value.mineral, `${path}.mineral`, true) };
 }
 function unknown(value: unknown, path: string): Unknown {
   const s = object(value, path);
   return {
     name: string(s.name, `${path}.name`, true),
     tag: string(s.tag, `${path}.tag`),
-    ...range(s, path),
+    ...range(s, path, true),
   };
 }
 const numericColumns = new Set([
@@ -91,6 +114,25 @@ function block(value: unknown, path: string): BlockEntry[] {
       count: integer(b.count, `${path}[${i}].count`, 0),
     };
   });
+}
+
+function enumValue<T extends string>(
+  value: unknown,
+  values: readonly T[],
+  path: string,
+): T {
+  if (!values.includes(value as T))
+    throw new Error(`${path} must be ${values.join(', ')}.`);
+  return value as T;
+}
+function grainatlas(value: unknown): NonNullable<Project['grainatlas']> {
+  const g = object(value, 'grainatlas');
+  return {
+    file: string(g.file, 'grainatlas.file'),
+    spots: array(g.spots, 'grainatlas.spots').map((r, i) =>
+      range(r, `grainatlas.spots[${i}]`),
+    ),
+  };
 }
 
 /** Validate and normalize a versioned project, with paths in all format errors. */
@@ -134,12 +176,25 @@ export function parseProject(text: string): Project {
         name: string(s.name, `${path}.name`, true),
         role: s.role,
         ranges: array(s.ranges, `${path}.ranges`).map((r, j) =>
-          range(r, `${path}.ranges[${j}]`),
+          range(r, `${path}.ranges[${j}]`, true),
         ),
         used: array(s.used, `${path}.used`).map((u, j) =>
           integer(u, `${path}.used[${j}]`),
         ),
         spare: integer(s.spare ?? 0, `${path}.spare`, 0),
+        ...optionalMineral(s, path),
+        ...(s.perBracket === undefined
+          ? {}
+          : { perBracket: integer(s.perBracket, `${path}.perBracket`) }),
+        ...(s.cadence === undefined
+          ? {}
+          : {
+              cadence: enumValue(
+                s.cadence,
+                ['every', 'odd', 'even'] as const,
+                `${path}.cadence`,
+              ),
+            }),
       };
     },
   );
@@ -182,8 +237,35 @@ export function parseProject(text: string): Project {
       'recipe.bracketAtSampleBoundaries',
     ),
     rotationStart: integer(r.rotationStart ?? 0, 'recipe.rotationStart', 0),
+    ...(r.secondaries === undefined
+      ? {}
+      : {
+          secondaries: enumValue(
+            r.secondaries,
+            ['rotate', 'cadence'] as const,
+            'recipe.secondaries',
+          ),
+        }),
+    ...(r.openingBracket === undefined
+      ? {}
+      : { openingBracket: boolean(r.openingBracket, 'recipe.openingBracket') }),
+    ...(r.rotationStarts === undefined
+      ? {}
+      : {
+          rotationStarts: Object.fromEntries(
+            Object.entries(
+              object(r.rotationStarts, 'recipe.rotationStarts'),
+            ).map(([mineral, start]) => {
+              string(mineral, 'recipe.rotationStarts mineral', true);
+              return [
+                mineral,
+                integer(start, `recipe.rotationStarts.${mineral}`, 0),
+              ];
+            }),
+          ),
+        }),
   };
-  bracketLayout([], standards, recipe);
+
   const sessionNumbers = new Set<number>();
   const sessions = array(p.sessions, 'sessions').map((value, i) => {
     const path = `sessions[${i}]`,
@@ -246,12 +328,13 @@ export function parseProject(text: string): Project {
         };
       }),
       fixed: boolean(s.fixed, `${path}.fixed`),
+      ...optionalMineral(s, path),
       ...(s.source === undefined
         ? {}
         : { source: string(s.source, `${path}.source`) }),
     };
   });
-  return {
+  const project: Project = {
     version: 1,
     ...(wizard === undefined ? {} : { wizard }),
     experiment: {
@@ -261,12 +344,74 @@ export function parseProject(text: string): Project {
     standards,
     recipe,
     sessions,
+    ...(p.grainatlas === undefined
+      ? {}
+      : { grainatlas: grainatlas(p.grainatlas) }),
   };
+  const names = new Set(standards.map((s) => s.name));
+  if (names.size !== standards.length || names.has('@primary'))
+    throw new Error(
+      'Standard names must be nonempty, unique, and not @primary.',
+    );
+  const groups = new Set(
+    sessions
+      .filter((s) => !s.fixed)
+      .map((s) => mineralGroup(project, s.mineral)),
+  );
+  // Keep validation of old single-mineral projects, even with no open sessions.
+  if (
+    standards.every(
+      (s) => s.role === 'reference' || !mineralGroup(project, s.mineral),
+    )
+  )
+    groups.add('');
+  for (const group of groups)
+    bracketLayout(
+      [],
+      groupStandards(project, group),
+      groupRecipe(project, group),
+    );
+  standards.forEach((s, i) =>
+    s.ranges.slice(0, -1).forEach((r, j) => {
+      if (r.auto?.to)
+        throw new Error(
+          `standards[${i}].ranges[${j}].auto.to is only allowed on the last range.`,
+        );
+    }),
+  );
+  return project;
 }
 
 /** Canonical key order, two-space JSON and a final newline, independent of insertion order. */
 export function serializeProject(project: Project): string {
-  return JSON.stringify(parseProject(JSON.stringify(project)), null, 2) + '\n';
+  const normalized = parseProject(JSON.stringify(project));
+  const cleanAuto = (r: PoolRange) => {
+    if (r.auto && !r.auto.from && !r.auto.to) delete r.auto;
+  };
+  for (const s of normalized.standards) {
+    if (s.mineral === normalized.wizard?.mineral) delete s.mineral;
+    if (s.perBracket === normalized.recipe.spotsPerSecondary)
+      delete s.perBracket;
+    if (s.cadence === 'every') delete s.cadence;
+    s.ranges.forEach(cleanAuto);
+  }
+  for (const s of normalized.sessions) {
+    if (s.mineral === normalized.wizard?.mineral) delete s.mineral;
+    s.unknowns.forEach(cleanAuto);
+  }
+  const recipe = normalized.recipe;
+  if (recipe.secondaries === 'rotate') delete recipe.secondaries;
+  if (recipe.openingBracket === false) delete recipe.openingBracket;
+  if (recipe.rotationStarts) {
+    recipe.rotationStarts = Object.fromEntries(
+      Object.entries(recipe.rotationStarts)
+        .filter(([, start]) => start !== 0)
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+    );
+    if (!Object.keys(recipe.rotationStarts).length)
+      delete recipe.rotationStarts;
+  }
+  return JSON.stringify(normalized, null, 2) + '\n';
 }
 
 /** Mark the source as run and append an empty next session, without changing input. */
@@ -280,15 +425,29 @@ export function newSessionFrom(project: Project, n: number): Project {
       session.rows = planProject(next).sessions.find(
         (s) => s.number === n,
       )!.rows;
-    const secondaries = next.standards.filter((s) => s.role === 'secondary');
+    const group = mineralGroup(next, session.mineral);
+    const secondaries = groupStandards(next, group).filter(
+      (s) => s.role === 'secondary',
+    );
     const last = [...session.rows]
       .reverse()
       .map((row) => parseLabel(row.Label, next.standards))
-      .find((label) => label.kind === 'secondary');
-    if (last && secondaries.length)
-      next.recipe.rotationStart =
+      .find(
+        (label) =>
+          label.kind === 'secondary' &&
+          secondaries.some((s) => s.name === label.name),
+      );
+    if (last && secondaries.length && next.recipe.secondaries !== 'cadence') {
+      const start =
         (secondaries.findIndex((s) => s.name === last.name) + 1) %
         secondaries.length;
+      if (group)
+        next.recipe.rotationStarts = {
+          ...next.recipe.rotationStarts,
+          [group]: start,
+        };
+      else next.recipe.rotationStart = start;
+    }
     session.fixed = true;
   }
   next.sessions.push({
@@ -296,6 +455,7 @@ export function newSessionFrom(project: Project, n: number): Project {
     unknowns: [],
     rows: [],
     fixed: false,
+    ...(session.mineral === undefined ? {} : { mineral: session.mineral }),
   });
   return next;
 }

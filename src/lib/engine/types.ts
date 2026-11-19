@@ -4,7 +4,18 @@ export interface SpotRange {
   to: number;
 }
 
+/** Opt-in automatic endpoints; unmarked values are kept as typed. */
+export interface Auto {
+  from?: true;
+  to?: true;
+}
+
+export interface PoolRange extends SpotRange {
+  auto?: Auto;
+}
+
 export interface Unknown extends SpotRange {
+  auto?: Auto;
   name: string;
   tag: string;
 }
@@ -14,7 +25,10 @@ export type StandardRole = 'primary' | 'secondary' | 'reference';
 export interface Standard {
   name: string;
   role: StandardRole;
-  ranges: SpotRange[];
+  ranges: PoolRange[];
+  mineral?: string;
+  perBracket?: number;
+  cadence?: 'every' | 'odd' | 'even';
   used: number[];
   spare: number;
 }
@@ -84,6 +98,9 @@ export interface Recipe {
   maxPairsPerBracket: number;
   bracketAtSampleBoundaries: boolean;
   rotationStart: number;
+  secondaries?: 'rotate' | 'cadence';
+  openingBracket?: boolean;
+  rotationStarts?: Record<string, number>;
 }
 
 export type Block = 'opening' | 'unknowns' | 'mid' | 'bracket' | 'closing';
@@ -119,10 +136,12 @@ export interface Session {
   rows: Row[];
   fixed: boolean;
   source?: string;
+  mineral?: string;
 }
 
 export interface Project {
   version: 1;
+  grainatlas?: { file: string; spots: SpotRange[] };
   wizard?: { step: 1 | 2 | 3 | 4; mineral: string };
   experiment: Experiment;
   standards: Standard[];
