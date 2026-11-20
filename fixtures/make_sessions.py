@@ -1,31 +1,24 @@
 #!/usr/bin/env python3
-"""Generate Qtegra sample lists for sessions 2 and 3 of the 2026-11-04 zircon
-U-Pb LA-ICP-MS experiment (Analyst A / Analyst B), using only the standard spots
-that session 1 did not consume, and leaving no standard spot spare.
+"""Generate synthetic Qtegra fixtures from scratch, never from lab workbooks.
 
-Deterministic: same template in -> byte-identical .xls/.xlsx/.csv out. The recipe is
-documented in RULES.md next to this file.
-
-Usage:  .venv/bin/python make_sessions.py [path/to/session1.xls]
+Fixed seed 20261104 randomizes the fixed session's standard draw order.
+Sessions 2 and 3 use an independent Python implementation of RULES.md.
+SheetJS handles workbook I/O through scripts/synthetic-workbook-io.mjs.
+Run from the repository root: pnpm fixtures:synthetic
 """
 from __future__ import annotations
 
 import csv
-import io
-import os
-import re
-import sys
-import zipfile
+import json
+from pathlib import Path
+import random
+import subprocess
 
-import openpyxl
-import xlrd
-import xlwt
-from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-from xlwt.Cell import StrCell
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-TEMPLATE = os.path.expanduser("~/Downloads/Zircon_04Nov26_Synthetic.xls")
-OUT_STEM = "Zircon_04Nov26_Synthetic"
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent
+TWINS = ROOT / "test-results" / "synthetic-fixtures"
+IO = ROOT / "scripts" / "synthetic-workbook-io.mjs"
+SEED = 20261104
 SHEET = "Sheet1"
 
 HEADER = [
@@ -34,7 +27,7 @@ HEADER = [
     "Laser Scan Position Number", "Laser Output Setting [%]",
 ]
 
-# Laser positions registered on the standard mounts (inclusive ranges).
+# Invented laser positions on the synthetic standard mounts (inclusive ranges).
 POOLS = {
     "S513": (628, 727),
     "91500": (728, 757),
@@ -45,7 +38,7 @@ POOLS = {
     "NIST612": (875, 901),
 }
 
-# Recipe parameters (the app's default recipe).
+# Recipe parameters (the synthetic budget acceptance case).
 # "No spare standards": the bracket count is set by the S513 supply, and the
 # secondary pairs are spread over all brackets, so every free spot is used.
 MAX_CHUNK = 18             # sanity cap: never more than 18 unknowns between brackets
@@ -60,19 +53,19 @@ SECONDARY_PER_BRACKET = 2
 # Unknowns, in run order: (sample, size tag, first spot, last spot).
 SESSIONS = {
     2: [
-        ("SYN-H3", "S", 1, 30), ("SYN-H4", "S", 31, 55), ("SYN-H5", "S", 56, 83),
-        ("SYN-H11", "S", 84, 90), ("SYN-T1", "S", 91, 116), ("SYN-T2", "S", 117, 119),
-        ("DKR1", "S", 120, 131), ("SYN-W2", "S", 132, 142),
-        ("SYN-S2", "S", 143, 167), ("SYN-S12", "S", 168, 181),
-        ("SYN-K2", "S", 182, 192), ("SYN-W1", "S", 193, 234),
+        ("SYN-1", "S", 1, 30), ("SYN-2", "S", 31, 55), ("SYN-3", "S", 56, 83),
+        ("SYN-4", "S", 84, 90), ("SYN-5", "S", 91, 116), ("SYN-6", "S", 117, 119),
+        ("SYN-7", "S", 120, 131), ("SYN-8-pg", "S", 132, 142),
+        ("SYN-9", "S", 143, 167), ("SYN-10", "S", 168, 181),
+        ("SYN-11.7", "S", 182, 192), ("SYN-12", "S", 193, 234),
     ],
     3: [
-        ("SYN-J1", "xs", 235, 252), ("SYN-M1", "xs", 253, 302),
-        ("SYN-F1", "xs", 303, 322), ("SYN-A1", "xs", 488, 627),
+        ("SYN-13-gc1", "xs", 235, 252), ("SYN-14-mafic", "xs", 253, 302),
+        ("SYN-15-felsic", "xs", 303, 322), ("SYN-16-gc1", "xs", 488, 627),
     ],
 }
 
-# Expectations asserted at the end (from the brief / RULES.md).
+# Exact synthetic expectations asserted at the end (RULES.md).
 EXPECT_SESSION1_USED = {
     "S513": list(range(628, 650)), "91500": list(range(738, 748)),
     "Seiland": list(range(768, 778)), "LTSE": list(range(798, 808)),
@@ -94,48 +87,6 @@ EXPECT_ROTATION = {2: [_R[i % 4] for i in range(0, 20)],      # 20 pairs
 EXPECT_SPARE = {k: [] for k in POOLS}
 
 
-# --------------------------------------------------------------------------
-# Template
-# --------------------------------------------------------------------------
-LABEL_RE = re.compile(r"^(?P<name>.+)_(?P<spot>\d+)$")
-
-
-def pool_of(spot: int) -> str | None:
-    for name, (lo, hi) in POOLS.items():
-        if lo <= spot <= hi:
-            return name
-    return None
-
-
-def read_template(path: str):
-    """Return (used standard spots per pool, all spots used, rows as label/spot)."""
-    book = xlrd.open_workbook(path, formatting_info=True, logfile=open(os.devnull, "w"))
-    sh = book.sheet_by_name(SHEET)
-    header = [sh.cell_value(0, c) for c in range(sh.ncols)]
-    assert header == HEADER, f"template header differs: {header}"
-    used = {k: [] for k in POOLS}
-    spots = []
-    for r in range(1, sh.nrows):
-        label = sh.cell_value(r, 0)
-        spot = sh.cell_value(r, 11)
-        assert sh.cell_type(r, 11) == xlrd.XL_CELL_NUMBER and spot == int(spot), (r, spot)
-        spot = int(spot)
-        m = LABEL_RE.match(label)
-        assert m and int(m.group("spot")) == spot, f"row {r}: label {label!r} vs spot {spot}"
-        name = m.group("name")
-        spots.append(spot)
-        if name in POOLS:
-            assert pool_of(spot) == name, f"row {r}: {label} outside its pool"
-            used[name].append(spot)
-        else:
-            assert pool_of(spot) is None, f"row {r}: unknown {label} sits on a standard pool"
-    col_widths = {c: sh.colinfo_map[c].width for c in sh.colinfo_map}
-    return {k: sorted(v) for k, v in used.items()}, spots, col_widths
-
-
-# --------------------------------------------------------------------------
-# Recipe
-# --------------------------------------------------------------------------
 def chunk_sizes(n: int, k: int) -> list[int]:
     """k chunks, sizes equal +-1, larger chunks first."""
     q, r = divmod(n, k)
@@ -242,206 +193,97 @@ def build_session(unknowns, n_brackets: int, pairs: list[int], draw: Draw, rot_i
     return rows, sizes, rotation, mid, rot_index
 
 
-# --------------------------------------------------------------------------
-# Writers. Cell types mirror the template exactly:
-#   Label text, Status BLANK cell, Duration number 30, Comment text,
-#   Evaluate BOOLEAN TRUE, Sample Type text, Standard/Amount/Final Quantity
-#   empty-string text cells, Dilution Factor number 1, Identifier text,
-#   Laser Scan Position Number number, Laser Output number 46.
-# --------------------------------------------------------------------------
-BLANK = object()   # Status: blank cell
-EMPTY = ""          # Standard / Amount / Final Quantity: empty text cell
+def fixed_session():
+    """Invent a non-rotating fixed session with 165 unknowns and 80 standards.
+
+    Shuffle consecutive standard pairs/triples as units, preserving used sets
+    and the structural edge cases of a manually assembled imported session.
+    """
+    rng = random.Random(SEED)
+    units = {}
+    for name, spots in EXPECT_SESSION1_USED.items():
+        width = 3 if name.startswith("NIST") else 2
+        units[name] = [spots[i:i + width] for i in range(0, len(spots), width)]
+        rng.shuffle(units[name])
+    pairs = [("Seiland", "91500"), ("PL", "LTSE")] * 5
+    rng.shuffle(pairs)
+    unknowns = [("SYN-17.7R-02", "", 323, 383), ("SYN-18", "", 384, 487)]
+    seq = [(name, spot) for name, _, lo, hi in unknowns for spot in range(lo, hi + 1)]
+    rows = []
+
+    def std(name):
+        for spot in units[name].pop():
+            rows.append(dict(label=f"{name}_{spot}", spot=spot, kind="standard", std=name))
+
+    for name in ("NIST612", "NIST610", "S513"):
+        std(name)
+    offset = 0
+    sizes = [15, 15, 15, 16, 20, 19, 20, 15, 15, 15]
+    for bracket, size in enumerate(sizes, 1):
+        for name, spot in seq[offset:offset + size]:
+            rows.append(dict(label=f"{name}_{spot}", spot=spot, kind="unknown", std=None))
+        offset += size
+        if bracket == 5:
+            std("NIST610")
+            std("NIST612")
+        pair = list(pairs[bracket - 1])
+        rng.shuffle(pair)
+        for name in pair:
+            std(name)
+        std("S513")
+    std("NIST612")
+    std("NIST610")
+    assert offset == 165 and len(rows) == 245
+    assert all(not left for left in units.values())
+    return rows
 
 
-def row_values(r):
-    return [r["label"], BLANK, 30, "<Comment>", True, "UNKNOWN", EMPTY, 1,
-            EMPTY, EMPTY, "<Identifier>", r["spot"], 46]
+def values(row):
+    return [row["label"], None, 30, "<Comment>", True, "UNKNOWN", "", 1,
+            "", "", "<Identifier>", row["spot"], 46]
 
 
-NUMERIC_COLS = {2, 7, 11, 12}
-
-
-def write_xls(path, rows, col_widths):
-    wb = xlwt.Workbook(encoding="utf-8")
-    ws = wb.add_sheet(SHEET)
-    font = "font: name Microsoft Sans Serif, height 160"
-    grey = "top_colour grey50, bottom_colour grey50, left_colour grey50, right_colour grey50"
-    st_head = xlwt.easyxf(
-        f"{font}, colour white; align: horiz center, vert center;"
-        " borders: top thin, left thin, right thin, top_colour white, left_colour white, right_colour white;"
-        " pattern: pattern solid, fore_colour grey50")
-    st_text = xlwt.easyxf(f"{font}; align: horiz left; borders: top thin, bottom thin, left thin, right thin, {grey};"
-                          " pattern: pattern solid, fore_colour white")
-    st_num = xlwt.easyxf(f"{font}; align: horiz right; borders: top thin, bottom thin, left thin, right thin, {grey};"
-                         " pattern: pattern solid, fore_colour white")
-    for c, h in enumerate(HEADER):
-        ws.write(0, c, h, st_head)
-    for c, w in col_widths.items():
-        ws.col(c).width = w
-    xf_text = wb.add_style(st_text)
-    sst_empty = None
-    for i, r in enumerate(rows, start=1):
-        for c, v in enumerate(row_values(r)):
-            style = st_num if c in NUMERIC_COLS else st_text
-            if v is BLANK:
-                ws.write(i, c, None, style)          # BLANK record
-            elif v == EMPTY and isinstance(v, str):
-                # xlwt turns "" into a BLANK; the template stores a real
-                # empty string (LABELSST), so insert one explicitly.
-                if sst_empty is None:
-                    sst_empty = wb.add_str("")
-                ws.row(i).insert_cell(c, StrCell(i, c, xf_text, sst_empty))
-            else:
-                ws.write(i, c, v, style)
-    wb.save(path)
-
-
-def write_xlsx(path, rows, col_widths):
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = SHEET
-    f = Font(name="Microsoft Sans Serif", size=8)
-    thin = Side(style="thin", color="808080")
-    border = Border(top=thin, bottom=thin, left=thin, right=thin)
-    ws.append(HEADER)
-    for cell in ws[1]:
-        cell.font = Font(name="Microsoft Sans Serif", size=8, color="FFFFFF")
-        cell.fill = PatternFill("solid", fgColor="808080")
-        cell.alignment = Alignment(horizontal="center", vertical="center")
-    for r in rows:
-        ws.append([None if v is BLANK else v for v in row_values(r)])
-    for row in ws.iter_rows(min_row=2):
-        for c, cell in enumerate(row):
-            cell.font = f
-            cell.border = border
-            cell.alignment = Alignment(horizontal="right" if c in NUMERIC_COLS else "left")
-    for c, w in col_widths.items():
-        ws.column_dimensions[openpyxl.utils.get_column_letter(c + 1)].width = round(w / 256, 2)
-    buf = io.BytesIO()
-    wb.save(buf)
-    _freeze_zip(buf.getvalue(), path)
-
-
-FIXED_STAMP = "2026-11-04T00:00:00Z"
-
-
-def _freeze_zip(data: bytes, path: str):
-    """Rewrite the .xlsx with fixed document/zip timestamps so reruns are byte-identical."""
-    src = zipfile.ZipFile(io.BytesIO(data))
-    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as dst:
-        for info in src.infolist():
-            body = src.read(info.filename)
-            if info.filename == "docProps/core.xml":
-                body = re.sub(rb"(<dcterms:(created|modified)[^>]*>)[^<]*",
-                              rb"\g<1>" + FIXED_STAMP.encode(), body)
-            zi = zipfile.ZipInfo(info.filename, date_time=(2026, 11, 4, 0, 0, 0))
-            zi.compress_type = zipfile.ZIP_DEFLATED
-            zi.external_attr = 0o644 << 16
-            dst.writestr(zi, body)
-
-
-def write_csv(path, rows):
-    with open(path, "w", newline="", encoding="utf-8") as fh:
-        w = csv.writer(fh, lineterminator="\n")
-        w.writerow(HEADER)
-        for r in rows:
-            w.writerow(["" if v is BLANK else ("TRUE" if v is True else v) for v in row_values(r)])
-
-
-# --------------------------------------------------------------------------
-# Main + self-checks
-# --------------------------------------------------------------------------
-def ranges(xs):
-    xs = sorted(xs)
-    out, start, prev = [], None, None
-    for x in xs:
-        if start is None:
-            start = prev = x
-        elif x == prev + 1:
-            prev = x
-        else:
-            out.append((start, prev))
-            start = prev = x
-    if start is not None:
-        out.append((start, prev))
-    return ", ".join(f"{a}" if a == b else f"{a}-{b}" for a, b in out) or "-"
-
-
-def main(template=TEMPLATE):
-    used1, spots1, col_widths = read_template(template)
-    assert used1 == EXPECT_SESSION1_USED, f"session 1 usage differs from brief: {used1}"
-    print(f"template: {len(spots1)} rows; session-1 standard spots:")
-    for k in POOLS:
-        print(f"  {k:8s} {ranges(used1[k])}")
-
-    draw = Draw(used1)
-    assert {k: len(v) for k, v in draw.free.items()} == EXPECT_FREE_BEFORE, draw.free
-    print("available before session 2:")
-    for k in POOLS:
-        print(f"  {k:8s} {ranges(draw.free[k])}")
-    n_unk_all = [sum(hi - lo + 1 for _, _, lo, hi in u) for u in SESSIONS.values()]
-    ks, pairs_all = plan_brackets(draw.free, n_unk_all)
-    print(f"no-spare plan: brackets per session {ks}, "
-          f"{sum(map(sum, pairs_all))} secondary pairs over {sum(ks)} brackets")
-    plan = dict(zip(SESSIONS, zip(ks, pairs_all)))
-    rot = ROTATION.index(ROTATION_START)
-    all_spots = list(spots1)
-    results = {}
-    for sess, unknowns in SESSIONS.items():
-        k, pairs = plan[sess]
+def main():
+    results = {1: fixed_session()}
+    draw = Draw(EXPECT_SESSION1_USED)
+    assert {k: len(v) for k, v in draw.free.items()} == EXPECT_FREE_BEFORE
+    counts = [sum(hi - lo + 1 for _, _, lo, hi in u) for u in SESSIONS.values()]
+    ks, pairs_all = plan_brackets(draw.free, counts)
+    rot = 0
+    for (sess, unknowns), k, pairs in zip(SESSIONS.items(), ks, pairs_all):
         rows, sizes, rotation, mid, rot = build_session(unknowns, k, pairs, draw, rot)
-        results[sess] = rows
-        n_unk = sum(hi - lo + 1 for _, _, lo, hi in unknowns)
-
-        # --- self-checks per session
-        assert len(rows) == EXPECT_ROWS[sess], (sess, len(rows))
-        assert len(rows) == n_unk + 8 + len(sizes) * 2 + sum(pairs) * 2 + 6 + 6
-        assert len(sizes) == k == EXPECT_BRACKETS[sess], (sess, k)
-        assert sizes == EXPECT_CHUNKS[sess], (sess, sizes)
+        assert len(rows) == EXPECT_ROWS[sess]
+        assert k == EXPECT_BRACKETS[sess] and sizes == EXPECT_CHUNKS[sess]
         assert max(sizes) <= MAX_CHUNK and max(sizes) - min(sizes) <= 1
-        assert mid == EXPECT_MID_AT[sess], (sess, mid)
-        assert pairs == EXPECT_PAIRS[sess], (sess, pairs)
-        assert rotation == EXPECT_ROTATION[sess], (sess, rotation)
-        for r in rows:
-            if r["kind"] == "standard":
-                lo, hi = POOLS[r["std"]]
-                assert lo <= r["spot"] <= hi, r
-            else:
-                assert pool_of(r["spot"]) is None, r
-        # standard spots ascending within each pool, in run order
-        for k in POOLS:
-            s = [r["spot"] for r in rows if r["std"] == k]
-            assert s == sorted(s), (sess, k, s)
-        all_spots += [r["spot"] for r in rows]
-
-        stem = f"{OUT_STEM}_{sess}"
-        write_xls(os.path.join(HERE, stem + ".xls"), rows, col_widths)
-        write_xlsx(os.path.join(HERE, stem + ".xlsx"), rows, col_widths)
-        write_csv(os.path.join(HERE, f"session-{sess}.csv"), rows)
-        print(f"session {sess}: {len(rows)} rows, {len(sizes)} chunks {sizes}, "
-              f"mid block in bracket {mid}, doubled brackets "
-              f"{[i + 1 for i, p in enumerate(pairs) if p == 2]}, rotation {rotation}")
-
-    # --- cross-session checks
-    dup = sorted({s for s in all_spots if all_spots.count(s) > 1})
-    assert not dup, f"spots used twice across sessions: {dup}"
-    for k in POOLS:
-        assert draw.remaining(k) == EXPECT_SPARE[k], (k, draw.remaining(k))
-    print("after session 3, unused standard spots:")
-    for k in POOLS:
-        print(f"  {k:8s} {ranges(draw.remaining(k))}")
-
-    # --- read-back of the written .xls against the in-memory rows
+        assert mid == EXPECT_MID_AT[sess] and pairs == EXPECT_PAIRS[sess]
+        assert rotation == EXPECT_ROTATION[sess]
+        for name in POOLS:
+            spots = [r["spot"] for r in rows if r["std"] == name]
+            assert spots == sorted(spots)
+        results[sess] = rows
+    all_spots = [r["spot"] for rows in results.values() for r in rows]
+    assert len(all_spots) == len(set(all_spots)) == 901
+    for name in POOLS:
+        assert draw.remaining(name) == EXPECT_SPARE[name]
+        lo, hi = POOLS[name]
+        used = sorted(r["spot"] for rows in results.values() for r in rows if r["std"] == name)
+        assert used == list(range(lo, hi + 1))
+    TWINS.mkdir(parents=True, exist_ok=True)
+    payload = []
     for sess, rows in results.items():
-        book = xlrd.open_workbook(os.path.join(HERE, f"{OUT_STEM}_{sess}.xls"))
-        sh = book.sheet_by_name(SHEET)
-        assert [sh.cell_value(0, c) for c in range(sh.ncols)] == HEADER
-        assert sh.nrows == len(rows) + 1
-        for i, r in enumerate(rows, start=1):
-            assert sh.cell_value(i, 0) == r["label"]
-            assert sh.cell_type(i, 11) == xlrd.XL_CELL_NUMBER and sh.cell_value(i, 11) == r["spot"]
-    print("all self-checks passed")
+        table = [HEADER] + [values(r) for r in rows]
+        stem = f"synthetic-session-{sess}"
+        payload.append(dict(path=str(HERE / f"{stem}.xls"), table=table))
+        if sess != 1:
+            payload.append(dict(path=str(TWINS / f"{stem}.xlsx"), table=table))
+            with (TWINS / f"{stem}.csv").open("w", newline="", encoding="utf-8") as fh:
+                writer = csv.writer(fh, lineterminator="\r\n")
+                writer.writerow(HEADER)
+                writer.writerows([["TRUE" if v is True else v for v in values(r)] for r in rows])
+        print(f"synthetic session {sess}: {len(rows)} rows")
+    subprocess.run(["node", str(IO), "write"], input=json.dumps(payload), text=True, check=True)
+    print(f"Fixed seed {SEED}; all generator self-checks passed")
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:])
+    main()

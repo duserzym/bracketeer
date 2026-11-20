@@ -1,4 +1,4 @@
-=== Session 1: Zircon_04Nov26_Synthetic.xls
+=== Session 1: synthetic-session-1.xls
 rows: 245  (unknowns 165, standards 80)
 standard spots used (run order -> ranges):
   S513     n=22  628-649
@@ -9,20 +9,20 @@ standard spots used (run order -> ranges):
   NIST610  n= 9  857-865
   NIST612  n= 9  893-901
 unknown chunks (10): [15, 15, 15, 16, 20, 19, 20, 15, 15, 15]
-unknown samples in order: SYN-K1 323-383, SYN-V1 384-487
+unknown samples in order: SYN-17.7R-02 323-383, SYN-18 384-487
 standard blocks:
-  [ 0] NIST612x3 + NIST610x3 + S513x2                spots 896, 897, 898, 863, 864, 865, 628, 629
-  [ 1] Seilandx2 + 91500x2 + S513x2                  spots 768, 769, 738, 739, 648, 649
-  [ 2] PLx2 + LTSEx2 + S513x2                        spots 836, 837, 806, 807, 630, 631
-  [ 3] 91500x2 + Seilandx2 + S513x2                  spots 740, 741, 770, 771, 632, 633
-  [ 4] LTSEx2 + PLx2 + S513x2                        spots 804, 805, 834, 835, 644, 645
-  [ 5] NIST610x3 + NIST612x3 + 91500x2 + Seilandx2 + S513x2 spots 860, 861, 862, 899, 900, 901, 742, 743, 772, 773, 646, 647
-  [ 6] PLx2 + LTSEx2 + S513x2                        spots 832, 833, 800, 801, 634, 635
-  [ 7] PLx2 + LTSEx2 + S513x2                        spots 828, 829, 802, 803, 638, 639
-  [ 8] 91500x2 + Seilandx2 + S513x2                  spots 744, 745, 776, 777, 640, 641
-  [ 9] LTSEx2 + PLx2 + S513x2                        spots 798, 799, 830, 831, 636, 637
-  [10] Seilandx2 + 91500x2 + S513x2                  spots 774, 775, 746, 747, 642, 643
-  [11] NIST612x3 + NIST610x3                         spots 893, 894, 895, 857, 858, 859
+  [ 0] NIST612x3 + NIST610x3 + S513x2                spots 899, 900, 901, 857, 858, 859, 648, 649
+  [ 1] Seilandx2 + 91500x2 + S513x2                  spots 768, 769, 746, 747, 634, 635
+  [ 2] LTSEx2 + PLx2 + S513x2                        spots 806, 807, 828, 829, 638, 639
+  [ 3] Seilandx2 + 91500x2 + S513x2                  spots 774, 775, 738, 739, 644, 645
+  [ 4] LTSEx2 + PLx2 + S513x2                        spots 804, 805, 832, 833, 646, 647
+  [ 5] NIST610x3 + NIST612x3 + LTSEx2 + PLx2 + S513x2 spots 863, 864, 865, 896, 897, 898, 802, 803, 834, 835, 636, 637
+  [ 6] 91500x2 + Seilandx2 + S513x2                  spots 740, 741, 772, 773, 628, 629
+  [ 7] 91500x2 + Seilandx2 + S513x2                  spots 742, 743, 776, 777, 630, 631
+  [ 8] PLx2 + LTSEx2 + S513x2                        spots 830, 831, 798, 799, 640, 641
+  [ 9] PLx2 + LTSEx2 + S513x2                        spots 836, 837, 800, 801, 642, 643
+  [10] 91500x2 + Seilandx2 + S513x2                  spots 744, 745, 770, 771, 632, 633
+  [11] NIST612x3 + NIST610x3                         spots 893, 894, 895, 860, 861, 862
 checks:
   PASS  header and per-column cell types/values match the template
   PASS  S513 spots inside pool 628-727
@@ -32,8 +32,11 @@ checks:
   PASS  PL spots inside pool 818-847
   PASS  NIST610 spots inside pool 848-874
   PASS  NIST612 spots inside pool 875-901
+  PASS  exact row count
+  PASS  exact unknown count
+  PASS  fixed-session chunks
 
-=== Session 2: Zircon_04Nov26_Synthetic_2.xls
+=== Session 2: synthetic-session-2.xls
 rows: 332  (unknowns 234, standards 98)
 standard spots used (run order -> ranges):
   S513     n=40  650-689
@@ -44,7 +47,7 @@ standard spots used (run order -> ranges):
   NIST610  n= 9  848-856
   NIST612  n= 9  875-883
 unknown chunks (19): [13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12]
-unknown samples in order: SYN-H3 1-30, SYN-H4 31-55, SYN-H5 56-83, SYN-H11 84-90, SYN-T1 91-116, SYN-T2 117-119, DKR1 120-131, SYN-W2 132-142, SYN-S2 143-167, SYN-S12 168-181, SYN-K2 182-192, SYN-W1 193-234
+unknown samples in order: SYN-1 1-30, SYN-2 31-55, SYN-3 56-83, SYN-4 84-90, SYN-5 91-116, SYN-6 117-119, SYN-7 120-131, SYN-8-pg 132-142, SYN-9 143-167, SYN-10 168-181, SYN-11.7 182-192, SYN-12 193-234
 standard blocks:
   [ 0] NIST612x3 + NIST610x3 + S513x2                spots 875, 876, 877, 848, 849, 850, 650, 651
   [ 1] Seilandx2 + S513x2                            spots 758, 759, 652, 653
@@ -76,6 +79,8 @@ checks:
   PASS  PL spots inside pool 818-847
   PASS  NIST610 spots inside pool 848-874
   PASS  NIST612 spots inside pool 875-901
+  PASS  exact row count
+  PASS  exact unknown count
   PASS  row count 332 == 332
   PASS  chunk sizes [13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12]
   PASS  21 standard blocks (opening + 19 brackets + closing)
@@ -90,7 +95,7 @@ checks:
   PASS  NIST610 drawn in ascending order
   PASS  NIST612 drawn in ascending order
 
-=== Session 3: Zircon_04Nov26_Synthetic_3.xls
+=== Session 3: synthetic-session-3.xls
 rows: 324  (unknowns 228, standards 96)
 standard spots used (run order -> ranges):
   S513     n=38  690-727
@@ -101,7 +106,7 @@ standard spots used (run order -> ranges):
   NIST610  n= 9  866-874
   NIST612  n= 9  884-892
 unknown chunks (18): [13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12]
-unknown samples in order: SYN-J1 235-252, SYN-M1 253-302, SYN-F1 303-322, SYN-A1 488-627
+unknown samples in order: SYN-13-gc1 235-252, SYN-14-mafic 253-302, SYN-15-felsic 303-322, SYN-16-gc1 488-627
 standard blocks:
   [ 0] NIST612x3 + NIST610x3 + S513x2                spots 884, 885, 886, 866, 867, 868, 690, 691
   [ 1] Seilandx2 + S513x2                            spots 778, 779, 692, 693
@@ -132,6 +137,8 @@ checks:
   PASS  PL spots inside pool 818-847
   PASS  NIST610 spots inside pool 848-874
   PASS  NIST612 spots inside pool 875-901
+  PASS  exact row count
+  PASS  exact unknown count
   PASS  row count 324 == 324
   PASS  chunk sizes [13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12]
   PASS  20 standard blocks (opening + 18 brackets + closing)
@@ -172,9 +179,9 @@ cumulative standard usage after session 3 / spare within pool:
   PASS  NIST612: 18 spots used by sessions 2-3
 
 === Twins (.xlsx, .csv) match the .xls
-  PASS  session 2 .xlsx labels/spots/constants identical (332 rows)
+  PASS  session 2 .xlsx every cell value/type identical (332 rows)
   PASS  session 2 .csv labels/spots identical (332 rows)
-  PASS  session 3 .xlsx labels/spots/constants identical (324 rows)
+  PASS  session 3 .xlsx every cell value/type identical (324 rows)
   PASS  session 3 .csv labels/spots identical (324 rows)
 
 RESULT: ALL CHECKS PASSED

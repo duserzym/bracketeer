@@ -1,0 +1,5230 @@
+{
+  "version": 1,
+  "experiment": {
+    "name": "synthetic-zircon-2026-11-04",
+    "defaults": {
+      "Duration [s]": 30,
+      "Comment": "<Comment>",
+      "Evaluate": true,
+      "Sample Type": "UNKNOWN",
+      "Standard": "",
+      "Dilution Factor": 1,
+      "Amount": "",
+      "Final Quantity": "",
+      "Identifier": "<Identifier>",
+      "Laser Output Setting [%]": 46
+    }
+  },
+  "standards": [
+    {
+      "name": "S513",
+      "role": "primary",
+      "ranges": [
+        {
+          "from": 628,
+          "to": 727
+        }
+      ],
+      "used": [],
+      "spare": 0
+    },
+    {
+      "name": "Seiland",
+      "role": "secondary",
+      "ranges": [
+        {
+          "from": 758,
+          "to": 787
+        }
+      ],
+      "used": [],
+      "spare": 0
+    },
+    {
+      "name": "91500",
+      "role": "secondary",
+      "ranges": [
+        {
+          "from": 728,
+          "to": 757
+        }
+      ],
+      "used": [],
+      "spare": 0
+    },
+    {
+      "name": "PL",
+      "role": "secondary",
+      "ranges": [
+        {
+          "from": 818,
+          "to": 847
+        }
+      ],
+      "used": [],
+      "spare": 0
+    },
+    {
+      "name": "LTSE",
+      "role": "secondary",
+      "ranges": [
+        {
+          "from": 788,
+          "to": 817
+        }
+      ],
+      "used": [],
+      "spare": 0
+    },
+    {
+      "name": "NIST610",
+      "role": "reference",
+      "ranges": [
+        {
+          "from": 848,
+          "to": 874
+        }
+      ],
+      "used": [],
+      "spare": 0
+    },
+    {
+      "name": "NIST612",
+      "role": "reference",
+      "ranges": [
+        {
+          "from": 875,
+          "to": 901
+        }
+      ],
+      "used": [],
+      "spare": 0
+    }
+  ],
+  "recipe": {
+    "opening": [
+      {
+        "standard": "NIST612",
+        "count": 3
+      },
+      {
+        "standard": "NIST610",
+        "count": 3
+      },
+      {
+        "standard": "@primary",
+        "count": 2
+      }
+    ],
+    "mid": [
+      {
+        "standard": "NIST610",
+        "count": 3
+      },
+      {
+        "standard": "NIST612",
+        "count": 3
+      }
+    ],
+    "closing": [
+      {
+        "standard": "NIST612",
+        "count": 3
+      },
+      {
+        "standard": "NIST610",
+        "count": 3
+      }
+    ],
+    "secondaryPairsPerBracket": 1,
+    "maxPairsPerBracket": 2,
+    "spotsPerSecondary": 2,
+    "primaryPerBracket": 2,
+    "chunking": {
+      "mode": "budget"
+    },
+    "bracketAtSampleBoundaries": false,
+    "rotationStart": 0
+  },
+  "sessions": [
+    {
+      "number": 1,
+      "unknowns": [
+        {
+          "name": "SYN-17.7R-02",
+          "tag": "",
+          "from": 323,
+          "to": 337
+        },
+        {
+          "name": "SYN-17.7R-02",
+          "tag": "",
+          "from": 338,
+          "to": 352
+        },
+        {
+          "name": "SYN-17.7R-02",
+          "tag": "",
+          "from": 353,
+          "to": 367
+        },
+        {
+          "name": "SYN-17.7R-02",
+          "tag": "",
+          "from": 368,
+          "to": 383
+        },
+        {
+          "name": "SYN-18",
+          "tag": "",
+          "from": 384,
+          "to": 403
+        },
+        {
+          "name": "SYN-18",
+          "tag": "",
+          "from": 404,
+          "to": 422
+        },
+        {
+          "name": "SYN-18",
+          "tag": "",
+          "from": 423,
+          "to": 442
+        },
+        {
+          "name": "SYN-18",
+          "tag": "",
+          "from": 443,
+          "to": 457
+        },
+        {
+          "name": "SYN-18",
+          "tag": "",
+          "from": 458,
+          "to": 472
+        },
+        {
+          "name": "SYN-18",
+          "tag": "",
+          "from": 473,
+          "to": 487
+        }
+      ],
+      "rows": [
+        {
+          "Label": "NIST612_899",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 899,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST612",
+            "block": "opening"
+          }
+        },
+        {
+          "Label": "NIST612_900",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 900,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST612",
+            "block": "opening"
+          }
+        },
+        {
+          "Label": "NIST612_901",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 901,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST612",
+            "block": "opening"
+          }
+        },
+        {
+          "Label": "NIST610_857",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 857,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST610",
+            "block": "opening"
+          }
+        },
+        {
+          "Label": "NIST610_858",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 858,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST610",
+            "block": "opening"
+          }
+        },
+        {
+          "Label": "NIST610_859",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 859,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST610",
+            "block": "opening"
+          }
+        },
+        {
+          "Label": "S513_648",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 648,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "opening"
+          }
+        },
+        {
+          "Label": "S513_649",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 649,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "opening"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_323",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 323,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_324",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 324,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_325",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 325,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_326",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 326,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_327",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 327,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_328",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 328,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_329",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 329,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_330",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 330,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_331",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 331,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_332",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 332,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_333",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 333,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_334",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 334,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_335",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 335,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_336",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 336,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_337",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 337,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "Seiland_768",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 768,
+          "meta": {
+            "kind": "secondary",
+            "name": "Seiland",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "Seiland_769",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 769,
+          "meta": {
+            "kind": "secondary",
+            "name": "Seiland",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "91500_746",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 746,
+          "meta": {
+            "kind": "secondary",
+            "name": "91500",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "91500_747",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 747,
+          "meta": {
+            "kind": "secondary",
+            "name": "91500",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_634",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 634,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_635",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 635,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_338",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 338,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_339",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 339,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_340",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 340,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_341",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 341,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_342",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 342,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_343",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 343,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_344",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 344,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_345",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 345,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_346",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 346,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_347",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 347,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_348",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 348,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_349",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 349,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_350",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 350,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_351",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 351,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_352",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 352,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "LTSE_806",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 806,
+          "meta": {
+            "kind": "secondary",
+            "name": "LTSE",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "LTSE_807",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 807,
+          "meta": {
+            "kind": "secondary",
+            "name": "LTSE",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "PL_828",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 828,
+          "meta": {
+            "kind": "secondary",
+            "name": "PL",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "PL_829",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 829,
+          "meta": {
+            "kind": "secondary",
+            "name": "PL",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_638",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 638,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_639",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 639,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_353",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 353,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_354",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 354,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_355",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 355,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_356",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 356,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_357",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 357,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_358",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 358,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_359",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 359,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_360",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 360,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_361",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 361,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_362",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 362,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_363",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 363,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_364",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 364,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_365",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 365,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_366",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 366,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_367",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 367,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "Seiland_774",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 774,
+          "meta": {
+            "kind": "secondary",
+            "name": "Seiland",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "Seiland_775",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 775,
+          "meta": {
+            "kind": "secondary",
+            "name": "Seiland",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "91500_738",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 738,
+          "meta": {
+            "kind": "secondary",
+            "name": "91500",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "91500_739",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 739,
+          "meta": {
+            "kind": "secondary",
+            "name": "91500",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_644",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 644,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_645",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 645,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_368",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 368,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_369",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 369,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_370",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 370,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_371",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 371,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_372",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 372,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_373",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 373,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_374",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 374,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_375",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 375,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_376",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 376,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_377",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 377,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_378",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 378,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_379",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 379,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_380",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 380,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_381",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 381,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_382",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 382,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-17.7R-02_383",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 383,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-17.7R-02",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "LTSE_804",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 804,
+          "meta": {
+            "kind": "secondary",
+            "name": "LTSE",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "LTSE_805",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 805,
+          "meta": {
+            "kind": "secondary",
+            "name": "LTSE",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "PL_832",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 832,
+          "meta": {
+            "kind": "secondary",
+            "name": "PL",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "PL_833",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 833,
+          "meta": {
+            "kind": "secondary",
+            "name": "PL",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_646",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 646,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_647",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 647,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "SYN-18_384",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 384,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_385",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 385,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_386",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 386,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_387",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 387,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_388",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 388,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_389",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 389,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_390",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 390,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_391",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 391,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_392",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 392,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_393",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 393,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_394",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 394,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_395",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 395,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_396",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 396,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_397",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 397,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_398",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 398,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_399",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 399,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_400",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 400,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_401",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 401,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_402",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 402,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_403",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 403,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "NIST610_863",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 863,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST610",
+            "block": "mid"
+          }
+        },
+        {
+          "Label": "NIST610_864",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 864,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST610",
+            "block": "mid"
+          }
+        },
+        {
+          "Label": "NIST610_865",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 865,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST610",
+            "block": "mid"
+          }
+        },
+        {
+          "Label": "NIST612_896",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 896,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST612",
+            "block": "mid"
+          }
+        },
+        {
+          "Label": "NIST612_897",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 897,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST612",
+            "block": "mid"
+          }
+        },
+        {
+          "Label": "NIST612_898",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 898,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST612",
+            "block": "mid"
+          }
+        },
+        {
+          "Label": "LTSE_802",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 802,
+          "meta": {
+            "kind": "secondary",
+            "name": "LTSE",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "LTSE_803",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 803,
+          "meta": {
+            "kind": "secondary",
+            "name": "LTSE",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "PL_834",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 834,
+          "meta": {
+            "kind": "secondary",
+            "name": "PL",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "PL_835",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 835,
+          "meta": {
+            "kind": "secondary",
+            "name": "PL",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_636",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 636,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_637",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 637,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "SYN-18_404",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 404,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_405",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 405,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_406",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 406,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_407",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 407,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_408",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 408,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_409",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 409,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_410",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 410,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_411",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 411,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_412",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 412,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_413",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 413,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_414",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 414,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_415",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 415,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_416",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 416,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_417",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 417,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_418",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 418,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_419",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 419,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_420",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 420,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_421",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 421,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_422",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 422,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "91500_740",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 740,
+          "meta": {
+            "kind": "secondary",
+            "name": "91500",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "91500_741",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 741,
+          "meta": {
+            "kind": "secondary",
+            "name": "91500",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "Seiland_772",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 772,
+          "meta": {
+            "kind": "secondary",
+            "name": "Seiland",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "Seiland_773",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 773,
+          "meta": {
+            "kind": "secondary",
+            "name": "Seiland",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_628",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 628,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_629",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 629,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "SYN-18_423",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 423,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_424",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 424,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_425",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 425,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_426",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 426,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_427",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 427,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_428",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 428,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_429",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 429,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_430",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 430,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_431",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 431,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_432",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 432,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_433",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 433,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_434",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 434,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_435",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 435,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_436",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 436,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_437",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 437,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_438",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 438,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_439",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 439,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_440",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 440,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_441",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 441,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_442",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 442,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "91500_742",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 742,
+          "meta": {
+            "kind": "secondary",
+            "name": "91500",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "91500_743",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 743,
+          "meta": {
+            "kind": "secondary",
+            "name": "91500",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "Seiland_776",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 776,
+          "meta": {
+            "kind": "secondary",
+            "name": "Seiland",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "Seiland_777",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 777,
+          "meta": {
+            "kind": "secondary",
+            "name": "Seiland",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_630",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 630,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_631",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 631,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "SYN-18_443",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 443,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_444",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 444,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_445",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 445,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_446",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 446,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_447",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 447,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_448",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 448,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_449",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 449,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_450",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 450,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_451",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 451,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_452",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 452,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_453",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 453,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_454",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 454,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_455",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 455,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_456",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 456,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_457",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 457,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "PL_830",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 830,
+          "meta": {
+            "kind": "secondary",
+            "name": "PL",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "PL_831",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 831,
+          "meta": {
+            "kind": "secondary",
+            "name": "PL",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "LTSE_798",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 798,
+          "meta": {
+            "kind": "secondary",
+            "name": "LTSE",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "LTSE_799",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 799,
+          "meta": {
+            "kind": "secondary",
+            "name": "LTSE",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_640",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 640,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_641",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 641,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "SYN-18_458",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 458,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_459",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 459,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_460",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 460,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_461",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 461,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_462",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 462,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_463",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 463,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_464",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 464,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_465",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 465,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_466",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 466,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_467",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 467,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_468",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 468,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_469",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 469,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_470",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 470,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_471",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 471,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_472",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 472,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "PL_836",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 836,
+          "meta": {
+            "kind": "secondary",
+            "name": "PL",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "PL_837",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 837,
+          "meta": {
+            "kind": "secondary",
+            "name": "PL",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "LTSE_800",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 800,
+          "meta": {
+            "kind": "secondary",
+            "name": "LTSE",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "LTSE_801",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 801,
+          "meta": {
+            "kind": "secondary",
+            "name": "LTSE",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_642",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 642,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_643",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 643,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "SYN-18_473",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 473,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_474",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 474,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_475",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 475,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_476",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 476,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_477",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 477,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_478",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 478,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_479",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 479,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_480",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 480,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_481",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 481,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_482",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 482,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_483",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 483,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_484",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 484,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_485",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 485,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_486",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 486,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "SYN-18_487",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 487,
+          "meta": {
+            "kind": "unknown",
+            "name": "SYN-18",
+            "block": "unknowns"
+          }
+        },
+        {
+          "Label": "91500_744",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 744,
+          "meta": {
+            "kind": "secondary",
+            "name": "91500",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "91500_745",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 745,
+          "meta": {
+            "kind": "secondary",
+            "name": "91500",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "Seiland_770",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 770,
+          "meta": {
+            "kind": "secondary",
+            "name": "Seiland",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "Seiland_771",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 771,
+          "meta": {
+            "kind": "secondary",
+            "name": "Seiland",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_632",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 632,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "S513_633",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 633,
+          "meta": {
+            "kind": "primary",
+            "name": "S513",
+            "block": "bracket"
+          }
+        },
+        {
+          "Label": "NIST612_893",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 893,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST612",
+            "block": "closing"
+          }
+        },
+        {
+          "Label": "NIST612_894",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 894,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST612",
+            "block": "closing"
+          }
+        },
+        {
+          "Label": "NIST612_895",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 895,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST612",
+            "block": "closing"
+          }
+        },
+        {
+          "Label": "NIST610_860",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 860,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST610",
+            "block": "closing"
+          }
+        },
+        {
+          "Label": "NIST610_861",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 861,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST610",
+            "block": "closing"
+          }
+        },
+        {
+          "Label": "NIST610_862",
+          "Status": null,
+          "Duration [s]": 30,
+          "Comment": "<Comment>",
+          "Evaluate": true,
+          "Sample Type": "UNKNOWN",
+          "Standard": "",
+          "Dilution Factor": 1,
+          "Amount": "",
+          "Final Quantity": "",
+          "Identifier": "<Identifier>",
+          "Laser Output Setting [%]": 46,
+          "Laser Scan Position Number": 862,
+          "meta": {
+            "kind": "reference",
+            "name": "NIST610",
+            "block": "closing"
+          }
+        }
+      ],
+      "fixed": true,
+      "source": "synthetic-session-1.xls"
+    },
+    {
+      "number": 2,
+      "unknowns": [
+        {
+          "name": "SYN-1",
+          "tag": "S",
+          "from": 1,
+          "to": 30
+        },
+        {
+          "name": "SYN-2",
+          "tag": "S",
+          "from": 31,
+          "to": 55
+        },
+        {
+          "name": "SYN-3",
+          "tag": "S",
+          "from": 56,
+          "to": 83
+        },
+        {
+          "name": "SYN-4",
+          "tag": "S",
+          "from": 84,
+          "to": 90
+        },
+        {
+          "name": "SYN-5",
+          "tag": "S",
+          "from": 91,
+          "to": 116
+        },
+        {
+          "name": "SYN-6",
+          "tag": "S",
+          "from": 117,
+          "to": 119
+        },
+        {
+          "name": "SYN-7",
+          "tag": "S",
+          "from": 120,
+          "to": 131
+        },
+        {
+          "name": "SYN-8-pg",
+          "tag": "S",
+          "from": 132,
+          "to": 142
+        },
+        {
+          "name": "SYN-9",
+          "tag": "S",
+          "from": 143,
+          "to": 167
+        },
+        {
+          "name": "SYN-10",
+          "tag": "S",
+          "from": 168,
+          "to": 181
+        },
+        {
+          "name": "SYN-11.7",
+          "tag": "S",
+          "from": 182,
+          "to": 192
+        },
+        {
+          "name": "SYN-12",
+          "tag": "S",
+          "from": 193,
+          "to": 234
+        }
+      ],
+      "rows": [],
+      "fixed": false
+    },
+    {
+      "number": 3,
+      "unknowns": [
+        {
+          "name": "SYN-13-gc1",
+          "tag": "xs",
+          "from": 235,
+          "to": 252
+        },
+        {
+          "name": "SYN-14-mafic",
+          "tag": "xs",
+          "from": 253,
+          "to": 302
+        },
+        {
+          "name": "SYN-15-felsic",
+          "tag": "xs",
+          "from": 303,
+          "to": 322
+        },
+        {
+          "name": "SYN-16-gc1",
+          "tag": "xs",
+          "from": 488,
+          "to": 627
+        }
+      ],
+      "rows": [],
+      "fixed": false
+    }
+  ]
+}

@@ -4,10 +4,10 @@ import { SESSION_2_STANDARDS } from './test-data';
 
 describe('sequence labels', () => {
   it.each([
-    ['SYN-K2_S_182', 'SYN-K2', 'S', 182],
-    ['SYN-V1_384', 'SYN-V1', '', 384],
-    ['SYN-K1_S_323', 'SYN-K1', 'S', 323],
-    ['SYN-A1_xs_488', 'SYN-A1', 'xs', 488],
+    ['SYN-11.7_S_182', 'SYN-11.7', 'S', 182],
+    ['SYN-18_384', 'SYN-18', '', 384],
+    ['SYN-17.7R-02_S_323', 'SYN-17.7R-02', 'S', 323],
+    ['SYN-16-gc1_xs_488', 'SYN-16-gc1', 'xs', 488],
     ['name_with_parts_tag_4', 'name_with_parts', 'tag', 4],
   ])('parses %s', (label, name, tag, spot) => {
     expect(parseLabel(label, SESSION_2_STANDARDS)).toEqual({

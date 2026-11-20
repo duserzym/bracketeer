@@ -162,7 +162,7 @@ test('imports a workbook into a new fixed session and imports pasted standard us
   await page
     .getByRole('button', { name: 'Choose .xls, .xlsx or .csv', exact: true })
     .click();
-  await (await chooserPromise).setFiles('fixtures/session-1.xls');
+  await (await chooserPromise).setFiles('fixtures/synthetic-session-1.xls');
   await expect(page.getByTestId('counts')).toContainText('245 rows');
   await expect(
     page.getByRole('button', { name: 'Session 2 · imported', exact: true }),
@@ -198,7 +198,7 @@ test('Save and Open project restore step, mineral, experiment and generated rows
   await menuAction(page, 'Save project');
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe(
-    'Zircon_04Nov26_Synthetic.bracketeer.json',
+    'synthetic-zircon-2026-11-04.bracketeer.json',
   );
   const file = testInfo.outputPath('round-trip.bracketeer.json');
   await download.saveAs(file);
@@ -213,7 +213,7 @@ test('Save and Open project restore step, mineral, experiment and generated rows
   await (await chooser).setFiles(file);
   await expect(
     page.getByRole('textbox', { name: 'Experiment title', exact: true }),
-  ).toHaveValue('Zircon_04Nov26_Synthetic');
+  ).toHaveValue('synthetic-zircon-2026-11-04');
   await expect(page.getByTestId('counts')).toContainText('332 rows');
   await expect(
     page.getByRole('button', { name: '4 Review', exact: true }),

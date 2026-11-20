@@ -58,10 +58,10 @@ test('single-file web build opens the offline example and generates 332 rows fro
     page.getByRole('button', { name: '4 Review', exact: true }),
   ).toHaveAttribute('aria-current', 'step');
   const project = parseProject(
-    await readFile('fixtures/session-1.bracketeer.json', 'utf8'),
+    await readFile('fixtures/synthetic-session-1.bracketeer.json', 'utf8'),
   );
   const expected = importWorkbook(
-    await readFile('fixtures/session-2.xls'),
+    await readFile('fixtures/synthetic-session-2.xls'),
     project.standards,
   );
   for (const format of ['xls', 'xlsx', 'csv']) {

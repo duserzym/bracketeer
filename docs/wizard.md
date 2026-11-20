@@ -29,7 +29,7 @@ Changed 2026-11-18: design counts, automatic Begin / End / Count, standard spots
   it does: `Next: unknowns`, `Next: bracketing`, `Generate and review`. Step 4
   has no Next. When Next is disabled, the text beside it gives the first
   blocking problem in plain words and names the row, e.g.
-  `Row 3, SYN-H4: spots 31–32 are also in row 1, SYN-H3.` Clicking the text
+  `Row 3, SYN-2: spots 31–32 are also in row 1, SYN-1.` Clicking the text
   focuses that input. All other problems are listed inline in the step.
 - **Keyboard**: Ctrl/Cmd+Enter is Next and Alt+← is Back, except while a text
   area has focus.
@@ -154,8 +154,8 @@ question for Yiming.
   while hand values stay. A legend explains the mark.
 - **Mineral** appears in the session header when the project has several
   mineral groups. A fixed session's mineral cannot be changed.
-- **Paste unknowns** accepts `SYN-H3 S 1-30`,
-  `SYN-H3, S, 1-30, 35, 40-42`, or `name, tag, from, to`. Parsed ranges are
+- **Paste unknowns** accepts `SYN-1 S 1-30`,
+  `SYN-1, S, 1-30, 35, 40-42`, or `name, tag, from, to`. Parsed ranges are
   sorted and deduplicated within a pasted sample. Each range becomes an
   entry; pasted endpoints are hand values. The session total is shown below.
 - **Import sequence…** reads an earlier sheet (`.xls`, `.xlsx`, `.csv` or

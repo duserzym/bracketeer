@@ -15,25 +15,25 @@ function cells(bytes: Uint8Array) {
   );
 }
 
-// Today's sessions 2 and 3 typed from scratch: no example file, no import.
+// Synthetic sessions 2 and 3 typed from scratch: no example file, no import.
 // Session 1's standard use is typed into the Used lists instead.
 const sessions = [
-  `SYN-H3 S 1-30
-SYN-H4 S 31-55
-SYN-H5 S 56-83
-SYN-H11 S 84-90
-SYN-T1 S 91-116
-SYN-T2 S 117-119
-DKR1 S 120-131
-SYN-W2 S 132-142
-SYN-S2 S 143-167
-SYN-S12 S 168-181
-SYN-K2 S 182-192
-SYN-W1 S 193-234`,
-  `SYN-J1 xs 235-252
-SYN-M1 xs 253-302
-SYN-F1 xs 303-322
-SYN-A1 xs 488-627`,
+  `SYN-1 S 1-30
+SYN-2 S 31-55
+SYN-3 S 56-83
+SYN-4 S 84-90
+SYN-5 S 91-116
+SYN-6 S 117-119
+SYN-7 S 120-131
+SYN-8-pg S 132-142
+SYN-9 S 143-167
+SYN-10 S 168-181
+SYN-11.7 S 182-192
+SYN-12 S 193-234`,
+  `SYN-13-gc1 xs 235-252
+SYN-14-mafic xs 253-302
+SYN-15-felsic xs 303-322
+SYN-16-gc1 xs 488-627`,
 ];
 const spots: Record<string, [string, string]> = {
   S513: ['628-727', '628-649'],
@@ -122,7 +122,7 @@ test('sessions typed through all four steps export the exact fixtures', async ({
     const output = testInfo.outputPath(`typed-${number}.xls`);
     await (await download).saveAs(output);
     expect(cells(await readFile(output))).toEqual(
-      cells(await readFile(`fixtures/session-${fixture}.xls`)),
+      cells(await readFile(`fixtures/synthetic-session-${fixture}.xls`)),
     );
   }
 });

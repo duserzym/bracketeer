@@ -13,10 +13,10 @@ const row = (Label: string, spot: number | null): Row => ({
   meta: { kind: 'unknown', name: 'stale metadata', block: 'unknowns' },
 });
 const rows = [
-  row('SYN-K2_S_182', 182),
-  row('SYN-V1_384', 384),
-  row('SYN-K1_S_323', 323),
-  row('SYN-A1_xs_488', 488),
+  row('SYN-11.7_S_182', 182),
+  row('SYN-18_384', 384),
+  row('SYN-17.7R-02_S_323', 323),
+  row('SYN-16-gc1_xs_488', 488),
   row('S513_650', 650),
 ];
 
@@ -32,10 +32,10 @@ describe('sequence import', () => {
       expect(result.issues).toEqual([]);
       expect(toTSV(result.rows)).toBe(toTSV(rows));
       expect(result.rows.map((r) => r.meta.name)).toEqual([
-        'SYN-K2',
-        'SYN-V1',
-        'SYN-K1',
-        'SYN-A1',
+        'SYN-11.7',
+        'SYN-18',
+        'SYN-17.7R-02',
+        'SYN-16-gc1',
         'S513',
       ]);
       expect(result.rows[0]!.Evaluate).toBe(true);

@@ -15,7 +15,10 @@ import {
 const example = () =>
   parseProject(
     readFileSync(
-      new URL('../../../fixtures/session-1.bracketeer.json', import.meta.url),
+      new URL(
+        '../../../fixtures/synthetic-session-1.bracketeer.json',
+        import.meta.url,
+      ),
       'utf8',
     ),
   );

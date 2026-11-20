@@ -17,7 +17,10 @@ function edit(change: (p: Project) => void) {
 describe('optional design model', () => {
   it('preserves the example project byte for byte without new fields', () => {
     const text = readFileSync(
-      new URL('../../../fixtures/session-1.bracketeer.json', import.meta.url),
+      new URL(
+        '../../../fixtures/synthetic-session-1.bracketeer.json',
+        import.meta.url,
+      ),
       'utf8',
     );
     expect(serializeProject(parseProject(text))).toBe(text);

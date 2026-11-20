@@ -159,7 +159,7 @@
     <button onclick={open}>Open project…</button>
     <button onclick={openExample}>Open example</button>
     <p class="hint">
-      Today's three-session zircon experiment, ready to generate.
+      Synthetic three-session zircon experiment, ready to generate.
     </p>
   </aside>
 </section>

@@ -1,26 +1,32 @@
 #!/usr/bin/env python3
-"""Independent re-read of session 1 (template) and sessions 2 and 3.
+"""Independent re-read of synthetic session 1 (fixed) and sessions 2 and 3.
 
 Shares no code with make_sessions.py. Classifies rows purely from the Label
 column, then prints per-standard spot usage, unknown chunk sizes and the
 composition of every standard block, and checks them against RULES.md.
 
-Usage:  .venv/bin/python verify.py > verify.txt
+Usage (after generation): python3 fixtures/verify.py > fixtures/verify.txt
 """
 import csv
 import os
 import re
 import sys
-
-import openpyxl
-import xlrd
+import json
+import subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-FILES = {
-    1: os.path.expanduser("~/Downloads/Zircon_04Nov26_Synthetic.xls"),
-    2: os.path.join(HERE, "Zircon_04Nov26_Synthetic_2.xls"),
-    3: os.path.join(HERE, "Zircon_04Nov26_Synthetic_3.xls"),
-}
+FILES = {n: os.path.join(HERE, f"synthetic-session-{n}.xls") for n in (1, 2, 3)}
+TWINS = os.path.join(HERE, "..", "test-results", "synthetic-fixtures")
+
+
+def read_books(paths):
+    io = os.path.join(HERE, "..", "scripts", "synthetic-workbook-io.mjs")
+    result = subprocess.run(["node", io, "read"], input=json.dumps(paths),
+                            text=True, capture_output=True, check=True)
+    return json.loads(result.stdout)
+
+
+TABLES = dict(zip(FILES, read_books(list(FILES.values()))))
 STANDARDS = ["S513", "91500", "Seiland", "LTSE", "PL", "NIST610", "NIST612"]
 POOL = {"S513": (628, 727), "91500": (728, 757), "Seiland": (758, 787),
         "LTSE": (788, 817), "PL": (818, 847), "NIST610": (848, 874),
@@ -28,9 +34,9 @@ POOL = {"S513": (628, 727), "91500": (728, 757), "Seiland": (758, 787),
 HEADER = ["Label", "Status", "Duration [s]", "Comment", "Evaluate", "Sample Type",
           "Standard", "Dilution Factor", "Amount", "Final Quantity", "Identifier",
           "Laser Scan Position Number", "Laser Output Setting [%]"]
-B, T, N, BO = xlrd.XL_CELL_BLANK, xlrd.XL_CELL_TEXT, xlrd.XL_CELL_NUMBER, xlrd.XL_CELL_BOOLEAN
+T, N, BO = "s", "n", "b"
 # (type, value) per column except Label (0) and spot (11): as in the template
-CONST = {1: (B, ""), 2: (N, 30.0), 3: (T, "<Comment>"), 4: (BO, 1), 5: (T, "UNKNOWN"),
+CONST = {2: (N, 30.0), 3: (T, "<Comment>"), 4: (BO, True), 5: (T, "UNKNOWN"),
          6: (T, ""), 7: (N, 1.0), 8: (T, ""), 9: (T, ""), 10: (T, "<Identifier>"),
          12: (N, 46.0)}
 
@@ -55,24 +61,23 @@ def rng(xs):
     return ", ".join(out)
 
 
-def load(path):
-    bk = xlrd.open_workbook(path, formatting_info=True, logfile=open(os.devnull, "w"))
-    sh = bk.sheet_by_name("Sheet1")
+def load(sess):
+    table = TABLES[sess]
     rows = []
-    types_ok = [sh.cell_value(0, c) for c in range(sh.ncols)] == HEADER
-    for r in range(1, sh.nrows):
-        label, spot = sh.cell_value(r, 0), sh.cell_value(r, 11)
+    types_ok = table[0] == [dict(t=T, v=h) for h in HEADER]
+    for cells in table[1:]:
+        label, spot = cells[0]["v"], cells[11]["v"]
+        types_ok &= cells[1] is None
         for c, (t, v) in CONST.items():
-            if sh.cell_type(r, c) != t or sh.cell_value(r, c) != v:
-                types_ok = False
-        if sh.cell_type(r, 0) != T or sh.cell_type(r, 11) != N:
-            types_ok = False
+            types_ok &= cells[c] == dict(t=t, v=v)
+        types_ok &= cells[0]["t"] == T and cells[11]["t"] == N
         name, s = re.fullmatch(r"(.+)_(\d+)", label).groups()
         assert int(s) == spot, (label, spot)
         if name in STANDARDS:
             rows.append(("std", name, int(spot), label))
         else:
-            m = re.fullmatch(r"(.+?)(?:_(S|xs))?", name)
+            m = re.fullmatch(r"(SYN-.+?)(?:_(S|xs))?", name)
+            assert m, f"Non-synthetic unknown: {name}"
             rows.append(("unk", m.group(1), int(spot), label))
     return rows, types_ok
 
@@ -105,7 +110,7 @@ def compose(block):
 
 data = {}
 for sess, path in FILES.items():
-    data[sess], types_ok = load(path)
+    data[sess], types_ok = load(sess)
     rows = data[sess]
     print(f"=== Session {sess}: {os.path.basename(path)}")
     n_unk = sum(1 for r in rows if r[0] == "unk")
@@ -129,7 +134,10 @@ for sess, path in FILES.items():
         lo, hi = POOL[s]
         check(all(lo <= r[2] <= hi for r in rows if r[1] == s and r[0] == "std"),
               f"{s} spots inside pool {lo}-{hi}")
+    check(len(rows) == {1: 245, 2: 332, 3: 324}[sess], "exact row count")
+    check(n_unk == {1: 165, 2: 234, 3: 228}[sess], "exact unknown count")
     if sess == 1:
+        check(chunks == [15, 15, 15, 16, 20, 19, 20, 15, 15, 15], "fixed-session chunks")
         print()
         continue
     std_blocks = [compose(b) for k, b in segs if k == "std"]
@@ -184,13 +192,9 @@ for s, n in {"S513": 78, "91500": 20, "Seiland": 20, "LTSE": 20, "PL": 20,
 print("\n=== Twins (.xlsx, .csv) match the .xls")
 for sess in (2, 3):
     xls = [r[3] for r in data[sess]]
-    ws = openpyxl.load_workbook(os.path.join(HERE, f"Zircon_04Nov26_Synthetic_{sess}.xlsx")).active
-    xl = list(ws.iter_rows(values_only=True))
-    ok = (list(xl[0]) == HEADER and [r[0] for r in xl[1:]] == xls
-          and all(r[11] == int(l.rsplit("_", 1)[1]) and r[4] is True and r[1] is None
-                  and r[2] == 30 and r[12] == 46 for r, l in zip(xl[1:], xls)))
-    check(ok, f"session {sess} .xlsx labels/spots/constants identical ({len(xl) - 1} rows)")
-    with open(os.path.join(HERE, f"session-{sess}.csv"), newline="") as fh:
+    twin = read_books([os.path.join(TWINS, f"synthetic-session-{sess}.xlsx")])[0]
+    check(twin == TABLES[sess], f"session {sess} .xlsx every cell value/type identical ({len(twin) - 1} rows)")
+    with open(os.path.join(TWINS, f"synthetic-session-{sess}.csv"), newline="") as fh:
         cv = list(csv.reader(fh))
     ok = (cv[0] == HEADER and [r[0] for r in cv[1:]] == xls
           and all(r[11] == l.rsplit("_", 1)[1] for r, l in zip(cv[1:], xls)))

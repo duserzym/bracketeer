@@ -8,10 +8,15 @@ import { planProject } from './sequence';
 import { QTEGRA_COLUMNS } from './types';
 
 const bytes = (n: number) =>
-  readFileSync(new URL(`../../../fixtures/session-${n}.xls`, import.meta.url));
+  readFileSync(
+    new URL(`../../../fixtures/synthetic-session-${n}.xls`, import.meta.url),
+  );
 const readSheet = (data: Uint8Array) => XLSX.read(data).Sheets.Sheet1!;
 const fixtureText = readFileSync(
-  new URL('../../../fixtures/session-1.bracketeer.json', import.meta.url),
+  new URL(
+    '../../../fixtures/synthetic-session-1.bracketeer.json',
+    import.meta.url,
+  ),
   'utf8',
 );
 const project = parseProject(fixtureText);
@@ -32,13 +37,25 @@ function compareSheets(actual: XLSX.WorkSheet, expected: XLSX.WorkSheet) {
 }
 
 describe('RULES.md revision 3 golden workbooks', () => {
-  it('imports session 1 intact, derives all used spots and the handmade structure', () => {
+  it('imports synthetic session 1 intact, derives all used spots and the fixed structure', () => {
     const imported = importWorkbook(bytes(1), project.standards);
     expect(imported.rows).toHaveLength(245);
     expect(imported.issues).toEqual([]);
     compareSheets(toWorksheet(imported.rows), readSheet(bytes(1)));
     const derived = deriveSession(imported.rows, project.standards);
     expect(derived.issues).toEqual([]);
+    expect(derived.unknowns).toEqual([
+      { name: 'SYN-17.7R-02', tag: '', from: 323, to: 337 },
+      { name: 'SYN-17.7R-02', tag: '', from: 338, to: 352 },
+      { name: 'SYN-17.7R-02', tag: '', from: 353, to: 367 },
+      { name: 'SYN-17.7R-02', tag: '', from: 368, to: 383 },
+      { name: 'SYN-18', tag: '', from: 384, to: 403 },
+      { name: 'SYN-18', tag: '', from: 404, to: 422 },
+      { name: 'SYN-18', tag: '', from: 423, to: 442 },
+      { name: 'SYN-18', tag: '', from: 443, to: 457 },
+      { name: 'SYN-18', tag: '', from: 458, to: 472 },
+      { name: 'SYN-18', tag: '', from: 473, to: 487 },
+    ]);
     expect(derived.used).toEqual({
       S513: range(628, 649),
       Seiland: range(768, 777),

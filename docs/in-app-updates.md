@@ -91,7 +91,7 @@ them as workflow artifacts without publishing a release; it is the dry run.
   1440 x 900 and 1280 x 800, light and dark, using the `?update-preview=`
   query (`ready`, `available`, `downloading`, `error`, `none`) that the page
   honours outside Tauri.
-- Screenshots of the chip and the panel are in `docs/screenshots/`.
+- `SCREENSHOTS=1 pnpm e2e --project=chromium updates.spec.ts` writes chip and panel screenshots with synthetic samples to `docs/screenshots/synthetic-updates-*.png`.
 
 ## bracketeer specifics
 

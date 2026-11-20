@@ -93,7 +93,7 @@ A standard with no ranges gets an automatic range when it needs spots or spare. 
 
 When an incomplete recipe cannot be counted, numbering still resolves unknowns and automatic Begins, keeps standard Ends, and leaves the planning problem visible. Spot checks still run.
 
-**Load GrainAtlas spots…** in step 2 reads a laser CSV with `name` and `x_stage` headers, or one spot name per line. The number is taken after the last underscore (`HH3_S_31` means position 31). Lines and rasters count as one position each. The app checks all unknown and standard ranges against those positions and warns about missing spots or a larger distinct total. These warnings do not block Next.
+**Load GrainAtlas spots…** in step 2 reads a laser CSV with `name` and `x_stage` headers, or one spot name per line. The number is taken after the last underscore (`SYN-1_S_31` means position 31). Lines and rasters count as one position each. The app checks all unknown and standard ranges against those positions and warns about missing spots or a larger distinct total. These warnings do not block Next.
 
 ## Warnings
 
@@ -110,7 +110,7 @@ The Recipe panel also reports shortages, including reference supply below the re
 
 ## Today's worked example
 
-This is [fixtures/RULES.md, revision 3](../fixtures/RULES.md). Session 1 was hand-made and is imported from `fixtures/session-1.xls`, not regenerated. Its 245 rows stay fixed. Sessions 2 and 3 are planned together in **Auto from budget**, with spare 0 and sample boundaries off.
+This is [fixtures/RULES.md, revision 3](../fixtures/RULES.md). Synthetic session 1 simulates hand entry and is imported from `fixtures/synthetic-session-1.xls`, not regenerated. Its 245 rows stay fixed. Sessions 2 and 3 are planned together in **Auto from budget**, with spare 0 and sample boundaries off.
 
 After session 1, S513 has **78 available** spots. Each of Seiland, 91500, PL and LTSE has 20 available spots; NIST610 and NIST612 each have 18.
 
@@ -136,7 +136,7 @@ The Standard spots table gives these formulas for the planned sessions:
 
 With the default blocks, rows = `n + 8 + 2k + 2 × pairs + 6 + 6`. That is `234 + 8 + 38 + 40 + 6 + 6 = 332` and `228 + 8 + 36 + 40 + 6 + 6 = 324`. Each session uses nine of each NIST standard. Each uses 20 secondary pairs, so session 3 starts at Seiland too.
 
-Across sessions 1–3, **every standard pool is fully used**. The generated sessions match `fixtures/session-2.xls` and `fixtures/session-3.xls` cell for cell in values and types; the app exports unstyled workbooks.
+Across sessions 1–3, **every standard pool is fully used**. The generated sessions match `fixtures/synthetic-session-2.xls` and `fixtures/synthetic-session-3.xls` cell for cell in values and types; the app exports unstyled workbooks.
 
 With **Chunk target 18** and one pair per bracket instead, both sessions have **13 brackets**, with the mid block at bracket 7. They have **306 + 300 rows** and leave **22 S513 spots and 28 secondary spots** unused. The NIST pools are still fully used.
 

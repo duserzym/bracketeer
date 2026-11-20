@@ -19,7 +19,7 @@ const standards = SESSION_2_STANDARDS.map((s) => ({
   spare: 0,
 }));
 const imported = importWorkbook(
-  readFileSync(new URL('../fixtures/session-1.xls', import.meta.url)),
+  readFileSync(new URL('../fixtures/synthetic-session-1.xls', import.meta.url)),
   standards,
 );
 const derived = deriveSession(imported.rows, standards);
@@ -27,23 +27,23 @@ if (imported.issues.length || derived.issues.length)
   throw new Error('Session 1 has unrecognized rows.');
 const project: Project = {
   version: 1,
-  experiment: { ...DEFAULT_EXPERIMENT, name: 'Zircon_04Nov26_Synthetic' },
+  experiment: { ...DEFAULT_EXPERIMENT, name: 'synthetic-zircon-2026-11-04' },
   standards,
-  recipe: structuredClone(DEFAULT_RECIPE),
+  recipe: { ...structuredClone(DEFAULT_RECIPE), chunking: { mode: 'budget' } },
   sessions: [
     {
       number: 1,
       unknowns: derived.unknowns,
       rows: imported.rows,
       fixed: true,
-      source: 'session-1.xls',
+      source: 'synthetic-session-1.xls',
     },
     { number: 2, unknowns: SESSION_2_UNKNOWNS, rows: [], fixed: false },
     { number: 3, unknowns: SESSION_3_UNKNOWNS, rows: [], fixed: false },
   ],
 };
 writeFileSync(
-  new URL('../fixtures/session-1.bracketeer.json', import.meta.url),
+  new URL('../fixtures/synthetic-session-1.bracketeer.json', import.meta.url),
   serializeProject(project),
 );
 console.log(

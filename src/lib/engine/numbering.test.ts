@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import example from '../../../fixtures/session-1.bracketeer.json';
+import example from '../../../fixtures/synthetic-session-1.bracketeer.json';
 import { countStandards } from './count';
 import { checkSpots } from './checks';
 import {

@@ -10,17 +10,17 @@ import {
 
 describe('parseUnknowns', () => {
   it.each([
-    ['SYN-H3 S 1-30', 'SYN-H3', 'S', 1, 30],
-    ['SYN-V1 384-487', 'SYN-V1', '', 384, 487],
-    ['SYN-J1 xs 235–252', 'SYN-J1', 'xs', 235, 252],
-    ['SYN-J1 xs 235 — 252', 'SYN-J1', 'xs', 235, 252],
-    ['SYN-H3 S 1 - 30', 'SYN-H3', 'S', 1, 30],
-    ['SYN-H3, S, 1, 30', 'SYN-H3', 'S', 1, 30],
-    ['SYN-H3\tS\t1\t30', 'SYN-H3', 'S', 1, 30],
-    ['SYN-V1\t\t384\t487', 'SYN-V1', '', 384, 487],
-    ['SYN-V1,384,487', 'SYN-V1', '', 384, 487],
-    ['SYN-H3,S,1–30', 'SYN-H3', 'S', 1, 30],
-    ['SYN-K2 S 182-192', 'SYN-K2', 'S', 182, 192],
+    ['SYN-1 S 1-30', 'SYN-1', 'S', 1, 30],
+    ['SYN-18 384-487', 'SYN-18', '', 384, 487],
+    ['SYN-13-gc1 xs 235–252', 'SYN-13-gc1', 'xs', 235, 252],
+    ['SYN-13-gc1 xs 235 — 252', 'SYN-13-gc1', 'xs', 235, 252],
+    ['SYN-1 S 1 - 30', 'SYN-1', 'S', 1, 30],
+    ['SYN-1, S, 1, 30', 'SYN-1', 'S', 1, 30],
+    ['SYN-1\tS\t1\t30', 'SYN-1', 'S', 1, 30],
+    ['SYN-18\t\t384\t487', 'SYN-18', '', 384, 487],
+    ['SYN-18,384,487', 'SYN-18', '', 384, 487],
+    ['SYN-1,S,1–30', 'SYN-1', 'S', 1, 30],
+    ['SYN-11.7 S 182-192', 'SYN-11.7', 'S', 182, 192],
     ['X 5', 'X', '', 5, 5],
     ['X xs 5', 'X', 'xs', 5, 5],
     ['X\t5', 'X', '', 5, 5],
@@ -34,11 +34,11 @@ describe('parseUnknowns', () => {
   it('accepts an Excel header, blank lines and CRLF; keeps input order', () => {
     expect(
       parseUnknowns(
-        '\r\nName\tTag\tFrom\tTo\r\nHH3\tS\t1\t30\r\nX\t\t31\t31\r\n',
+        '\r\nName\tTag\tFrom\tTo\r\nSYN-1\tS\t1\t30\r\nX\t\t31\t31\r\n',
       ),
     ).toEqual({
       rows: [
-        { name: 'SYN-H3', tag: 'S', from: 1, to: 30 },
+        { name: 'SYN-1', tag: 'S', from: 1, to: 30 },
         { name: 'X', tag: '', from: 31, to: 31 },
       ],
       errors: [],

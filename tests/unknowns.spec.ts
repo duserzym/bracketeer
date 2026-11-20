@@ -23,7 +23,10 @@ test('paste makes separate continued entries and keeps hand values in the projec
   page,
 }) => {
   await startZircon(page);
-  await pasteSamples(page, 'SYN-H3, S, 1-30, 35, 40-42\nHH4 S 50-55\nHH5,S,60,65');
+  await pasteSamples(
+    page,
+    'SYN-1, S, 1-30, 35, 40-42\nSYN-2 S 50-55\nSYN-3,S,60,65',
+  );
   await expect(
     page
       .getByRole('table', { name: 'Unknowns', exact: true })
@@ -55,11 +58,11 @@ test('paste makes separate continued entries and keeps hand values in the projec
       ),
     )
     .toEqual([
-      { name: 'SYN-H3', tag: 'S', from: 1, to: 30 },
-      { name: 'SYN-H3', tag: 'S', from: 35, to: 35 },
-      { name: 'SYN-H3', tag: 'S', from: 40, to: 42 },
-      { name: 'SYN-H4', tag: 'S', from: 50, to: 55 },
-      { name: 'SYN-H5', tag: 'S', from: 60, to: 65 },
+      { name: 'SYN-1', tag: 'S', from: 1, to: 30 },
+      { name: 'SYN-1', tag: 'S', from: 35, to: 35 },
+      { name: 'SYN-1', tag: 'S', from: 40, to: 42 },
+      { name: 'SYN-2', tag: 'S', from: 50, to: 55 },
+      { name: 'SYN-3', tag: 'S', from: 60, to: 65 },
     ]);
   await expect(next(page)).toBeEnabled();
   await page.getByRole('button', { name: 'Back', exact: true }).click();
@@ -78,7 +81,7 @@ test('overlaps block and focus the numbered field across session tabs', async ({
   await commitCell(page, 'Unknown 3 begin', '31');
   await commitCell(page, 'Unknown 3 end', '32');
   const message = page.locator('.wizard-footer').getByRole('button', {
-    name: 'Row 3, SYN-H5: spots 31–32 are also in row 2, SYN-H4.',
+    name: 'Row 3, SYN-3: spots 31–32 are also in row 2, SYN-2.',
     exact: true,
   });
   await expect(next(page)).toBeDisabled();
@@ -102,20 +105,20 @@ test('invalid endpoints and duplicate separated names block; pool checks belong 
   await commitCell(page, 'Unknown 3 begin', '84');
   await expect(next(page)).toBeDisabled();
   await expect(page.locator('.wizard-footer')).toContainText(
-    'Row 3, SYN-H5: end must be at least begin.',
+    'Row 3, SYN-3: end must be at least begin.',
   );
   await commitCell(page, 'Unknown 3 begin', '56');
   const name = page.getByRole('textbox', {
     name: 'Unknown 3 name',
     exact: true,
   });
-  await name.fill('SYN-H3');
+  await name.fill('SYN-1');
   await name.press('Tab');
   await expect(next(page)).toBeDisabled();
   await expect(page.locator('.wizard-footer')).toContainText(
     'this name and tag are also in row 1',
   );
-  await name.fill('SYN-H5');
+  await name.fill('SYN-3');
   await name.press('Tab');
   await expect(next(page)).toBeEnabled();
   await expect(page.getByTestId('spots-panel')).toBeHidden();
@@ -146,15 +149,20 @@ test('paste reports line errors, experiment names commit, and import remains ava
     name: 'Paste unknowns',
     exact: true,
   });
-  await paste.fill('SYN-H3, S, 1-30, 35, 40-42\nHH4 S 50-55\nHH5,S,60,65\nbad');
+  await paste.fill(
+    'SYN-1, S, 1-30, 35, 40-42\nSYN-2 S 50-55\nSYN-3,S,60,65\nbad',
+  );
   await expect(page.getByTestId('samples-panel')).toContainText('Line 4: bad');
   await expect(
     page.getByRole('button', { name: 'Add pasted unknowns', exact: true }),
   ).toBeDisabled();
-  await pasteSamples(page, 'SYN-H3, S, 1-30, 35, 40-42\nHH4 S 50-55\nHH5,S,60,65');
+  await pasteSamples(
+    page,
+    'SYN-1, S, 1-30, 35, 40-42\nSYN-2 S 50-55\nSYN-3,S,60,65',
+  );
   await expect(
     page.getByRole('textbox', { name: 'Unknown 5 name', exact: true }),
-  ).toHaveValue('SYN-H5');
+  ).toHaveValue('SYN-3');
   const name = page.getByRole('textbox', {
     name: 'Experiment name',
     exact: true,
@@ -181,7 +189,7 @@ test('all fixture entries stay visible, fixed rows are read-only, and empty sess
 }) => {
   await exampleUnknowns(page);
   const fixture = JSON.parse(
-    await readFile('fixtures/session-1.bracketeer.json', 'utf8'),
+    await readFile('fixtures/synthetic-session-1.bracketeer.json', 'utf8'),
   ) as Project;
   for (const number of [2, 3]) {
     await page

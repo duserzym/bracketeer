@@ -15,9 +15,9 @@ function projectWithSamples() {
   const p = emptyProject();
   p.standards = [p.standards[0]!];
   p.sessions[0]!.unknowns = [
-    { name: 'SYN-H3', tag: 'S', from: 1, to: 32 },
-    { name: 'SYN-H4', tag: 'S', from: 40, to: 45 },
-    { name: 'SYN-H5', tag: 'S', from: 50, to: 55 },
+    { name: 'SYN-1', tag: 'S', from: 1, to: 32 },
+    { name: 'SYN-2', tag: 'S', from: 40, to: 45 },
+    { name: 'SYN-3', tag: 'S', from: 50, to: 55 },
   ];
   return p;
 }
@@ -66,26 +66,26 @@ describe('sample rows and drafts', () => {
 
 describe('sample paste', () => {
   it.each([
-    'SYN-H3, S, 1-30, 35, 40-42',
-    'SYN-H3 S 1-30 35 40-42',
-    'SYN-H3 S 1-30, 35, 40-42',
-    'SYN-H3\tS\t1-30;35;40-42',
+    'SYN-1, S, 1-30, 35, 40-42',
+    'SYN-1 S 1-30 35 40-42',
+    'SYN-1 S 1-30, 35, 40-42',
+    'SYN-1\tS\t1-30;35;40-42',
   ])('adds non-contiguous sample %s', (text) => {
     const parsed = parseSamplePaste(text);
     expect(parsed.errors).toEqual([]);
     expect(parsed.rows).toHaveLength(1);
     expect(parsed.rows[0]).toMatchObject({
-      name: 'SYN-H3',
+      name: 'SYN-1',
       tag: 'S',
       text: '1–30, 35, 40–42',
     });
   });
   it('retains legacy formats, headers and empty tags, and reports original line numbers', () => {
     const parsed = parseSamplePaste(
-      'Name,Tag,From,To\r\nHH3,S,1,30\nX 31-35\nY\t\t40\t42\n\nbad\nZ S 30-1\nQ S 1-100001',
+      'Name,Tag,From,To\r\nSYN-1,S,1,30\nX 31-35\nY\t\t40\t42\n\nbad\nZ S 30-1\nQ S 1-100001',
     );
     expect(parsed.rows.map((r) => [r.name, r.tag, r.text])).toEqual([
-      ['SYN-H3', 'S', '1–30'],
+      ['SYN-1', 'S', '1–30'],
       ['X', '', '31–35'],
       ['Y', '', '40–42'],
     ]);
@@ -132,18 +132,18 @@ describe('step 2 validation', () => {
   });
   it('blocks duplicate identities in a session, but permits different tags and identities across sessions', () => {
     const p = projectWithSamples();
-    p.sessions[0]!.unknowns[2]!.name = 'SYN-H3';
+    p.sessions[0]!.unknowns[2]!.name = 'SYN-1';
     expect(validateUnknowns(p).errors[0]).toMatchObject({
       row: 3,
       field: 'name',
-      message: 'Row 3, SYN-H3: this name and tag are also in row 1.',
+      message: 'Row 3, SYN-1: this name and tag are also in row 1.',
     });
     p.sessions[0]!.unknowns[2]!.tag = 'L';
     expect(validateUnknowns(p).errors).toEqual([]);
     p.sessions.push({
       number: 2,
       fixed: false,
-      unknowns: [{ name: 'SYN-H3', tag: 'S', from: 60, to: 65 }],
+      unknowns: [{ name: 'SYN-1', tag: 'S', from: 60, to: 65 }],
       rows: [],
     });
     expect(validateUnknowns(p).errors).toEqual([]);
@@ -152,7 +152,7 @@ describe('step 2 validation', () => {
     const p = projectWithSamples();
     p.sessions[0]!.unknowns[2]!.from = 31;
     expect(validateUnknowns(p).errors).toContainEqual({
-      message: 'Row 3, SYN-H5: spots 31–32 are also in row 1, SYN-H3.',
+      message: 'Row 3, SYN-3: spots 31–32 are also in row 1, SYN-1.',
       session: 1,
       row: 3,
       field: 'spots',
@@ -165,7 +165,7 @@ describe('step 2 validation', () => {
       rows: [],
     });
     expect(validateUnknowns(p).errors).toContainEqual({
-      message: 'Row 1, X: spot 1 is also in session 1, row 1, SYN-H3.',
+      message: 'Row 1, X: spot 1 is also in session 1, row 1, SYN-1.',
       session: 2,
       row: 1,
       field: 'spots',
@@ -175,7 +175,7 @@ describe('step 2 validation', () => {
     const p = projectWithSamples();
     p.standards[0]!.ranges = [{ from: 55, to: 70 }];
     expect(validateUnknowns(p).errors[0]).toEqual({
-      message: 'Row 3, SYN-H5: spot 55 is in the S513 pool.',
+      message: 'Row 3, SYN-3: spot 55 is in the S513 pool.',
       session: 1,
       row: 3,
       field: 'spots',

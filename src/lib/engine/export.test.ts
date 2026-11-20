@@ -5,10 +5,10 @@ import { DEFAULT_EXPERIMENT, QTEGRA_COLUMNS, type Row } from './types';
 
 const row: Row = {
   ...DEFAULT_EXPERIMENT.defaults,
-  Label: 'HH3_S_1',
+  Label: 'SYN-1_S_1',
   Status: null,
   'Laser Scan Position Number': 1,
-  meta: { kind: 'unknown', name: 'SYN-H3', block: 'unknowns' },
+  meta: { kind: 'unknown', name: 'SYN-1', block: 'unknowns' },
 };
 const header =
   'Label,Status,Duration [s],Comment,Evaluate,Sample Type,Standard,Dilution Factor,Amount,Final Quantity,Identifier,Laser Scan Position Number,Laser Output Setting [%]';
@@ -16,7 +16,7 @@ const header =
 describe('Qtegra text exports', () => {
   it('exports exactly 13 ordered columns, no metadata/header, TRUE and CRLF for clipboard', () => {
     expect(toTSV([row])).toBe(
-      'HH3_S_1\t\t30\t<Comment>\tTRUE\tUNKNOWN\t\t1\t\t\t<Identifier>\t1\t46\r\n',
+      'SYN-1_S_1\t\t30\t<Comment>\tTRUE\tUNKNOWN\t\t1\t\t\t<Identifier>\t1\t46\r\n',
     );
     const text = toTSV([
       row,
@@ -34,7 +34,7 @@ describe('Qtegra text exports', () => {
   it('writes the exact CSV header and default cell types as text', () => {
     expect(QTEGRA_COLUMNS.join(',')).toBe(header);
     expect(toCSV([row])).toBe(
-      `${header}\r\nHH3_S_1,,30,<Comment>,TRUE,UNKNOWN,,1,,,<Identifier>,1,46\r\n`,
+      `${header}\r\nSYN-1_S_1,,30,<Comment>,TRUE,UNKNOWN,,1,,,<Identifier>,1,46\r\n`,
     );
     expect(toCSV([])).toBe(`${header}\r\n`);
   });

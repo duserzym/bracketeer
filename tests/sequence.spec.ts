@@ -70,12 +70,12 @@ test('the four-step example plans the shared budget and exports both exact BIFF8
       .click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toBe(
-      `Zircon_04Nov26_Synthetic_${number}.xls`,
+      `synthetic-zircon-2026-11-04_${number}.xls`,
     );
     const output = testInfo.outputPath(`session-${number}.xls`);
     await download.saveAs(output);
     expect(cells(await readFile(output))).toEqual(
-      cells(await readFile(`fixtures/session-${number}.xls`)),
+      cells(await readFile(`fixtures/synthetic-session-${number}.xls`)),
     );
   }
 });
@@ -91,7 +91,7 @@ test('Copy and the Qtegra paste table equal toTSV byte for byte and keep the cop
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await generatedExample(page);
   const project = parseProject(
-    await readFile('fixtures/session-1.bracketeer.json', 'utf8'),
+    await readFile('fixtures/synthetic-session-1.bracketeer.json', 'utf8'),
   );
   const expected = toTSV(planProject(project).sessions[1]!.rows);
   await page
@@ -202,7 +202,7 @@ test('unknown paste shows line errors and fills the editable table', async ({
     name: 'Paste unknowns',
     exact: true,
   });
-  await paste.fill('SYN-H3 S 1-30\nbad line');
+  await paste.fill('SYN-1 S 1-30\nbad line');
   await expect(
     page
       .getByTestId('samples-panel')
@@ -211,13 +211,13 @@ test('unknown paste shows line errors and fills the editable table', async ({
   await expect(
     page.getByRole('button', { name: 'Add pasted unknowns', exact: true }),
   ).toBeDisabled();
-  await paste.fill('SYN-H3 S 1-30\nHH4 S 31-55');
+  await paste.fill('SYN-1 S 1-30\nSYN-2 S 31-55');
   await page
     .getByRole('button', { name: 'Add pasted unknowns', exact: true })
     .click();
   await expect(
     page.getByRole('textbox', { name: 'Unknown 1 name', exact: true }),
-  ).toHaveValue('SYN-H3');
+  ).toHaveValue('SYN-1');
   await expect(
     page.getByRole('spinbutton', { name: 'Unknown 2 begin', exact: true }),
   ).toHaveValue('31');

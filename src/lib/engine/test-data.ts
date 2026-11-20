@@ -1,4 +1,4 @@
-// Small, explicit acceptance inputs from docs/PLAN.md §6 and AGENTS.md.
+// Small, explicit synthetic acceptance inputs from docs/PLAN.md §6 and AGENTS.md.
 // Used spots follow RULES.md revision 3; the fixture script reads them from XLS.
 import {
   DEFAULT_EXPERIMENT,
@@ -12,25 +12,25 @@ function range(from: number, to: number): number[] {
 }
 
 export const SESSION_2_UNKNOWNS: Unknown[] = [
-  { name: 'SYN-H3', tag: 'S', from: 1, to: 30 },
-  { name: 'SYN-H4', tag: 'S', from: 31, to: 55 },
-  { name: 'SYN-H5', tag: 'S', from: 56, to: 83 },
-  { name: 'SYN-H11', tag: 'S', from: 84, to: 90 },
-  { name: 'SYN-T1', tag: 'S', from: 91, to: 116 },
-  { name: 'SYN-T2', tag: 'S', from: 117, to: 119 },
-  { name: 'DKR1', tag: 'S', from: 120, to: 131 },
-  { name: 'SYN-W2', tag: 'S', from: 132, to: 142 },
-  { name: 'SYN-S2', tag: 'S', from: 143, to: 167 },
-  { name: 'SYN-S12', tag: 'S', from: 168, to: 181 },
-  { name: 'SYN-K2', tag: 'S', from: 182, to: 192 },
-  { name: 'SYN-W1', tag: 'S', from: 193, to: 234 },
+  { name: 'SYN-1', tag: 'S', from: 1, to: 30 },
+  { name: 'SYN-2', tag: 'S', from: 31, to: 55 },
+  { name: 'SYN-3', tag: 'S', from: 56, to: 83 },
+  { name: 'SYN-4', tag: 'S', from: 84, to: 90 },
+  { name: 'SYN-5', tag: 'S', from: 91, to: 116 },
+  { name: 'SYN-6', tag: 'S', from: 117, to: 119 },
+  { name: 'SYN-7', tag: 'S', from: 120, to: 131 },
+  { name: 'SYN-8-pg', tag: 'S', from: 132, to: 142 },
+  { name: 'SYN-9', tag: 'S', from: 143, to: 167 },
+  { name: 'SYN-10', tag: 'S', from: 168, to: 181 },
+  { name: 'SYN-11.7', tag: 'S', from: 182, to: 192 },
+  { name: 'SYN-12', tag: 'S', from: 193, to: 234 },
 ];
 
 export const SESSION_3_UNKNOWNS: Unknown[] = [
-  { name: 'SYN-J1', tag: 'xs', from: 235, to: 252 },
-  { name: 'SYN-M1', tag: 'xs', from: 253, to: 302 },
-  { name: 'SYN-F1', tag: 'xs', from: 303, to: 322 },
-  { name: 'SYN-A1', tag: 'xs', from: 488, to: 627 },
+  { name: 'SYN-13-gc1', tag: 'xs', from: 235, to: 252 },
+  { name: 'SYN-14-mafic', tag: 'xs', from: 253, to: 302 },
+  { name: 'SYN-15-felsic', tag: 'xs', from: 303, to: 322 },
+  { name: 'SYN-16-gc1', tag: 'xs', from: 488, to: 627 },
 ];
 
 // Secondary table order is deliberately different from numeric pool order.
@@ -88,7 +88,7 @@ export const SESSION_2_STANDARDS: Standard[] = [
 
 export const TEST_PROJECT: import('./types').Project = {
   version: 1,
-  experiment: { ...DEFAULT_EXPERIMENT, name: 'Zircon_04Nov26_Synthetic' },
+  experiment: { ...DEFAULT_EXPERIMENT, name: 'synthetic-zircon-2026-11-04' },
   standards: SESSION_2_STANDARDS,
   recipe: { ...DEFAULT_RECIPE, chunking: { mode: 'budget' } },
   sessions: [

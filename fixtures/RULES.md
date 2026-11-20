@@ -1,24 +1,29 @@
 # Bracketing rules: zircon U-Pb, 2026-11-04, sessions 2 and 3
 
-These rules generated four files from the session-1 sample list `~/Downloads/Zircon_04Nov26_Synthetic.xls`:
+These are invented sessions for Analyst A and Analyst B, dated 2026-11-04.
+They contain no measured data or original sample identifiers.
 
-- `Zircon_04Nov26_Synthetic_2.xls` and `_3.xls`
-- an `.xlsx` and a `.csv` copy of each
+- `synthetic-session-1.xls`: a fixed session with 245 rows (165 unknowns,
+  80 standards), two invented untagged samples and a non-rotating draw order.
+- `synthetic-session-2.xls` and `synthetic-session-3.xls`: 332 and 324 rows,
+  generated independently of the app's planning engine.
+- `synthetic-session-1.bracketeer.json`: the fixed session plus two planned
+  sessions, used by the app's Open example action and tests.
 
-Two scripts check the result:
+`make_sessions.py` creates all three workbooks from constants, with fixed
+seed **20261104** for session 1's shuffled standard pairs and triples.
+`verify.py` independently re-reads every cell and checks the recipe; its
+output is in `verify.txt`. Both use SheetJS through
+`../scripts/synthetic-workbook-io.mjs`, with no Python package dependencies.
 
-- `make_sessions.py` implements the rules and asserts every number below.
-- `verify.py` re-reads all three workbooks independently. Its output is in `verify.txt`.
-
-The two workbooks also serve as golden test fixtures for the `bracket` app.
-
-**Goal for this run (set by Yiming): leave no spare standards.** After session 3, every registered spot on the standard mounts is used.
+**Goal for this synthetic acceptance case: leave no spare standards.**
+After session 3 every spot in the synthetic standard pools is used.
 
 ## Row format (Qtegra sample list)
 
 The sheet is named `Sheet1`. It has one header row, then one row per spot. The table lists the 13 columns in order and with their exact spelling.
 
-**Cell types are copied from the session-1 file, cell for cell.** Fixture tests must check the types as well as the values.
+**Cell types follow the Qtegra contract below in all three files.** Fixture tests must check the types as well as the values.
 
 | # | Column | Value | Cell type |
 |---|---|---|---|
@@ -40,21 +45,18 @@ Labels:
 
 | Row type | Format | Examples |
 |---|---|---|
-| Unknown with a size tag | `<sample>_<tag>_<spot>` | `HH3_S_1`, `SYN-K2_S_182`, `SYN-A1_xs_488` |
-| Unknown without a size tag | `<sample>_<spot>` | `SYN-V1_384` |
+| Unknown with a size tag | `<sample>_<tag>_<spot>` | `SYN-1_S_1`, `SYN-11.7_S_182`, `SYN-16-gc1_xs_488` |
+| Unknown without a size tag | `<sample>_<spot>` | `SYN-18_384` |
 | Standard | `<standard>_<spot>` | `S513_650`, `91500_728` |
 
 The `.xlsx` copy holds the same values, with `None` in Status. The `.csv` copy writes Evaluate as `TRUE` and leaves the empty cells empty.
 
-Formatting follows the template:
-
-- 8 pt Microsoft Sans Serif
-- grey header row with white text
-- the template's column widths
+All workbooks are unstyled. XLSX and CSV twins are generated only under
+`test-results/synthetic-fixtures/`, never added to the fixture directory.
 
 ## Standard pools and availability
 
-A spot is available if it is in its standard's pool and session 1 did not use it. The session-1 usage is read from the template file, not entered by hand.
+A spot is available if it is in its standard's pool and session 1 did not use it. Session 1's used sets are defined by the generator and independently checked after import.
 
 | Standard | Role | Pool | Used by session 1 | Available for sessions 2–3 |
 |---|---|---|---|---|
@@ -66,7 +68,7 @@ A spot is available if it is in its standard's pool and session 1 did not use it
 | NIST610 | glass | 848–874 | 857–865 (9) | 848–856, 866–874 (18) |
 | NIST612 | glass | 875–901 | 893–901 (9) | 875–892 (18) |
 
-## Recipe: no spare standards (the app's default)
+## Recipe: Auto from budget, no spare standards
 
 ### Session layout
 
@@ -116,7 +118,7 @@ Rows = n + 8 (opening) + 2k (S513 in brackets) + 2 × pairs + 6 (mid block) + 6 
 
 ### Session 2
 
-Unknowns (n = 234, size tag `S`), in run order: SYN-H3 1–30, SYN-H4 31–55, SYN-H5 56–83, SYN-H11 84–90, SYN-T1 91–116, SYN-T2 117–119, DKR1 120–131, SYN-W2 132–142, SYN-S2 143–167, SYN-S12 168–181, SYN-K2 182–192, SYN-W1 193–234.
+Unknowns (n = 234, size tag `S`), in run order: SYN-1 1–30, SYN-2 31–55, SYN-3 56–83, SYN-4 84–90, SYN-5 91–116, SYN-6 117–119, SYN-7 120–131, SYN-8-pg 132–142, SYN-9 143–167, SYN-10 168–181, SYN-11.7 182–192, SYN-12 193–234.
 
 | Item | Value |
 |---|---|
@@ -138,7 +140,7 @@ Unknowns (n = 234, size tag `S`), in run order: SYN-H3 1–30, SYN-H4 31–55, S
 
 ### Session 3
 
-Unknowns (n = 228, size tag `xs`), in run order: SYN-J1 235–252, SYN-M1 253–302, SYN-F1 303–322, SYN-A1 488–627.
+Unknowns (n = 228, size tag `xs`), in run order: SYN-13-gc1 235–252, SYN-14-mafic 253–302, SYN-15-felsic 303–322, SYN-16-gc1 488–627.
 
 | Item | Value |
 |---|---|
@@ -190,18 +192,21 @@ closing   NIST612 890-892, NIST610 872-874
 - **Every pool is fully used:** S513 628–727, 91500 728–757, Seiland 758–787, LTSE 788–817, PL 818–847, NIST610 848–874, NIST612 875–901.
 - **No standard spots are left for reruns.** A rerun would need newly registered positions.
 
-## Revision history
+## Recipe revision
 
-1. **Superseded.** 10 fixed chunks, and the lower 10 spots of each secondary pool treated as unavailable.
-2. **Superseded.** Those lower spots confirmed fresh. Chunks of at most 18, giving 13 brackets per session and 306 + 300 rows. This left 22 S513 and 28 secondary spots spare.
-3. **This version.** No spare standards. The bracket count comes from the S513 supply, giving 37 brackets of 12–13 unknowns. The 40 secondary pairs are spread over those brackets, with 3 evenly spaced doubled brackets. The result is 332 + 324 rows.
+Revision 3 uses the S513 supply for 37 brackets of 12–13 unknowns and
+spreads 40 secondary pairs over them, including 3 doubled brackets.
+The synthetic fixture preserves this acceptance structure.
 
 ## Reproduce
 
-```
-python3 -m venv .venv && .venv/bin/pip install xlrd xlwt openpyxl
-.venv/bin/python make_sessions.py      # writes outputs, runs self-checks
-.venv/bin/python verify.py > verify.txt
+From the repository root, after `pnpm install`:
+
+```sh
+pnpm fixtures:synthetic
 ```
 
-Reruns produce byte-identical files. The `.xlsx` timestamps are fixed at 2026-11-04 so that this holds.
+This generates the three XLS workbooks, derives the JSON project from the
+synthetic fixed session, creates temporary XLSX/CSV twins, and rewrites
+`verify.txt`. Node.js, pnpm and Python 3 are sufficient; no lab workbook or
+external file is read. Repeated runs produce byte-identical outputs.

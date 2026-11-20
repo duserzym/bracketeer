@@ -335,7 +335,7 @@
           rows="2"
           bind:value={paste}
           disabled={session.fixed}
-          placeholder="SYN-H3 S 1-30, 35, 40-42"
+          placeholder="SYN-1 S 1-30, 35, 40-42"
         ></textarea></label
       >
       {#each parsed.errors as error (error.line)}<p class="error">

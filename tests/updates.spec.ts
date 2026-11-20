@@ -78,7 +78,7 @@ for (const viewport of [
       if (screenshots) {
         await mkdir('docs/screenshots', { recursive: true });
         await page.screenshot({
-          path: `docs/screenshots/updates-ready-${suffix}`,
+          path: `docs/screenshots/synthetic-updates-ready-${suffix}`,
         });
       }
       await chip.click();
@@ -91,7 +91,7 @@ for (const viewport of [
       await fits(panel, page);
       if (screenshots)
         await page.screenshot({
-          path: `docs/screenshots/updates-panel-${suffix}`,
+          path: `docs/screenshots/synthetic-updates-panel-${suffix}`,
         });
       await panel.getByRole('button', { name: 'Close', exact: true }).click();
       await expect(panel).not.toBeVisible();

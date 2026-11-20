@@ -1,4 +1,4 @@
-import example from '../../../fixtures/session-1.bracketeer.json';
+import example from '../../../fixtures/synthetic-session-1.bracketeer.json';
 import { parseLabel } from '../engine/labels';
 import { parseProject } from '../engine/project';
 import {

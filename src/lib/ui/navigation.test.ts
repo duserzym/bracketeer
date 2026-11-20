@@ -18,18 +18,18 @@ describe('unknowns navigation validation', () => {
       session: 2,
       label: 'Unknown 1 name',
     });
-    project.sessions[1]!.unknowns[0]!.name = 'SYN-H3';
+    project.sessions[1]!.unknowns[0]!.name = 'SYN-1';
     project.sessions[1]!.unknowns[0]!.from = 31;
     expect(unknownsProblem(project)?.message).toContain('ascending');
   });
   it('reports duplicate identities, overlapping unknowns and standard pools', () => {
     const project = exampleProject();
     const second = project.sessions[1]!.unknowns[2]!;
-    second.name = 'SYN-H3';
+    second.name = 'SYN-1';
     expect(unknownsProblem(project)?.message).toContain('name and tag');
-    second.name = 'SYN-H5';
+    second.name = 'SYN-3';
     second.from = 30;
-    expect(unknownsProblem(project)?.message).toContain('also in row 1, SYN-H3');
+    expect(unknownsProblem(project)?.message).toContain('also in row 1, SYN-1');
     second.from = 56;
     project.standards[0]!.ranges = [{ from: 1, to: 1000 }];
     expect(unknownsProblem(project)?.message).toContain('S513 pool');
@@ -62,7 +62,7 @@ describe('design wizard validation', () => {
   it('numbers every continued entry, permits adjacent identities, and focuses errors in later sessions', () => {
     const project = exampleProject();
     project.sessions[1]!.unknowns.splice(1, 0, {
-      name: 'SYN-H3',
+      name: 'SYN-1',
       tag: 'S',
       from: 1000,
       to: 1001,
@@ -74,7 +74,7 @@ describe('design wizard validation', () => {
       label: 'Unknown 1 begin',
     });
     project.sessions[2]!.unknowns[0]!.from = 235;
-    project.sessions[1]!.unknowns[3]!.name = 'SYN-H3';
+    project.sessions[1]!.unknowns[3]!.name = 'SYN-1';
     expect(designProblem(project)?.label).toBe('Unknown 4 name');
   });
   it('accepts zero-demand standards without pools in design modes, but requires pools for demand', () => {

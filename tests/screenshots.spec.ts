@@ -30,7 +30,7 @@ for (const viewport of [
       .click();
     await page.getByRole('button', { name: '2 Unknowns', exact: true }).click();
     await page.screenshot({
-      path: `docs/screenshots/wizard-${viewport.width}-2-unknowns.png`,
+      path: `docs/screenshots/synthetic-wizard-${viewport.width}-2-unknowns.png`,
     });
     await page
       .getByRole('button', { name: 'Next: bracketing', exact: true })
@@ -39,21 +39,21 @@ for (const viewport of [
       '37 brackets × 2',
     );
     await page.screenshot({
-      path: `docs/screenshots/wizard-${viewport.width}-3-bracketing.png`,
+      path: `docs/screenshots/synthetic-wizard-${viewport.width}-3-bracketing.png`,
     });
     await page
       .getByRole('button', { name: 'Generate and review', exact: true })
       .click();
     await expect(page.getByTestId('counts')).toContainText('332 rows');
     await page.screenshot({
-      path: `docs/screenshots/wizard-${viewport.width}-4-review.png`,
+      path: `docs/screenshots/synthetic-wizard-${viewport.width}-4-review.png`,
     });
     await page
       .getByRole('button', { name: 'Qtegra paste', exact: true })
       .click();
     await expect(page.getByTestId('paste-scroll')).toBeVisible();
     await page.screenshot({
-      path: `docs/screenshots/wizard-${viewport.width}-4-paste.png`,
+      path: `docs/screenshots/synthetic-wizard-${viewport.width}-4-paste.png`,
     });
   });
 }
@@ -68,7 +68,7 @@ test('design formulas and automatic unknown numbering screenshots', async ({
   await mkdir('docs/screenshots', { recursive: true });
   await page.setViewportSize({ width: 1440, height: 900 });
   await startZircon(page);
-  for (const [i, name] of ['SYN-H3', 'SYN-H4', 'SYN-H5'].entries())
+  for (const [i, name] of ['SYN-1', 'SYN-2', 'SYN-3'].entries())
     await addCountSample(page, name, 30, i + 1);
   await commitCell(page, 'Unknown 1 begin', '1');
   await commitCell(page, 'Unknown 3 begin', '80');
@@ -83,7 +83,7 @@ test('design formulas and automatic unknown numbering screenshots', async ({
     page.getByRole('button', { name: 'Auto Unknown 1 begin', exact: true }),
   ).toBeVisible();
   await page.screenshot({
-    path: 'docs/screenshots/wizard-1440-2-numbering.png',
+    path: 'docs/screenshots/synthetic-wizard-1440-2-numbering.png',
   });
   await page
     .getByRole('button', { name: 'Next: bracketing', exact: true })
@@ -143,7 +143,7 @@ test('GrainAtlas screenshot shows the loaded file and the mount warning', async 
   await mkdir('docs/screenshots', { recursive: true });
   await page.setViewportSize({ width: 1440, height: 900 });
   await startZircon(page);
-  for (const [i, name] of ['SYN-H3', 'SYN-H4', 'SYN-H5'].entries())
+  for (const [i, name] of ['SYN-1', 'SYN-2', 'SYN-3'].entries())
     await addCountSample(page, name, 18, i + 1);
   const file = testInfo.outputPath('mount.csv');
   await writeFile(
@@ -151,7 +151,7 @@ test('GrainAtlas screenshot shows the loaded file and the mount warning', async 
     'name,x_stage,y_stage,kind,grain,sample\n' +
       Array.from(
         { length: 40 },
-        (_, i) => `HH3_${i + 1},${i},0,spot,${i + 1},SYN-H3\n`,
+        (_, i) => `SYN-1_${i + 1},${i},0,spot,${i + 1},SYN-1\n`,
       ).join(''),
   );
   const chooser = page.waitForEvent('filechooser');
@@ -168,7 +168,7 @@ test('GrainAtlas screenshot shows the loaded file and the mount warning', async 
       .getByText(/This run uses .*GrainAtlas placed 40/u),
   ).toBeInViewport();
   await page.screenshot({
-    path: 'docs/screenshots/wizard-1440-2-grainatlas.png',
+    path: 'docs/screenshots/synthetic-wizard-1440-2-grainatlas.png',
   });
 });
 

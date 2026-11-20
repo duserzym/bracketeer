@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import example from '../../../fixtures/session-1.bracketeer.json';
+import example from '../../../fixtures/synthetic-session-1.bracketeer.json';
 import { checkSpots } from './checks';
 import { parseProject } from './project';
 import { DEFAULT_EXPERIMENT, DEFAULT_RECIPE, type Project } from './types';
@@ -36,7 +36,7 @@ function project(): Project {
         number: 1,
         fixed: false,
         rows: [],
-        unknowns: [{ name: 'SYN-H3', tag: '', from: 1, to: 4 }],
+        unknowns: [{ name: 'SYN-1', tag: '', from: 1, to: 4 }],
       },
     ],
   };
@@ -78,11 +78,11 @@ describe('spot checks', () => {
     const p = project();
     p.sessions[0]!.unknowns.push(
       { name: 'Y', tag: '', from: 5, to: 6 },
-      { name: 'SYN-H3', tag: '', from: 1, to: 4 },
+      { name: 'SYN-1', tag: '', from: 1, to: 4 },
     );
     expect(checkSpots(p)).toContainEqual({
       severity: 'error',
-      message: 'Rows 1 and 3, SYN-H3: the same spots 1–4.',
+      message: 'Rows 1 and 3, SYN-1: the same spots 1–4.',
       target: { kind: 'unknown', session: 1, index: 2 },
     });
     p.sessions[0]!.unknowns[2] = { name: 'Y', tag: '', from: 7, to: 8 };
@@ -100,12 +100,12 @@ describe('spot checks', () => {
     });
     expect(checkSpots(p)).toContainEqual({
       severity: 'error',
-      message: 'Row 2, Y: spot 4 is also in row 1, SYN-H3.',
+      message: 'Row 2, Y: spot 4 is also in row 1, SYN-1.',
       target: { kind: 'unknown', session: 1, index: 1 },
     });
     expect(checkSpots(p)).toContainEqual({
       severity: 'error',
-      message: 'Row 1, Z: spots 2–3 are also in session 1, row 1, SYN-H3.',
+      message: 'Row 1, Z: spots 2–3 are also in session 1, row 1, SYN-1.',
       target: { kind: 'unknown', session: 2, index: 0 },
     });
   });
@@ -113,7 +113,7 @@ describe('spot checks', () => {
     const p = project();
     p.standards[0]!.ranges = [{ from: 3, to: 20 }];
     expect(messages(p)).toContain(
-      'Row 1, SYN-H3: spots 3–4 are in the S513 pool.',
+      'Row 1, SYN-1: spots 3–4 are in the S513 pool.',
     );
   });
   it('reports overlaps within a standard and between standards, with range targets', () => {
@@ -147,7 +147,7 @@ describe('spot checks', () => {
       const errors = checkSpots(p).filter((i) => i.severity === 'error');
       expect(errors).toContainEqual({
         severity: 'error',
-        message: 'Row 1, SYN-H3: begin must be a positive whole number.',
+        message: 'Row 1, SYN-1: begin must be a positive whole number.',
         target: { kind: 'unknown', session: 1, index: 0 },
       });
       expect(errors).toContainEqual({
@@ -209,7 +209,7 @@ describe('GrainAtlas checks', () => {
         { from: 20, to: 21 },
       ],
     };
-    p.sessions[0]!.unknowns.push({ name: 'SYN-H3', tag: '', from: 1, to: 4 });
+    p.sessions[0]!.unknowns.push({ name: 'SYN-1', tag: '', from: 1, to: 4 });
     expect(messages(p)).toContain(
       'This run uses 8 spots; GrainAtlas placed 6 (mount.csv).',
     );
@@ -219,7 +219,7 @@ describe('GrainAtlas checks', () => {
   });
   it('lists absent positions by entry/range with the specified punctuation', () => {
     const p = project();
-    p.sessions[0]!.unknowns[0] = { name: 'SYN-H3', tag: '', from: 1, to: 32 };
+    p.sessions[0]!.unknowns[0] = { name: 'SYN-1', tag: '', from: 1, to: 32 };
     p.standards[0]!.ranges = [{ from: 726, to: 727 }];
     p.standards[1]!.ranges = [{ from: 20, to: 21 }];
     p.grainatlas = {
@@ -231,7 +231,7 @@ describe('GrainAtlas checks', () => {
     };
     expect(checkSpots(p)).toContainEqual({
       severity: 'warning',
-      message: 'Not placed in GrainAtlas: SYN-H3 31–32.',
+      message: 'Not placed in GrainAtlas: SYN-1 31–32.',
       target: { kind: 'unknown', session: 1, index: 0 },
     });
     p.grainatlas.spots = [
@@ -239,7 +239,7 @@ describe('GrainAtlas checks', () => {
       { from: 1000, to: 2000 },
     ];
     expect(messages(p)).toContain(
-      'Not placed in GrainAtlas: SYN-H3 31–32, S513 726–727.',
+      'Not placed in GrainAtlas: SYN-1 31–32, S513 726–727.',
     );
   });
   it('emits the exact total warning and caps the absent row list at eight items', () => {

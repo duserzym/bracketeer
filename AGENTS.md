@@ -76,11 +76,11 @@ Columns, in this order and spelling (one header row, sheet name `Sheet1`):
 Label | Status | Duration [s] | Comment | Evaluate | Sample Type | Standard | Dilution Factor | Amount | Final Quantity | Identifier | Laser Scan Position Number | Laser Output Setting [%]
 ```
 
-Cell values per row, as in the template `fixtures/session-1.xls`:
+Cell values per row, as in the template `fixtures/synthetic-session-1.xls`:
 
 | Column | Value | Cell type |
 | --- | --- | --- |
-| Label | `<name>_<tag>_<spot>` for unknowns (`HH3_S_1`), `<name>_<spot>` when the tag is empty (`SYN-V1_384`) and for standards (`S513_650`) | text |
+| Label | `<name>_<tag>_<spot>` for unknowns (`SYN-1_S_1`), `<name>_<spot>` when the tag is empty (`SYN-18_384`) and for standards (`S513_650`) | text |
 | Status | empty | blank |
 | Duration [s] | 30 (experiment default) | number |
 | Comment | `<Comment>` (default) | text |
@@ -196,24 +196,24 @@ project's sessions); a standard row outside that standard's pool; a
 standard row on a spot already used (typed-in used list or a fixed
 session); an unknown row outside its sample range. Each names the row(s).
 
-### Today's acceptance case (`fixtures/RULES.md`, revision 3)
+### Synthetic acceptance case (`fixtures/RULES.md`, revision 3)
 
-Session 1 is fixed (imported from `fixtures/session-1.xls`); sessions 2
+Session 1 is fixed (imported from `fixtures/synthetic-session-1.xls`); sessions 2
 and 3 are planned together in budget mode with spare 0: S513 has 78
 available → K = (78 − 2·2) / 2 = 37; each secondary has 20 → P = 40
 (rotation from Seiland, rotationStart 0); split 37 by 234 : 228
 → 19 and 18 brackets; doubled run brackets 13, 25, 37 (session 2 bracket 13;
 session 3 brackets 6 and 18); mid block at bracket 10 and 9; 332 and 324
 rows; every pool fully used. The generated rows must equal
-`fixtures/session-2.xls` and `fixtures/session-3.xls` cell for cell (value
+`fixtures/synthetic-session-2.xls` and `fixtures/synthetic-session-3.xls` cell for cell (value
 and cell type).
 
 ## Fixtures
 
-- `fixtures/session-1.xls`: the hand-made template for session 1 (245 rows).
-  Its standard draw order was by hand, so it is checked only structurally
+- `fixtures/synthetic-session-1.xls`: the synthetic fixed template for session 1 (245 rows).
+  Its seeded standard draw order simulates hand entry and is checked structurally
   (chunk sizes, bracket composition, used spots per standard).
-- `fixtures/session-2.xls`, `fixtures/session-3.xls`: sessions 2 and 3,
+- `fixtures/synthetic-session-2.xls`, `fixtures/synthetic-session-3.xls`: sessions 2 and 3,
   generated independently by `fixtures/make_sessions.py` following
   `fixtures/RULES.md` (revision 3, final); `fixtures/verify.txt` is the
   independent check. Golden tests compare labels, positions, values and cell

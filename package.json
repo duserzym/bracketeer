@@ -16,7 +16,8 @@
     "e2e": "playwright test",
     "build": "vite build",
     "build:desktop": "vite build --outDir dist/tauri --emptyOutDir",
-    "build:web": "vite build --mode singlefile && mv dist/.singlefile/index.html dist/bracketeer.html && rmdir dist/.singlefile"
+    "build:web": "vite build --mode singlefile && mv dist/.singlefile/index.html dist/bracketeer.html && rmdir dist/.singlefile",
+    "fixtures:synthetic": "python3 fixtures/make_sessions.py && node --import tsx scripts/make-fixture-project.ts && python3 fixtures/verify.py > fixtures/verify.txt"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",

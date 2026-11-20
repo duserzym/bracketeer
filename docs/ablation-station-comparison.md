@@ -1,8 +1,7 @@
 # Ablation Station and bracketeer (2026-11-18)
 
 IGL Ablation Station is Boise State's planning page for laser sessions
-(Isotope Geology Laboratory; "designed by M. Mohr, A.I. assisted, based on
-the IGL experiment maker workbook"). Yiming brought back the page and five
+(Isotope Geology Laboratory). Yiming brought back the page and five
 saved setups from the November 2026 visit. This note describes what it does
 in our own words, so that bracketeer can take over what works. Its code is
 not copied; the numbers below were obtained by running the page's own

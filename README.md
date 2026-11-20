@@ -14,13 +14,9 @@ Open bracketeer: on Windows, double-click `bracketeer.exe`; on Mac, open the app
 
    ![Step 1: apatite added to a zircon run](docs/screenshots/wizard-1440-1-two-minerals.png)
 
-2. **Unknowns.** Use **Add sample**, enter a name and optional tag, then **Count**. **Begin** follows the previous **End**, across sessions too; Count fills End. Type Begin or End to keep a hand value. The accent bar marks it; **Auto** lets it follow again. Later automatic values move when a row changes, while hand values stay. You can also paste `SYN-H3 S 1-30, 35, 40-42`; each range becomes a row, with pasted numbers kept as hand values. **Import sequence** brings in an earlier fixed session.
-
-   ![Step 2: automatic numbering and hand marks](docs/screenshots/wizard-1440-2-numbering.png)
+2. **Unknowns.** Use **Add sample**, enter a name and optional tag, then **Count**. **Begin** follows the previous **End**, across sessions too; Count fills End. Type Begin or End to keep a hand value. The accent bar marks it; **Auto** lets it follow again. Later automatic values move when a row changes, while hand values stay. You can also paste `SYN-1 S 1-30, 35, 40-42`; each range becomes a row, with pasted numbers kept as hand values. **Import sequence** brings in an earlier fixed session.
 
    **Load GrainAtlas spots…** reads a laser CSV or a text list of spot names. It checks the whole project's unknown and standard ranges against the placed spots, and warns about missing positions or too many spots. It does not fill the unknowns table.
-
-   ![Step 2: loaded GrainAtlas spots and mount warnings](docs/screenshots/wizard-1440-2-grainatlas.png)
 
 3. **Bracketing.** New projects start with **Chunk target 18**: set the design, read the count, then place the standard spots. The **Standard spots** table is here, with **Begin**, **End**, **Placed / needed**, **Used**, **Spare** and **+ range**. Each standard shows its arithmetic underneath. Placed / needed uses the available count after used spots and spare. Automatic standard ranges follow the unknowns and fill to the needed count; type a Begin to move a range and its automatic End follows.
 
@@ -30,11 +26,7 @@ Open bracketeer: on Windows, double-click `bracketeer.exe`; on Mac, open the app
 
    When the spots are already placed, choose **Auto from budget** and enter the ranges. It derives the bracket count from the available supply and rotates secondary pairs. The summary updates as values change. Click **Generate and review**.
 
-   ![Step 3: Auto from budget with the example's placed pools](docs/screenshots/wizard-1440-3-bracketing.png)
-
 4. **Review.** Edit rows if needed and check the warnings below the grid (click one to select its rows). Then click **Export .xls**, or **Copy for Qtegra** and paste into the LabBook sample list. **Qtegra paste** shows exactly the rows that are copied (no header). **Start another session** marks this one as run and takes you to step 2 for the next.
-
-   ![Step 4](docs/screenshots/wizard-1440-4-paste.png)
 
 ## Projects and sessions
 
@@ -87,6 +79,8 @@ The script sets `TAURI_SIGNING_PRIVATE_KEY`, or prints how to add it by hand.
 Use Node.js 22.18+ or 24+ and pnpm 10 (the package pins pnpm 10.33.0). Run `make setup`, then `make dev`. The app uses Svelte 5, strict TypeScript and Vite; the pure engine is in `src/lib/engine/`. Excel import and export use SheetJS 0.20.3 from its official tarball. The wizard is described in [docs/wizard.md](docs/wizard.md). The mineral tiles are static SVGs rendered by `scripts/make_minerals.py` from [mineral-habit-matrix](https://github.com/duserzym/mineral-habit-matrix).
 
 Run `make check` for Prettier (including Markdown), ESLint, `svelte-check`, Vitest and host Rust checks. These checks need Rust, `cargo tauri` 2 and Xcode Command Line Tools on the Mac; they generate icons if needed. Run `pnpm format` to apply formatting.
+
+The example and acceptance workbooks are synthetic. Run `pnpm fixtures:synthetic` to regenerate them with fixed seed 20261104, including the independent verification report. See [the fixture rules](fixtures/RULES.md). To refresh documentation images with synthetic samples, run `SCREENSHOTS=1 pnpm e2e --project=chromium screenshots.spec.ts updates.spec.ts`; images showing sample data use new `synthetic` paths. The exact old paths for the publication history purge are in [the purge list](docs/synthetic-history-purge.txt).
 
 Run `make test` before finishing a change. It also runs Playwright in Chromium and WebKit, which needs the Playwright **1.64.1** browser builds available locally. `make setup` does not download browsers. Tests compare generated sessions 2 and 3 with the golden workbooks cell for cell, including cell types, both from the example project and typed from scratch through the four steps, and check every step at 1440 × 900 and 1280 × 800. The standalone HTML is tested offline through `file://`.
 

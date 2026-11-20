@@ -22,7 +22,7 @@ const session2Recipe: Recipe = {
 };
 const experiment2 = {
   ...DEFAULT_EXPERIMENT,
-  name: 'Zircon_04Nov26_Synthetic',
+  name: 'synthetic-zircon-2026-11-04',
   session: 2,
 };
 
@@ -197,7 +197,7 @@ describe('generation options', () => {
       Identifier: 'ID',
       'Laser Output Setting [%]': 42,
     };
-    const sample = { name: 'SYN-V1', tag: '', from: 384, to: 384 };
+    const sample = { name: 'SYN-18', tag: '', from: 384, to: 384 };
     const result = generate(
       { ...DEFAULT_EXPERIMENT, defaults },
       [sample],
@@ -206,7 +206,7 @@ describe('generation options', () => {
     );
     expect(result.rows.find((r) => r.meta.kind === 'unknown')).toMatchObject({
       ...defaults,
-      Label: 'SYN-V1_384',
+      Label: 'SYN-18_384',
       'Laser Scan Position Number': 384,
     });
     expect(
@@ -388,7 +388,7 @@ describe('validate after manual edits', () => {
     const edited = structuredClone(result.rows);
     edited[0]!['Laser Scan Position Number'] = 628; // Wrong NIST612 pool; used S513 spot is irrelevant to NIST612.
     edited[6]!['Laser Scan Position Number'] = 628; // Primary: in pool but used in session 1.
-    edited[8]!['Laser Scan Position Number'] = 900; // Unknown: outside SYN-H3's range.
+    edited[8]!['Laser Scan Position Number'] = 900; // Unknown: outside SYN-1's range.
     const warnings = validate(edited, SESSION_2_STANDARDS, SESSION_2_UNKNOWNS);
     expect(
       warnings.map(({ kind, rowIndexes }) => ({ kind, rowIndexes })),

@@ -177,7 +177,7 @@ test('a stored later step with missing pools opens at the Bracketing step and fo
 }) => {
   await page.goto('/');
   const project = JSON.parse(
-    await readFile('fixtures/session-1.bracketeer.json', 'utf8'),
+    await readFile('fixtures/synthetic-session-1.bracketeer.json', 'utf8'),
   ) as Project;
   project.standards[0]!.ranges = [];
   const chooser = page.waitForEvent('filechooser');

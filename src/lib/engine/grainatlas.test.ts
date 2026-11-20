@@ -5,14 +5,14 @@ describe('GrainAtlas positions', () => {
   it('reads generic laser CSV with quoted commas, escaped quotes, size tags, lines and rasters', () => {
     expect(
       parseGrainAtlasSpots(
-        '\uFEFFname,x_stage,y_stage,kind,grain,sample\r\n"HH3_S_1",1,2,spot,1,SYN-H3\r\n"a,b_2",3,4,line,2,"a,b"\r\n"a""b_3",5,6,raster,3,"a""b"\r\n',
+        '\uFEFFname,x_stage,y_stage,kind,grain,sample\r\n"SYN-1_S_1",1,2,spot,1,SYN-1\r\n"a,b_2",3,4,line,2,"a,b"\r\n"a""b_3",5,6,raster,3,"a""b"\r\n',
       ),
     ).toEqual({ spots: [1, 2, 3], errors: [] });
   });
   it('reads a plain list, taking only the integer after the last underscore', () => {
     expect(
       parseGrainAtlasSpots(
-        '\nHH3_S_31\rHH3_L_32\r\nA_lot_of_parts_4\nHH3_S_31\n',
+        '\nSYN-1_S_31\rSYN-1_L_32\r\nA_lot_of_parts_4\nSYN-1_S_31\n',
       ),
     ).toEqual({ spots: [4, 31, 32], errors: [] });
     expect(parseGrainAtlasSpots(' \n')).toEqual({ spots: [], errors: [] });

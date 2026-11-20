@@ -12,9 +12,9 @@ fill in and update as a begin or end is typed. Follow its structure and keep
 bracketeer's mineral catalogues, now with **several minerals in one run**.
 
 Nothing here may change the exports for the same input. Sessions 2 and 3 of
-the example project must still equal `fixtures/session-2.xls` and
-`fixtures/session-3.xls` cell for cell, and the exported bytes must equal
-those of commit `eb5c6c3` (SHA-256 below). Old project files open unchanged:
+the example project must still equal `fixtures/synthetic-session-2.xls` and
+`fixtures/synthetic-session-3.xls` cell for cell, and the exported bytes must equal
+the pinned synthetic fixture hashes (SHA-256 below). Old project files open unchanged:
 no value in them is ever moved by the new automatic numbering.
 
 ## 1. Engine
@@ -190,7 +190,7 @@ standard range (name, index). Errors block Next; warnings do not.
 
 - Errors, per material and per mount (the project is one laser scan list):
   two unknown entries share spots (today's message), two entries are the same
-  range (`Rows 1 and 3, SYN-H3: the same spots 1–30.`), an unknown spot is in a
+  range (`Rows 1 and 3, SYN-1: the same spots 1–30.`), an unknown spot is in a
   standard range (today), two ranges of one standard overlap
   (`NIST610: ranges 1 and 2 overlap at 850–856.`), two standards' ranges
   overlap (today), a begin or end is missing or not a whole number.
@@ -215,7 +215,7 @@ and rasters count as one position each. Stored as
   standard ranges) than GrainAtlas placed:
   `This run uses 662 spots; GrainAtlas placed 640 (mount.csv).`;
 - warning listing spots the project uses that GrainAtlas did not place, by row
-  (`Not placed in GrainAtlas: SYN-H3 31–32, S513 726–727.`, at most 8 items, then
+  (`Not placed in GrainAtlas: SYN-1 31–32, S513 726–727.`, at most 8 items, then
   `and N more`).
 
 ### 1.8 Default for new projects
@@ -243,7 +243,7 @@ mineral.
 
 - Table per session: `Row | Name | Tag | Begin | End | Count | ↑ ↓ ×`. One row
   per entry; an entry with the same name and tag as the row above shows
-  `↳ continued` under the name. The paste box stays (`SYN-H3 S 1-30, 35, 40-42`
+  `↳ continued` under the name. The paste box stays (`SYN-1 S 1-30, 35, 40-42`
   makes three entries; pasted numbers are hand values).
 - **Add sample** appends a row whose Begin is filled (previous End + 1) and
   focuses Name; typing Count fills End.
@@ -303,14 +303,14 @@ Unchanged.
   incomplete plans that cannot be counted. GrainAtlas parsing covers CSV with
   quotes, a plain list, `{sample}_S_{n}` and bad lines.
 - Export bytes (`export-bytes.test.ts`): SHA-256 of the example project's
-  sessions 2 and 3 as `.csv`, TSV, `.xls`, `.xlsx`, equal to commit `eb5c6c3`:
+  sessions 2 and 3 as `.csv`, TSV, `.xls`, `.xlsx`, with pinned synthetic fixture hashes:
 
   | File    | Session 2                                                          | Session 3                                                          |
   | ------- | ------------------------------------------------------------------ | ------------------------------------------------------------------ |
-  | `.csv`  | `3466dacf6cba66736f6ac1e4f09a0f471e8a25c54caa05e326f41cc8317869c1` | `dfdd6d8e215da9ba2ff67d1c260c8c9939ba1937cf4d0c7bb1874cb746c07c29` |
-  | TSV     | `ee0255ed55aa6339adf5b3a4720d0dde2911fc74c31f9a2cc2b2d6fb046eddb4` | `c70746c6785d93d0bc5e3137f826c3f7592b60c5faadd219712afd0d51859f71` |
-  | `.xls`  | `073658bb60fd49c613d16c18a5f89e2df579b69f391fba9ccec12aad204f2bb9` | `a04f0c18625d86abe643e4e2d2eff2529c42434eac1b13baa2785878e1ca728e` |
-  | `.xlsx` | `be518318517e7573654f28777b181d6ecd3bba3188c73f9669ef8ce79e819be8` | `ccf34901900d48938b80d50fc47464a2126d01a3fd5700adf7c8fe5c00f41ea0` |
+  | `.csv`  | `078a5fdcef69d7e2f91459a8123bb7aa491af109f24a989e708e4dc20b41d08b` | `db0f0ede40de555d59129931c9140db9e62618679f471c420583a384a03dc72c` |
+  | TSV     | `f30f91d2e246de92aa9fe78fba06701ea78c1887906ca83f22582c1942286a70` | `72fdf179ae5bfe780dcc63bbda50feb5691c07620304739827f4a4c50a132f55` |
+  | `.xls`  | `32b640552366ad09a2b7293d5696cdb4e9d32fc98a649e45c63a67dba4cb3f35` | `105006c2b603f399c1f56410cc45c940cb71ed43e4c73dc0d31c34b25853e139` |
+  | `.xlsx` | `57ae61bbb330aea73a61d7f5b01e84dbcc5b5d19de96fcbc4207239002fbb90c` | `0026b0aa9edece7402e3aa64d875d59ee9b0a094cdbcffcd0baf48a97da9777a` |
 
 - Playwright: the wizard golden typed by hand through the new step 2 and
   step 3 tables (pools typed as begin/end, `+ range` for NIST610, Auto from
