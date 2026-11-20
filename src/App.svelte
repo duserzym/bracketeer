@@ -1047,6 +1047,7 @@
         ></label
       >
       <CheckUpdatesButton onopen={() => updatesPanel.open()} />
+      <VersionChip onopen={() => updatesPanel.open()} />
       <div class="menu-wrap">
         <button
           aria-expanded={menuOpen}
@@ -1197,7 +1198,6 @@
             ? 'Next: bracketing'
             : 'Generate and review'}</button
       >{/if}
-    <VersionChip onopen={() => updatesPanel.open()} />
   </footer>
 </main>
 

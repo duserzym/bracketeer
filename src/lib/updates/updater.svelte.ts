@@ -6,6 +6,7 @@ import {
   savePrefs,
   pickEndpoint,
   STABLE_ENDPOINT,
+  UNSUPPORTED_FOLDER_REASON,
   transition,
   type UpdateStatus,
   type UpdateInfo,
@@ -16,8 +17,7 @@ import {
 export const isTauri =
   typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 const WEB_REASON = 'Updates come with the desktop app.';
-const PORTABLE_REASON =
-  'This portable copy cannot update itself; download the new version from GitHub.';
+const PORTABLE_REASON = UNSUPPORTED_FOLDER_REASON;
 const storage = {
   getItem: (key: string) => localStorage.getItem(key),
   setItem: (key: string, value: string) => localStorage.setItem(key, value),

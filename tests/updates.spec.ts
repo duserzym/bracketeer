@@ -36,7 +36,7 @@ for (const viewport of [
       );
       await page.goto('/?update-preview=ready');
       const chip = page.getByTestId('version-chip');
-      await expect(chip).toHaveText('Update ready, restart');
+      await expect(chip).toHaveText('v0.1.0');
       await footerFits(page);
       await page
         .getByRole('button', { name: 'Open example', exact: true })
@@ -84,7 +84,7 @@ for (const viewport of [
       await chip.click();
       const panel = page.getByTestId('updates-panel');
       await expect(panel).toHaveJSProperty('open', true);
-      await expect(panel).toContainText('Version 0.2.0 is ready to install');
+      await expect(panel).toContainText('v0.2.0 is ready');
       await expect(
         panel.getByRole('button', { name: 'Restart to update' }),
       ).toBeVisible();
@@ -96,31 +96,33 @@ for (const viewport of [
       await panel.getByRole('button', { name: 'Close', exact: true }).click();
       await expect(panel).not.toBeVisible();
       await page.goto('/?update-preview=available');
-      await expect(chip).toHaveText('Update available');
+      await expect(chip).toHaveText('v0.1.0');
       await page.goto('/?update-preview=none');
-      await expect(chip).toHaveText('Up to date');
+      await expect(chip).toHaveText('v0.1.0');
     });
   }
 }
 
-for (const [state, chipText, panelText] of [
-  ['downloading', 'Downloading 43%', 'Downloading 0.2.0, 43%'],
-  [
-    'error',
-    'Check failed',
-    "Can't reach the update server. Check your internet connection and try again.",
-  ],
+for (const [state, panelText] of [
+  ['downloading', 'Downloading v0.2.0… 43%'],
+  ['error', 'No internet connection, or github.com did not answer.'],
   [
     'unsupported',
-    'Update available',
-    'This portable copy cannot update itself',
+    'bracketeer cannot replace itself in this folder. Download the new version from GitHub.',
   ],
 ] as const) {
   test(`preview ${state}`, async ({ page }) => {
     await page.goto(`/?update-preview=${state}`);
-    await expect(page.getByTestId('version-chip')).toHaveText(chipText);
+    await expect(page.getByTestId('version-chip')).toHaveText('v0.1.0');
     await page.getByTestId('version-chip').click();
     await expect(page.getByTestId('updates-panel')).toContainText(panelText);
+    if (state === 'error') {
+      const details = page.getByTestId('updates-panel').locator('.details');
+      await expect(details).toHaveText(
+        'Details: Network error: Could not reach GitHub',
+      );
+      await expect(details).toHaveCSS('user-select', 'text');
+    }
     if (state === 'unsupported')
       await expect(
         page.getByRole('link', { name: 'Open download page' }),

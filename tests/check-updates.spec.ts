@@ -4,8 +4,7 @@ import { join } from 'node:path';
 
 const button = (page: Page) => page.getByTestId('check-updates');
 const popover = (page: Page) => page.getByTestId('check-updates-popover');
-const networkMessage =
-  "Can't reach the update server. Check your internet connection and try again.";
+const networkMessage = 'No internet connection, or github.com did not answer.';
 
 async function fits(locator: Locator, page: Page) {
   await expect(locator).toBeVisible();
@@ -42,7 +41,11 @@ for (const [scenario, text, badge] of [
   ['none', 'Up to date (v0.1.0)', false],
   ['error', networkMessage, false],
   ['ready', 'v0.2.0 is ready', true],
-  ['unsupported', 'Update available: v0.2.0', true],
+  [
+    'unsupported',
+    'bracketeer cannot replace itself in this folder. Download the new version from GitHub.',
+    true,
+  ],
 ] as const) {
   test(`manual check restores the ${scenario} preview outcome`, async ({
     page,
@@ -61,6 +64,10 @@ for (const [scenario, text, badge] of [
         popover(page).getByRole('button', { name: 'Download', exact: true }),
       ).toBeVisible();
     }
+    if (scenario === 'error')
+      await expect(popover(page)).toContainText(
+        'Details: Network error: Could not reach GitHub',
+      );
     if (scenario === 'ready')
       await expect(
         popover(page).getByRole('button', { name: 'Restart to update' }),
@@ -115,6 +122,10 @@ test('opening during a download keeps its progress and settings opens the shared
   await button(page).click();
   await expect(popover(page)).toContainText('Downloading v0.2.0… 43%');
   await expect(button(page)).toHaveAttribute('data-busy', 'true');
+  await expect(button(page).locator('svg')).toHaveCSS(
+    'animation-name',
+    /spin$/,
+  );
   await popover(page).getByRole('button', { name: 'Update settings…' }).click();
   await expect(popover(page)).not.toBeVisible();
   await expect(page.getByTestId('updates-panel')).toHaveJSProperty(
@@ -122,7 +133,7 @@ test('opening during a download keeps its progress and settings opens the shared
     true,
   );
   await expect(page.getByTestId('updates-panel')).toContainText(
-    'Downloading 0.2.0, 43%',
+    'Downloading v0.2.0… 43%',
   );
 });
 
@@ -151,6 +162,10 @@ for (const viewport of [
     await page.setViewportSize(viewport);
     await page.goto('/?update-preview=idle');
     await fits(button(page), page);
+    const chip = page.getByTestId('version-chip');
+    await fits(chip, page);
+    await expect(chip).toHaveText('v0.1.0');
+    await expect(page.getByTestId('topbar')).toContainText('v0.1.0');
     const screenshot =
       process.env.SCREENSHOTS === '1' &&
       browserName === 'chromium' &&
@@ -168,6 +183,7 @@ for (const viewport of [
     // All top-bar controls share one line, including the last Menu button.
     const center = (await button(page).boundingBox())!;
     for (const locator of [
+      page.getByTestId('version-chip'),
       page.getByLabel('Theme', { exact: true }),
       page.locator('.menu-wrap > button'),
       page.locator('.step-bar'),

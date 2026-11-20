@@ -9,24 +9,6 @@
   const busy = $derived(
     status.kind === 'checking' || status.kind === 'downloading',
   );
-  const label = $derived(
-    status.kind === 'checking'
-      ? 'Checking'
-      : status.kind === 'downloading'
-        ? `Downloading${status.pct === null ? '' : ` ${status.pct}%`}`
-        : status.kind === 'ready'
-          ? 'Update ready, restart'
-          : status.kind === 'available' ||
-              (status.kind === 'unsupported' && status.info)
-            ? 'Update available'
-            : status.kind === 'installing'
-              ? 'Restarting'
-              : status.kind === 'error'
-                ? 'Check failed'
-                : status.kind === 'none' && updater.justChecked
-                  ? 'Up to date'
-                  : `v${updater.version}`,
-  );
 </script>
 
 <button
@@ -37,7 +19,7 @@
 >
   {#if dot}<span class="dot" aria-hidden="true"></span>{/if}
   {#if busy}<span class="spinner" aria-hidden="true"></span>{/if}
-  {label}
+  v{updater.version}
 </button>
 
 <style>

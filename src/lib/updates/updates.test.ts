@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   compareVersions,
   friendlyUpdateError,
+  updateErrorDetails,
+  UNSUPPORTED_FOLDER_REASON,
   checkButtonView,
   pickEndpoint,
   transition,
@@ -26,8 +28,7 @@ describe('friendlyUpdateError', () => {
   it.each([
     'PUBKEY missing',
     'invalid public key',
-    'Base64',
-    'decode failed',
+    'Updater pubkey is empty',
     'not configured',
   ])('explains configuration errors: %s', (raw) => {
     expect(friendlyUpdateError(raw)).toBe(
@@ -36,12 +37,15 @@ describe('friendlyUpdateError', () => {
   });
   it.each([
     '404',
+    'HTTP 404 Not Found',
     'release JSON invalid',
     'Could not fetch a valid release',
     'Not Found',
     'no assets',
   ])('explains missing releases: %s', (raw) => {
-    expect(friendlyUpdateError(raw)).toBe('No release has been published yet.');
+    expect(friendlyUpdateError(raw)).toBe(
+      'No public release of bracketeer has been published.',
+    );
   });
   it.each([
     'error sending request',
@@ -56,24 +60,98 @@ describe('friendlyUpdateError', () => {
     'URLError',
   ])('explains network errors: %s', (raw) => {
     expect(friendlyUpdateError(raw)).toBe(
-      "Can't reach the update server. Check your internet connection and try again.",
+      'No internet connection, or github.com did not answer.',
     );
+  });
+  it.each([
+    'certificate verify failed',
+    'CERTIFICATE_VERIFY_FAILED',
+    'invalid peer certificate: UnknownIssuer',
+    'error sending request: invalid peer certificate: UnknownIssuer',
+  ])('explains certificate errors before network errors: %s', (raw) => {
+    expect(friendlyUpdateError(raw)).toBe(
+      'Could not verify the secure connection to github.com.',
+    );
+  });
+  it.each([
+    'the signature could not be verified',
+    'minisign verification failed',
+    'Verify error',
+    'signature error: base64 decode failed',
+  ])('explains updater signature errors: %s', (raw) => {
+    expect(friendlyUpdateError(raw)).toBe(
+      "The update's signature did not match. Nothing was installed.",
+    );
+  });
+  it.each([
+    'install folder not writable',
+    'Read-only file system',
+    'Permission denied (os error 13)',
+    'Access is denied. (os error 5)',
+  ])('explains unwritable installs: %s', (raw) => {
+    expect(friendlyUpdateError(raw)).toBe(UNSUPPORTED_FOLDER_REASON);
+    expect(friendlyUpdateError(raw)).toBe(
+      'bracketeer cannot replace itself in this folder. Download the new version from GitHub.',
+    );
+  });
+  it.each([
+    [
+      'public key certificate signature 404 network not writable',
+      'Updates are not configured for this build yet.',
+    ],
+    [
+      'certificate Verify 404 network not writable',
+      'Could not verify the secure connection to github.com.',
+    ],
+    [
+      'signature 404 network not writable',
+      "The update's signature did not match. Nothing was installed.",
+    ],
+    [
+      'HTTP 404 network not writable',
+      'No public release of bracketeer has been published.',
+    ],
+    [
+      'network not writable',
+      'No internet connection, or github.com did not answer.',
+    ],
+  ])('uses canonical classification order for %s', (raw, expected) => {
+    expect(friendlyUpdateError(raw)).toBe(expected);
   });
   it('prioritizes configuration and release errors over network wording', () => {
     expect(friendlyUpdateError('Network: public key not configured')).toBe(
       'Updates are not configured for this build yet.',
     );
     expect(friendlyUpdateError('error sending request: 404 not found')).toBe(
-      'No release has been published yet.',
+      'No public release of bracketeer has been published.',
     );
   });
   it('trims unknown errors and caps the raw detail at 120 characters', () => {
+    expect(friendlyUpdateError('decode failed')).toBe(
+      'The update check failed: decode failed',
+    );
     expect(friendlyUpdateError('  Unexpected response  ')).toBe(
       'The update check failed: Unexpected response',
     );
     expect(friendlyUpdateError('x'.repeat(200))).toBe(
       `The update check failed: ${'x'.repeat(119)}…`,
     );
+  });
+});
+
+describe('updateErrorDetails', () => {
+  it('keeps raw errors selectable in the view, trims and limits them to 120 characters', () => {
+    expect(
+      updateErrorDetails('  invalid peer certificate: UnknownIssuer  '),
+    ).toBe('invalid peer certificate: UnknownIssuer');
+    const details = updateErrorDetails('x'.repeat(200));
+    expect(details).toBe(`${'x'.repeat(119)}…`);
+    expect(details).toHaveLength(120);
+    expect(
+      checkButtonView({ kind: 'error', message: 'x'.repeat(200) }, '0.1.0')
+        .details,
+    ).toBe(details);
+    expect(updateErrorDetails('x'.repeat(120))).toBe('x'.repeat(120));
   });
 });
 
@@ -85,7 +163,7 @@ describe('checkButtonView', () => {
     boolean,
     boolean,
   ][] = [
-    [{ kind: 'idle' }, 'Check for updates (v0.1.0)', null, false, false],
+    [{ kind: 'idle' }, 'Current version: v0.1.0', null, false, false],
     [{ kind: 'checking' }, 'Checking for updates…', null, false, true],
     [{ kind: 'none', checkedAt: 1 }, 'Up to date (v0.1.0)', null, false, false],
     [
@@ -119,7 +197,7 @@ describe('checkButtonView', () => {
     ],
     [
       { kind: 'error', message: 'offline' },
-      "Can't reach the update server. Check your internet connection and try again.",
+      'No internet connection, or github.com did not answer.',
       null,
       false,
       false,
@@ -132,8 +210,8 @@ describe('checkButtonView', () => {
       false,
     ],
     [
-      { kind: 'unsupported', reason: 'Portable', info },
-      'Update available: v0.2.0',
+      { kind: 'unsupported', reason: UNSUPPORTED_FOLDER_REASON, info },
+      UNSUPPORTED_FOLDER_REASON,
       'link',
       true,
       false,
@@ -142,6 +220,9 @@ describe('checkButtonView', () => {
   it.each(cases)('renders %j', (status, text, action, badge, busy) => {
     expect(checkButtonView(status, '0.1.0', false)).toEqual({
       text,
+      secondaryText:
+        status.kind === 'available' ? 'Current version: v0.1.0' : null,
+      details: status.kind === 'error' ? status.message : null,
       action,
       badge,
       busy,

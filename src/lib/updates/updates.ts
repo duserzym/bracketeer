@@ -1,6 +1,9 @@
 /** Pure update policy; storage is injected so this module needs no browser. */
 export const STABLE_ENDPOINT =
   'https://github.com/duserzym/bracketeer/releases/latest/download/latest.json';
+const APP_NAME = 'bracketeer';
+const FEED_HOST = new URL(STABLE_ENDPOINT).host;
+export const UNSUPPORTED_FOLDER_REASON = `${APP_NAME} cannot replace itself in this folder. Download the new version from GitHub.`;
 export type Channel = 'stable' | 'beta';
 export interface Release {
   draft: boolean;
@@ -66,22 +69,34 @@ export type UpdateStatus =
   | { kind: 'unsupported'; reason: string; info?: UpdateInfo };
 
 export function friendlyUpdateError(raw: string): string {
-  if (/pubkey|public key|base64|decode|not configured/i.test(raw))
+  if (/pubkey|public key|not configured/i.test(raw))
     return 'Updates are not configured for this build yet.';
+  if (/certificate|UnknownIssuer/i.test(raw))
+    return `Could not verify the secure connection to ${FEED_HOST}.`;
+  if (/signature|minisign|\bverify\b/i.test(raw))
+    return "The update's signature did not match. Nothing was installed.";
   if (
     /404|release JSON|Could not fetch a valid release|not found|no assets/i.test(
       raw,
     )
   )
-    return 'No release has been published yet.';
+    return `No public release of ${APP_NAME} has been published.`;
   if (
     /error sending request|dns|connect|timed out|timeout|offline|network|failed to fetch|ENOTFOUND|URLError/i.test(
       raw,
     )
   )
-    return "Can't reach the update server. Check your internet connection and try again.";
+    return `No internet connection, or ${FEED_HOST} did not answer.`;
+  if (
+    /not writable|read.only|permission denied|access (?:is )?denied/i.test(raw)
+  )
+    return UNSUPPORTED_FOLDER_REASON;
+  return `The update check failed: ${updateErrorDetails(raw)}`;
+}
+
+export function updateErrorDetails(raw: string): string {
   const message = raw.trim();
-  return `The update check failed: ${message.length > 120 ? `${message.slice(0, 119)}…` : message}`;
+  return message.length > 120 ? `${message.slice(0, 119)}…` : message;
 }
 
 /** Presentation only: all state changes and actions stay in the shared updater. */
@@ -91,6 +106,8 @@ export function checkButtonView(
   autoDownload = true,
 ): {
   text: string;
+  secondaryText: string | null;
+  details: string | null;
   action: 'download' | 'install' | 'link' | null;
   badge: boolean;
   busy: boolean;
@@ -104,7 +121,7 @@ export function checkButtonView(
   let action: 'download' | 'install' | 'link' | null = null;
   switch (status.kind) {
     case 'idle':
-      text = `Check for updates (v${version})`;
+      text = `Current version: v${version}`;
       break;
     case 'checking':
       text = 'Checking for updates…';
@@ -130,13 +147,20 @@ export function checkButtonView(
       text = friendlyUpdateError(status.message);
       break;
     case 'unsupported':
-      text = status.info
-        ? `Update available: v${status.info.version}`
-        : status.reason;
+      text = status.reason;
       action = status.info ? 'link' : null;
       break;
   }
-  return { text, action, badge, busy };
+  return {
+    text,
+    secondaryText:
+      status.kind === 'available' ? `Current version: v${version}` : null,
+    details:
+      status.kind === 'error' ? updateErrorDetails(status.message) : null,
+    action,
+    badge,
+    busy,
+  };
 }
 
 export type UpdateEvent =

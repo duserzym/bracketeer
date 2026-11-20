@@ -55,7 +55,8 @@
   onclick={toggle}
 >
   <svg
-    class:rotating={updater.status.kind === 'checking'}
+    class:rotating={updater.status.kind === 'checking' ||
+      updater.status.kind === 'downloading'}
     width="18"
     height="18"
     viewBox="0 0 24 24"
@@ -86,7 +87,10 @@
   {#if updater.status.kind === 'checking'}
     <small class="reduced-motion-checking">Checking…</small>
   {/if}
-  {#if view.badge}<small>Current version: v{updater.version}</small>{/if}
+  {#if view.secondaryText}<small>{view.secondaryText}</small>{/if}
+  {#if view.details !== null}<small class="details"
+      >Details: {view.details}</small
+    >{/if}
   {#if view.action === 'download'}
     <button onclick={download}>Download</button>
   {:else if view.action === 'install'}
@@ -153,6 +157,9 @@
     display: block;
     margin-bottom: 10px;
     color: var(--muted);
+  }
+  .details {
+    user-select: text;
   }
   a {
     display: block;

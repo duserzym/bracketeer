@@ -7,36 +7,15 @@
     setPrefs,
     isTauri,
   } from './updater.svelte';
-  import { friendlyUpdateError, type Channel } from './updates';
+  import { checkButtonView, type Channel } from './updates';
   let dialog: HTMLDialogElement;
   export function open() {
     dialog.showModal();
   }
   const status = $derived(updater.status);
   const info = $derived('info' in status ? status.info : null);
-  const time = (value: number) =>
-    new Date(value).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  const line = $derived(
-    status.kind === 'checking'
-      ? 'Checking for updates'
-      : status.kind === 'none'
-        ? `You're up to date, checked ${time(status.checkedAt)}`
-        : status.kind === 'available'
-          ? `Version ${status.info.version} is available`
-          : status.kind === 'downloading'
-            ? `Downloading ${status.info.version}${status.pct === null ? '' : `, ${status.pct}%`}`
-            : status.kind === 'ready'
-              ? `Version ${status.info.version} is ready to install`
-              : status.kind === 'installing'
-                ? 'Installing and restarting'
-                : status.kind === 'error'
-                  ? friendlyUpdateError(status.message)
-                  : status.kind === 'unsupported'
-                    ? status.reason
-                    : 'Checks run automatically in the background.',
+  const view = $derived(
+    checkButtonView(status, updater.version, updater.prefs.autoDownload),
   );
 </script>
 
@@ -47,10 +26,9 @@
 >
   <h2 id="updates-title">Updates</h2>
   <strong>bracketeer v{updater.version}</strong>
-  <p aria-live="polite">{line}</p>
-  {#if status.kind === 'unsupported' && info}<p>
-      Version {info.version} is available
-    </p>{/if}
+  <p aria-live="polite">{view.text}</p>
+  {#if view.secondaryText}<p>{view.secondaryText}</p>{/if}
+  {#if view.details !== null}<p class="details">Details: {view.details}</p>{/if}
   <div class="update-actions">
     <button
       onclick={() => check(true)}
@@ -133,9 +111,13 @@
     justify-content: space-between;
     gap: 20px;
   }
-  .last-check {
+  .last-check,
+  .details {
     color: var(--muted);
     font-size: 12px;
+  }
+  .details {
+    user-select: text;
   }
   pre {
     font: inherit;
