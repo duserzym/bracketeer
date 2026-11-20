@@ -59,9 +59,27 @@ glass style, centred, at most 1180 px wide.
   - **Reference glasses**: checkboxes. NIST610 and NIST612 are in every
     system.
 
-  Each entry can be renamed inline, removed (×), moved up or down (↑ ↓, which
-  also sets the rotation), and moved to another group (a small role menu). An
-  `Add standard` field per group takes a name.
+  Drag a row's grip to reorder within a group (the Secondaries order sets the
+  rotation) or move it between groups. A lifted row and insertion line show
+  the destination; empty groups are drop zones. Each mineral's list is its
+  own drop area: dragging between minerals cancels. Pointer dragging works
+  with a mouse, trackpad or touch, and scrolls the panel near its edges.
+  Escape cancels. A click on a grip does nothing; each drop is one Undo step.
+
+  Moving from Secondaries or Reference glasses into **Primary** ticks that
+  standard. The previous primary stays in Primary as an unticked candidate;
+  nothing else moves. Reordering within Primary keeps every ticked state as
+  it was. Moving the ticked primary out keeps it ticked in its new group and
+  requires a replacement primary before Next. Moving between Secondaries and
+  Reference glasses keeps the ticked state.
+
+  **Move to…** opens a menu of the other groups, with their full names. Arrow
+  keys choose, Enter moves, and Escape closes; focus returns to Move to….
+  On a grip, Space or Enter picks up, ↑/↓ chooses positions across groups,
+  Space or Enter drops, and Escape cancels. A live region announces the name,
+  group and position. Names grow to fit and tools wrap below them in narrow
+  cards. Each entry can also be renamed inline, removed (×), or moved up or
+  down (↑ ↓). An `Add standard` field per group takes a name.
 
 - **Catalogue per mineral**: the seeds and the lab's defaults are below. The
   user's edits to a catalogue (added, renamed, removed, reordered or regrouped

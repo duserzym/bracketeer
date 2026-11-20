@@ -52,6 +52,36 @@ export const minerals = [
   { id: 'other', name: 'Other', light: otherLight, dark: otherDark },
 ];
 export const roles: StandardRole[] = ['primary', 'secondary', 'reference'];
+
+/** Position is zero-based within the destination group, after removing the source.
+ * The caller supplies one mineral's entries, so a drop cannot cross minerals. */
+export function applyDrop(
+  entries: readonly Entry[],
+  from: number,
+  group: StandardRole,
+  position: number,
+): Entry[] {
+  const source = entries[from];
+  if (!source || !roles.includes(group)) return entries.slice();
+  const remaining = entries.filter((_, i) => i !== from).map((e) => ({ ...e }));
+  const destinations = remaining
+    .map((entry, index) => ({ entry, index }))
+    .filter(({ entry }) => entry.role === group);
+  const slot = Math.max(0, Math.min(Math.trunc(position), destinations.length));
+  const at =
+    destinations[slot]?.index ??
+    (destinations.length ? destinations.at(-1)!.index + 1 : remaining.length);
+  const enteringPrimary = group === 'primary' && source.role !== 'primary';
+  if (enteringPrimary)
+    for (const entry of remaining)
+      if (entry.role === 'primary') entry.checked = false;
+  remaining.splice(at, 0, {
+    ...source,
+    role: group,
+    checked: enteringPrimary ? true : source.checked,
+  });
+  return remaining;
+}
 const key = 'bracketeer.minerals';
 const seedNames: Record<string, [string[], string[]]> = {
   zircon: [

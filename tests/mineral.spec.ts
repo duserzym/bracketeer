@@ -222,8 +222,11 @@ test('checked secondary order, group changes and Restore list persist in the cat
     .fill('Lab PL');
   await page.keyboard.press('Tab');
   await page
-    .getByRole('combobox', { name: 'Lab PL group', exact: true })
-    .selectOption('reference');
+    .getByRole('button', { name: 'Move Lab PL to…', exact: true })
+    .click();
+  await page
+    .getByRole('menuitem', { name: 'Reference glasses', exact: true })
+    .click();
   await expect(
     page
       .getByRole('region', { name: 'Reference glasses', exact: true })

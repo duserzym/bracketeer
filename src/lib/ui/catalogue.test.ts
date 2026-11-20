@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseLabel } from '../engine/labels';
 import {
+  applyDrop,
   applySelection,
   catalogue,
   deriveStep,
@@ -257,5 +258,175 @@ describe('mineral catalogue', () => {
     );
     expect(entries.find((e) => e.name === 'S513')?.checked).toBe(false);
     expect(entries.filter((e) => e.name === 'NIST610')).toHaveLength(1);
+  });
+});
+
+describe('catalogue drops (positions exclude the source)', () => {
+  it('reorders either way within a group without changing other groups or input', () => {
+    const original = seeds('zircon');
+    const before = structuredClone(original);
+    const moved = applyDrop(
+      original,
+      original.findIndex((e) => e.name === 'LTSE'),
+      'secondary',
+      0,
+    );
+    expect(
+      moved
+        .filter((e) => e.role === 'secondary' && e.checked)
+        .map((e) => e.name),
+    ).toEqual(['LTSE', 'Seiland', '91500', 'PL']);
+    expect(moved.filter((e) => e.role !== 'secondary')).toEqual(
+      original.filter((e) => e.role !== 'secondary'),
+    );
+    const back = applyDrop(
+      moved,
+      moved.findIndex((e) => e.name === 'LTSE'),
+      'secondary',
+      3,
+    );
+    expect(back).toEqual(original);
+    expect(original).toEqual(before);
+    moved[0]!.name = 'changed';
+    expect(original).toEqual(before);
+  });
+  it.each([true, false])(
+    'keeps checked=%s between secondaries and references, at the requested position',
+    (checked) => {
+      const entries = seeds('zircon');
+      const from = entries.findIndex((e) => e.name === '91500');
+      entries[from]!.checked = checked;
+      const moved = applyDrop(entries, from, 'reference', 1);
+      expect(moved.filter((e) => e.role === 'reference')).toEqual([
+        { name: 'NIST610', role: 'reference', checked: true },
+        { name: '91500', role: 'reference', checked },
+        { name: 'NIST612', role: 'reference', checked: true },
+      ]);
+      expect(
+        applyDrop(
+          moved,
+          moved.findIndex((e) => e.name === '91500'),
+          'secondary',
+          1,
+        ),
+      ).toEqual(entries);
+    },
+  );
+  it('reorders unchecked and checked Primary entries without changing any checked flags', () => {
+    const entries = seeds('zircon');
+    const original = structuredClone(entries);
+    const moved = applyDrop(entries, 1, 'primary', 0);
+    expect(moved.filter((e) => e.role === 'primary')).toEqual([
+      { name: 'GJ1', role: 'primary', checked: false },
+      { name: 'S513', role: 'primary', checked: true },
+      { name: 'Plešovice', role: 'primary', checked: false },
+    ]);
+    const movedActive = applyDrop(moved, 1, 'primary', 2);
+    expect(movedActive.filter((e) => e.role === 'primary')).toEqual([
+      { name: 'GJ1', role: 'primary', checked: false },
+      { name: 'Plešovice', role: 'primary', checked: false },
+      { name: 'S513', role: 'primary', checked: true },
+    ]);
+    for (const next of [moved, movedActive]) {
+      for (const entry of next)
+        expect(entry).toEqual(original.find((e) => e.name === entry.name));
+      expect(next.filter((e) => e.role !== 'primary')).toEqual(
+        original.filter((e) => e.role !== 'primary'),
+      );
+      expect(selectionProblem('zircon', next)).toBe('');
+    }
+    expect(entries).toEqual(original);
+  });
+  it.each(['GJ1', 'LTSE', 'NIST610'])(
+    'makes %s primary and keeps all previous candidates, unticked, without moving anyone else',
+    (name) => {
+      const entries =
+        name === 'GJ1'
+          ? applyDrop(seeds('zircon'), 1, 'secondary', 0)
+          : seeds('zircon');
+      const from = entries.findIndex((e) => e.name === name);
+      const next = applyDrop(entries, from, 'primary', 0);
+      expect(next[0]).toEqual({ name, role: 'primary', checked: true });
+      expect(
+        next.filter((e) => e.role === 'primary' && e.checked),
+      ).toHaveLength(1);
+      expect(next.find((e) => e.name === 'S513')).toEqual({
+        name: 'S513',
+        role: 'primary',
+        checked: false,
+      });
+      expect(
+        next.filter((e) => e.name !== name).map((e) => [e.name, e.role]),
+      ).toEqual(
+        entries.filter((e) => e.name !== name).map((e) => [e.name, e.role]),
+      );
+      expect(next.filter((e) => e.role !== 'primary')).toEqual(
+        entries.filter((e) => e.role !== 'primary' && e.name !== name),
+      );
+    },
+  );
+  it.each(['secondary', 'reference'] as const)(
+    'keeps a ticked primary ticked when moved to %s and requires a replacement',
+    (role) => {
+      const next = applyDrop(seeds('zircon'), 0, role, 0);
+      expect(next.find((e) => e.name === 'S513')).toEqual({
+        name: 'S513',
+        role,
+        checked: true,
+      });
+      expect(selectionProblem('zircon', next)).toBe(
+        'Add your primary standard',
+      );
+      const unchecked = applyDrop(seeds('zircon'), 1, role, 0);
+      expect(unchecked.find((e) => e.name === 'GJ1')?.checked).toBe(false);
+    },
+  );
+  it('handles empty groups, clamps positions, and leaves another mineral untouched', () => {
+    const apatite = seeds('apatite').filter((e) => e.role !== 'reference');
+    const saved = structuredClone(apatite);
+    const only = [
+      { name: 'Custom', role: 'secondary' as const, checked: false },
+    ];
+    expect(applyDrop(only, 0, 'primary', 99)).toEqual([
+      { name: 'Custom', role: 'primary', checked: true },
+    ]);
+    expect(applyDrop(only, -1, 'primary', 0)).toEqual(only);
+    const zircon = seeds('zircon');
+    const first = applyDrop(zircon, 6, 'secondary', -10);
+    expect(first.filter((e) => e.role === 'secondary')[0]?.name).toBe('LTSE');
+    const last = applyDrop(
+      first,
+      first.findIndex((e) => e.name === 'LTSE'),
+      'secondary',
+      100,
+    );
+    expect(last.filter((e) => e.role === 'secondary').at(-1)?.name).toBe(
+      'LTSE',
+    );
+    expect(apatite).toEqual(saved);
+  });
+  it('applies the dropped roles and rotation to the project while retaining spot settings', () => {
+    const project = exampleProject();
+    let entries = seeds('zircon');
+    entries = applyDrop(
+      entries,
+      entries.findIndex((e) => e.name === '91500'),
+      'reference',
+      0,
+    );
+    entries = applyDrop(
+      entries,
+      entries.findIndex((e) => e.name === 'LTSE'),
+      'secondary',
+      0,
+    );
+    const next = applySelection(project, 'zircon', entries);
+    expect(
+      next.standards.filter((e) => e.role === 'secondary').map((e) => e.name),
+    ).toEqual(['LTSE', 'Seiland', 'PL']);
+    expect(next.standards.find((e) => e.name === '91500')).toEqual({
+      ...project.standards.find((e) => e.name === '91500'),
+      role: 'reference',
+    });
   });
 });

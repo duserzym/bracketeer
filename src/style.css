@@ -700,13 +700,14 @@ dialog p {
   font-size: 11px;
 }
 .catalogue-groups {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   margin-top: 12px;
-  align-items: start;
+  align-items: flex-start;
 }
 .catalogue-group {
+  flex: 1 1 240px;
   min-width: 0;
   background: color-mix(in srgb, var(--subtle) 65%, transparent);
   border: 1px solid var(--border);
@@ -747,11 +748,6 @@ dialog p {
 .catalogue-tools {
   margin-top: 5px;
   padding-left: 20px;
-}
-.catalogue-tools select {
-  font-size: 10px;
-  height: 25px;
-  padding: 2px;
 }
 .catalogue-tools button {
   font-size: 12px;
@@ -831,29 +827,124 @@ dialog p {
   }
 }
 
-/* A catalogue entry stays on one line, including its role and order controls;
-   the three groups stay side by side so the secondaries are visible at once. */
+/* Names keep their intrinsic width; controls wrap below them in narrow cards. */
 .catalogue-entry {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  padding: 3px 0;
+  gap: 4px 8px;
+  padding: 6px 0;
+}
+.catalogue-name {
+  flex-wrap: wrap;
+  flex: 0 1 auto;
+}
+.catalogue-name > .commit-cell {
+  flex: 0 0 auto;
 }
 .catalogue-name .commit-cell input {
-  flex: 1;
+  width: auto;
+  max-width: none;
+  font-family: ui-monospace, monospace;
 }
 .catalogue-tools {
+  flex-wrap: wrap;
   margin: 0 0 0 auto;
   padding: 0;
   gap: 3px;
 }
-.catalogue-tools select {
-  width: 76px;
+.catalogue-error {
+  width: 100%;
+}
+.catalogue-name .drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 30px;
+  padding: 4px;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+.grip {
+  display: inline-block;
+  width: 10px;
+  height: 16px;
+  flex: 0 0 10px;
+  background: radial-gradient(circle, currentColor 1.2px, transparent 1.5px) 0
+    0 / 5px 5px;
+  color: var(--muted);
+}
+.drag-source {
+  opacity: 0.45;
+}
+.drag-source .drag-handle {
+  cursor: grabbing;
+}
+.drop-indicator {
+  position: relative;
+  height: 0;
+  z-index: 1;
+}
+.drop-indicator::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -2px;
+  border-top: 3px solid var(--accent);
+  border-radius: 2px;
+}
+.catalogue-empty {
+  padding: 18px 6px;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  text-align: center;
+}
+.catalogue-empty.drop-ready {
+  background: var(--selection);
+  border-color: var(--accent);
+}
+.catalogue-lifted {
+  position: fixed;
+  width: 260px;
+  max-width: calc(100vw - 24px);
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  pointer-events: none;
+}
+.catalogue-lifted span:last-child {
+  color: var(--muted);
   font-size: 11px;
 }
-.catalogue-error {
-  grid-column: 1 / -1;
+.catalogue-menu {
+  position: fixed;
+  z-index: 101;
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.catalogue-menu button {
+  text-align: left;
+  padding: 6px 10px;
+  border-color: transparent;
 }
 .unknowns-step {
   display: flex;
@@ -1312,12 +1403,18 @@ dialog p {
 .another-mineral label {
   max-width: 280px;
 }
-.catalogue-name > .commit-cell {
-  flex: 1;
-  min-width: 0;
-}
 
 .experiment-title .commit-cell input {
   background: transparent;
   border-color: transparent;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

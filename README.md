@@ -6,7 +6,7 @@ bracketeer turns unknowns and standard spot ranges into a standard-bracketed LA-
 
 Open bracketeer: on Windows, double-click `bracketeer.exe`; on Mac, open the app; or open `bracketeer.html` in Edge. The step bar at the top shows where you are (**1 Mineral, 2 Unknowns, 3 Bracketing, 4 Review**). **Back** never loses what you typed, and **Next** stays disabled until the step is complete, with the reason shown beside it.
 
-1. **Mineral.** Click the mineral you are dating. Its primary, secondaries and reference glasses appear below. Zircon starts with S513 as primary, Seiland, 91500, PL and LTSE as secondaries, and NIST610 and NIST612. Tick, rename, reorder or add standards; your list is remembered for that mineral. **Continue**, **Recent projects** and **Open project** are on the same panel.
+1. **Mineral.** Click the mineral you are dating. Its primary, secondaries and reference glasses appear below. Zircon starts with S513 as primary, Seiland, 91500, PL and LTSE as secondaries, and NIST610 and NIST612. Tick, rename or add standards; drag a handle to reorder within a group or move between groups, or use **Move to…**. Moving from Secondaries or Reference glasses into Primary ticks that standard and leaves the previous primary in the same group, unticked. Reordering within Primary keeps the current primary. Moving the ticked primary out requires choosing a replacement. Each mineral is a separate drop area. Your list is remembered for that mineral. **Continue**, **Recent projects** and **Open project** are on the same panel.
 
    ![Step 1: choose a mineral and its standards](docs/screenshots/wizard-1440-1-mineral.png)
 

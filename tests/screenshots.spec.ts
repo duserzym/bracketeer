@@ -171,3 +171,43 @@ test('GrainAtlas screenshot shows the loaded file and the mount warning', async 
     path: 'docs/screenshots/wizard-1440-2-grainatlas.png',
   });
 });
+
+// Supervisor refreshes these with SCREENSHOTS=1, alongside the existing images.
+for (const viewport of [
+  { width: 1280, height: 800 },
+  { width: 1440, height: 900 },
+  { width: 1536, height: 864 },
+]) {
+  for (const theme of ['light', 'dark']) {
+    test(`step 1 standards at ${viewport.width} in ${theme}`, async ({
+      page,
+    }, testInfo) => {
+      test.skip(
+        testInfo.project.name !== 'chromium',
+        'One set of documentation images.',
+      );
+      await mkdir('docs/screenshots', { recursive: true });
+      await page.setViewportSize(viewport);
+      await page.goto('/');
+      await page
+        .getByRole('combobox', { name: 'Theme', exact: true })
+        .selectOption(theme);
+      await page.getByRole('radio', { name: 'Zircon', exact: true }).click();
+      await expect(
+        page.getByRole('textbox', { name: 'Rename Plešovice', exact: true }),
+      ).toBeVisible();
+      await page.screenshot({
+        path: `docs/screenshots/wizard-${viewport.width}-1-mineral-${theme}.png`,
+      });
+      await page
+        .getByRole('button', { name: 'Move 91500 to…', exact: true })
+        .click();
+      await expect(
+        page.getByRole('menuitem', { name: 'Reference glasses', exact: true }),
+      ).toBeVisible();
+      await page.screenshot({
+        path: `docs/screenshots/wizard-${viewport.width}-1-move-menu-${theme}.png`,
+      });
+    });
+  }
+}

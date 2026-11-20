@@ -43,17 +43,21 @@ for (const viewport of [
     const entry = page.locator('.catalogue-entry').filter({
       has: page.getByRole('radio', { name: 'Use S513', exact: true }),
     });
-    const nameBounds = (await entry
-      .getByRole('textbox', { name: 'Rename S513', exact: true })
-      .boundingBox())!;
-    for (const control of await entry.locator('select, button').all()) {
+    const entryBounds = (await entry.boundingBox())!;
+    // Step 1 tools may wrap below the name; every control stays inside its row.
+    for (const control of await entry.locator('input, button').all()) {
       const bounds = (await control.boundingBox())!;
+      expect(bounds.x).toBeGreaterThanOrEqual(entryBounds.x);
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(
+        entryBounds.x + entryBounds.width + 1,
+      );
+      expect(bounds.y).toBeGreaterThanOrEqual(entryBounds.y);
+      expect(bounds.y + bounds.height).toBeLessThanOrEqual(
+        entryBounds.y + entryBounds.height + 1,
+      );
       expect(
-        Math.abs(
-          bounds.y + bounds.height / 2 - nameBounds.y - nameBounds.height / 2,
-        ),
-      ).toBeLessThan(2);
-      expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+        await control.evaluate((el) => el.scrollWidth <= el.clientWidth),
+      ).toBe(true);
     }
     const groups = await page.locator('.catalogue-group').all();
     const bounds = await Promise.all(

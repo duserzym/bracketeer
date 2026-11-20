@@ -13,6 +13,7 @@
     invalid = false,
     validate,
     required = type === 'number',
+    grow = false,
   }: {
     label: string;
     value: string | number;
@@ -26,6 +27,7 @@
     invalid?: boolean;
     validate?: (value: string) => string;
     required?: boolean;
+    grow?: boolean;
   } = $props();
   let text = $state('');
   let focused = $state(false);
@@ -82,6 +84,7 @@
     aria-label={label}
     {readonly}
     {required}
+    size={grow ? Math.max(1, text.length + 2) : undefined}
     min={type === 'number' ? min : undefined}
     step={type === 'number' ? step : undefined}
     value={text}
