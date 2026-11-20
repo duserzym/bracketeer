@@ -128,7 +128,7 @@ for (const [state, panelText] of [
         page.getByRole('link', { name: 'Open download page' }),
       ).toHaveAttribute(
         'href',
-        'https://github.com/duserzym/bracketeer/releases/latest',
+        'https://github.com/duserzym/bracketeer/releases/tag/v0.2.0',
       );
   });
 }
@@ -140,11 +140,97 @@ test('browser version and persisted update preferences', async ({ page }) => {
   await expect(panel).toContainText('Updates come with the desktop app.');
   await expect(panel.getByRole('button', { name: 'Check now' })).toBeDisabled();
   await panel.getByLabel('Download updates automatically').uncheck();
-  await panel.getByLabel('Channel').selectOption('beta');
+  await expect(panel.getByLabel('Channel')).toHaveCount(0);
   await page.reload();
   await page.getByTestId('version-chip').click();
   await expect(
     panel.getByLabel('Download updates automatically'),
   ).not.toBeChecked();
-  await expect(panel.getByLabel('Channel')).toHaveValue('beta');
+  await expect(panel.getByLabel('Channel')).toHaveCount(0);
+});
+
+test('a stored beta preference migrates silently to stable', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('bracketeer.updates'))
+      localStorage.setItem(
+        'bracketeer.updates',
+        JSON.stringify({
+          channel: 'beta',
+          autoDownload: false,
+          lastResult: 'Previous check',
+        }),
+      );
+  });
+  await page.goto('/');
+  await page.getByTestId('version-chip').click();
+  const panel = page.getByTestId('updates-panel');
+  await expect(panel.getByLabel('Channel')).toHaveCount(0);
+  await expect(
+    panel.getByLabel('Download updates automatically'),
+  ).not.toBeChecked();
+  await expect(panel).toContainText('Previous check');
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('bracketeer.updates')!),
+    ),
+  ).not.toHaveProperty('channel');
+});
+
+for (const theme of ['light', 'dark']) {
+  test(`what's new shows once, reopens and fits 1280x800 in ${theme}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.addInitScript((theme) => {
+      localStorage.setItem('bracketeer.theme', theme);
+      if (!localStorage.getItem('bracketeer.updates'))
+        localStorage.setItem(
+          'bracketeer.updates',
+          JSON.stringify({ lastSeenVersion: '0.0.9' }),
+        );
+    }, theme);
+    await page.goto('/?update-preview=idle');
+    const card = page.getByTestId('whats-new');
+    await expect(card).toContainText("What's new in v0.1.0");
+    await expect(card).toContainText(
+      'Mineral, Unknowns, Bracketing and Review',
+    );
+    await fits(card, page);
+    await card.getByRole('button', { name: "Dismiss what's new" }).click();
+    await expect(card).not.toBeVisible();
+    await expect(page.getByTestId('check-updates')).toBeFocused();
+    await page.reload();
+    await expect(card).not.toBeVisible();
+    await page.getByTestId('check-updates').click();
+    await page
+      .getByTestId('check-updates-popover')
+      .getByRole('button', { name: "What's new", exact: true })
+      .click();
+    await expect(card).toBeVisible();
+    await fits(card, page);
+    await page.keyboard.press('Escape');
+    await expect(card).not.toBeVisible();
+    await expect(page.getByTestId('check-updates')).toBeFocused();
+  });
+}
+
+test('first install records its version and shows no automatic card', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.getByTestId('version-chip')).toHaveText('v0.1.0');
+  await expect(page.getByTestId('whats-new')).not.toBeVisible();
+  expect(
+    await page.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem('bracketeer.updates')!).lastSeenVersion,
+    ),
+  ).toBe('0.1.0');
+  await page.getByTestId('check-updates').click();
+  await page.getByRole('button', { name: "What's new", exact: true }).click();
+  await expect(page.getByTestId('whats-new')).toContainText(
+    'Mineral, Unknowns, Bracketing and Review',
+  );
 });

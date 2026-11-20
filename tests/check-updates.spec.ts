@@ -77,7 +77,7 @@ for (const [scenario, text, badge] of [
         popover(page).getByRole('link', { name: 'Open download page' }),
       ).toHaveAttribute(
         'href',
-        'https://github.com/duserzym/bracketeer/releases/latest',
+        'https://github.com/duserzym/bracketeer/releases/tag/v0.2.0',
       );
     await page.keyboard.press('Escape');
     await expect(popover(page)).not.toBeVisible();
@@ -200,5 +200,37 @@ for (const viewport of [
       });
     await page.setViewportSize({ width: 1280, height: 800 });
     await fits(popover(page), page);
+  });
+}
+
+for (const state of ['available', 'ready']) {
+  test(`${state} notes appear below the state in the popover and settings`, async ({
+    page,
+  }) => {
+    await page.goto(`/?update-preview=${state}`);
+    await button(page).click();
+    await expect(popover(page)).toContainText('Faster generate, new wizard');
+    await expect(popover(page).locator('.notes')).toHaveCSS(
+      '-webkit-line-clamp',
+      '4',
+    );
+    await expect(
+      popover(page).getByRole('link', { name: 'Release notes', exact: true }),
+    ).toHaveAttribute(
+      'href',
+      'https://github.com/duserzym/bracketeer/releases/tag/v0.2.0',
+    );
+    await popover(page)
+      .getByRole('button', { name: 'Update settings…' })
+      .click();
+    const panel = page.getByTestId('updates-panel');
+    await expect(panel).toContainText('Faster generate, new wizard');
+    await expect(panel.locator('.notes')).toHaveCSS('-webkit-line-clamp', '4');
+    await expect(
+      panel.getByRole('link', { name: 'Release notes', exact: true }),
+    ).toHaveAttribute(
+      'href',
+      'https://github.com/duserzym/bracketeer/releases/tag/v0.2.0',
+    );
   });
 }

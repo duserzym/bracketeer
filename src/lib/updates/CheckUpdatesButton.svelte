@@ -1,10 +1,20 @@
 <script lang="ts">
-  import { check, download, install, updater } from './updater.svelte';
-  import { checkButtonView } from './updates';
+  import {
+    check,
+    download,
+    install,
+    updater,
+    showWhatsNew,
+    openReleaseNotes,
+  } from './updater.svelte';
+  import ReleaseNotes from './ReleaseNotes.svelte';
+  import { checkButtonView, releaseNotesUrl } from './updates';
 
   let { onopen }: { onopen: () => void } = $props();
   let button: HTMLButtonElement;
   let popover: HTMLDivElement;
+  let card: HTMLDivElement;
+  let dismiss: HTMLButtonElement;
   let expanded = $state(false);
   const view = $derived(
     checkButtonView(
@@ -14,14 +24,18 @@
     ),
   );
 
-  function position() {
-    if (!popover?.matches(':popover-open')) return;
+  function positionBox(boxElement: HTMLDivElement) {
+    if (!boxElement?.matches(':popover-open')) return;
     const anchor = button.getBoundingClientRect();
-    const box = popover.getBoundingClientRect();
+    const box = boxElement.getBoundingClientRect();
     const gap = 8;
-    popover.style.left = `${Math.max(gap, Math.min(anchor.right - box.width, innerWidth - box.width - gap))}px`;
+    boxElement.style.left = `${Math.max(gap, Math.min(anchor.right - box.width, innerWidth - box.width - gap))}px`;
     const below = anchor.bottom + gap;
-    popover.style.top = `${Math.max(gap, Math.min(below + box.height <= innerHeight - gap ? below : anchor.top - box.height - gap, innerHeight - box.height - gap))}px`;
+    boxElement.style.top = `${Math.max(gap, Math.min(below + box.height <= innerHeight - gap ? below : anchor.top - box.height - gap, innerHeight - box.height - gap))}px`;
+  }
+  function position() {
+    positionBox(popover);
+    positionBox(card);
   }
   function toggle() {
     // check() coalesces checks and downloads already in progress.
@@ -32,6 +46,17 @@
     popover.hidePopover();
     onopen();
   }
+  function whatsNew() {
+    popover.hidePopover();
+    showWhatsNew();
+  }
+  $effect(() => {
+    if (updater.whatsNewOpen) {
+      card.showPopover();
+      positionBox(card);
+      dismiss.focus();
+    } else if (card?.matches(':popover-open')) card.hidePopover();
+  });
   $effect(() => {
     // Reposition when a result changes the popover's height.
     void view;
@@ -55,8 +80,7 @@
   onclick={toggle}
 >
   <svg
-    class:rotating={updater.status.kind === 'checking' ||
-      updater.status.kind === 'downloading'}
+    class:rotating={view.busy}
     width="18"
     height="18"
     viewBox="0 0 24 24"
@@ -91,21 +115,73 @@
   {#if view.details !== null}<small class="details"
       >Details: {view.details}</small
     >{/if}
+  {#if updater.status.kind === 'available' || updater.status.kind === 'ready'}
+    <ReleaseNotes info={updater.status.info} />
+  {/if}
   {#if view.action === 'download'}
     <button onclick={download}>Download</button>
   {:else if view.action === 'install'}
     <button class="primary" onclick={install}>Restart to update</button>
   {:else if view.action === 'link'}
     <a
-      href="https://github.com/duserzym/bracketeer/releases/latest"
+      href={releaseNotesUrl(
+        'info' in updater.status && updater.status.info
+          ? updater.status.info.version
+          : updater.version,
+      )}
+      onclick={(event) =>
+        openReleaseNotes(
+          event,
+          'info' in updater.status && updater.status.info
+            ? updater.status.info.version
+            : updater.version,
+        )}
       target="_blank"
       rel="noreferrer">Open download page</a
     >
   {/if}
+  <button class="settings" onclick={whatsNew}>What's new</button>
   <button class="settings" onclick={settings}>Update settings…</button>
 </div>
 
+<div
+  bind:this={card}
+  popover="auto"
+  data-testid="whats-new"
+  role="dialog"
+  aria-labelledby="whats-new-title"
+  ontoggle={() => {
+    if (!card.matches(':popover-open')) {
+      updater.whatsNewOpen = false;
+      button.focus();
+    }
+  }}
+>
+  <div class="card-heading">
+    <strong id="whats-new-title">What's new in v{updater.version}</strong>
+    <button
+      bind:this={dismiss}
+      aria-label="Dismiss what's new"
+      onclick={() => {
+        updater.whatsNewOpen = false;
+      }}>✕</button
+    >
+  </div>
+  <p class="current-notes">{updater.currentNotes}</p>
+</div>
+
 <style>
+  .card-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .current-notes {
+    white-space: pre-wrap;
+    margin: 0;
+  }
   .check-updates {
     position: relative;
     flex: 0 0 28px;

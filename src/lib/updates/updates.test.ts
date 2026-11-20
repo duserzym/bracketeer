@@ -5,12 +5,11 @@ import {
   updateErrorDetails,
   UNSUPPORTED_FOLDER_REASON,
   checkButtonView,
-  pickEndpoint,
   transition,
   loadPrefs,
+  whatsNew,
+  releaseNotesUrl,
   savePrefs,
-  STABLE_ENDPOINT,
-  type Release,
   type UpdateInfo,
   type UpdateStatus,
   type UpdateEvent,
@@ -253,48 +252,6 @@ describe('compareVersions', () => {
     expect(compareVersions(a, b)).toBe(expected),
   );
 });
-function release(version: string, draft = false, asset = true): Release {
-  return {
-    tag_name: `v${version}`,
-    draft,
-    prerelease: version.includes('-'),
-    assets: asset
-      ? [
-          {
-            name: 'latest.json',
-            browser_download_url: `https://example.test/${version}/latest.json`,
-          },
-        ]
-      : [],
-  };
-}
-describe('pickEndpoint', () => {
-  it('stable ignores the list and pre-releases', () => {
-    expect(pickEndpoint('stable', [release('9.0.0-beta.1')])).toBe(
-      STABLE_ENDPOINT,
-    );
-    expect(pickEndpoint('stable', [])).toBe(STABLE_ENDPOINT);
-  });
-  it('beta selects the newest version, including pre-releases, regardless of list order', () => {
-    expect(
-      pickEndpoint('beta', [release('0.9.9'), release('0.10.0-beta.1')]),
-    ).toContain('/0.10.0-beta.1/');
-    expect(
-      pickEndpoint('beta', [release('0.2.0-beta.1'), release('0.2.0')]),
-    ).toContain('/0.2.0/');
-  });
-  it('skips drafts', () =>
-    expect(
-      pickEndpoint('beta', [release('3.0.0', true), release('2.0.0')]),
-    ).toContain('/2.0.0/'));
-  it('falls back if the newest release has no updater asset, or no release exists', () => {
-    expect(
-      pickEndpoint('beta', [release('3.0.0', false, false), release('2.0.0')]),
-    ).toBe(STABLE_ENDPOINT);
-    expect(pickEndpoint('beta', [])).toBe(STABLE_ENDPOINT);
-  });
-});
-
 const states: UpdateStatus[] = [
   { kind: 'idle' },
   { kind: 'checking' },
@@ -380,10 +337,11 @@ describe('preferences', () => {
       '{"channel":"nightly","autoDownload":1,"lastCheck":"bad","lastResult":7}',
     ]) {
       expect(loadPrefs({ getItem: () => raw, setItem() {} })).toEqual({
-        channel: 'stable',
         autoDownload: true,
         lastCheck: null,
         lastResult: null,
+        lastSeenVersion: null,
+        pendingNotes: null,
       });
     }
   });
@@ -396,10 +354,11 @@ describe('preferences', () => {
       },
     };
     const prefs = {
-      channel: 'beta' as const,
       autoDownload: false,
       lastCheck: 123,
       lastResult: 'Up to date',
+      lastSeenVersion: '0.1.0',
+      pendingNotes: { version: '0.1.1', notes: 'New printing.' },
     };
     savePrefs(storage, prefs);
     expect(values.has('bracketeer.updates')).toBe(true);
@@ -416,5 +375,121 @@ describe('preferences', () => {
     };
     expect(loadPrefs(storage).autoDownload).toBe(true);
     expect(() => savePrefs(storage, loadPrefs(storage))).not.toThrow();
+  });
+});
+
+describe('stable preference migration', () => {
+  it.each(['beta', 'stable'])(
+    'removes a saved %s channel and preserves other settings',
+    (channel) => {
+      let raw = JSON.stringify({
+        channel,
+        autoDownload: false,
+        lastCheck: 123,
+        lastResult: 'Previous result',
+        lastSeenVersion: '0.1.0',
+      });
+      const storage = {
+        getItem: () => raw,
+        setItem: (_key: string, value: string) => {
+          raw = value;
+        },
+      };
+      const prefs = loadPrefs(storage);
+      expect(prefs).toMatchObject({
+        autoDownload: false,
+        lastCheck: 123,
+        lastResult: 'Previous result',
+        lastSeenVersion: '0.1.0',
+      });
+      expect(prefs).not.toHaveProperty('channel');
+      expect(JSON.parse(raw)).not.toHaveProperty('channel');
+    },
+  );
+});
+
+describe("what's new policy", () => {
+  const prefs = loadPrefs({ getItem: () => null, setItem() {} });
+  it('records a first install without showing a card', () => {
+    const result = whatsNew('0.1.0', prefs, 'First release.');
+    expect(result.show).toBe(false);
+    expect(result.prefs.lastSeenVersion).toBe('0.1.0');
+    expect(result.notes).toBe('First release.');
+  });
+  it('shows a newer running version once, including manual reinstalls', () => {
+    const result = whatsNew(
+      '0.1.1',
+      { ...prefs, lastSeenVersion: '0.1.0' },
+      'New printing.',
+    );
+    expect(result.show).toBe(true);
+    expect(whatsNew('0.1.1', result.prefs, 'New printing.').show).toBe(false);
+    expect(whatsNew('0.1.0', result.prefs, 'First release.').show).toBe(false);
+  });
+  it('prefers bundled notes to saved manifest notes', () => {
+    const result = whatsNew(
+      '0.1.1',
+      {
+        ...prefs,
+        lastSeenVersion: '0.1.0',
+        pendingNotes: { version: '0.1.1', notes: 'Manifest notes' },
+      },
+      'Bundled notes',
+    );
+    expect(result.notes).toBe('Bundled notes');
+    expect(result.prefs.pendingNotes?.notes).toBe('Manifest notes');
+  });
+  it('uses saved notes for the matching version when bundled notes are absent or blank', () => {
+    for (const bundled of [undefined, '  ']) {
+      const result = whatsNew(
+        '9.9.9',
+        {
+          ...prefs,
+          lastSeenVersion: '0.1.0',
+          pendingNotes: { version: '9.9.9', notes: 'Manifest notes' },
+        },
+        bundled,
+      );
+      expect(result.notes).toBe('Manifest notes');
+      expect(result.show).toBe(true);
+      expect(whatsNew('9.9.9', result.prefs, undefined).notes).toBe(
+        'Manifest notes',
+      );
+    }
+  });
+  it('falls back to the running version and retains notes for a future version', () => {
+    const result = whatsNew(
+      '9.9.9',
+      {
+        ...prefs,
+        lastSeenVersion: '0.1.0',
+        pendingNotes: { version: '10.0.0', notes: 'Future notes' },
+      },
+      undefined,
+    );
+    expect(result.notes).toBe('Updated to v9.9.9.');
+    expect(result.prefs.pendingNotes?.version).toBe('10.0.0');
+    expect(whatsNew('9.9.9', prefs, undefined).notes).toBe(
+      'Updated to v9.9.9.',
+    );
+  });
+});
+
+describe('release note links', () => {
+  it('links to this repository and the exact release tag', () => {
+    expect(releaseNotesUrl('0.1.1')).toBe(
+      'https://github.com/duserzym/bracketeer/releases/tag/v0.1.1',
+    );
+  });
+  it.each([
+    '',
+    '../evil',
+    '0.1.1?evil',
+    '0.1.1#evil',
+    '0.1.1/../../settings',
+    'https://evil.test',
+    '0.1.1\n',
+  ])('rejects unsafe version %j', (version) => {
+    expect(() => releaseNotesUrl(version)).toThrow('Invalid release version');
   });
 });

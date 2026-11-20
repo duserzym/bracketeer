@@ -5,7 +5,7 @@
   "identifier": "org.bracketeer.desktop",
   "plugins": {
     "updater": {
-      "pubkey": "",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVCRThGODY1MTdGMkRCQUUKUldTdTIvSVhaZmpvVzdrUEw5VUZYaE9lVCs3K2FUWUc3ZU5UU0hQZ2VJVU13cTVMWGZUdmwwbGsK",
       "endpoints": [
         "https://github.com/duserzym/bracketeer/releases/latest/download/latest.json"
       ],

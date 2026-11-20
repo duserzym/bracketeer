@@ -1,7 +1,7 @@
-//! Signed desktop updates; the page chooses the stable or beta endpoint.
+//! Signed desktop updates from the configured stable feed.
 use serde::Serialize;
 use std::sync::Mutex;
-use tauri::{AppHandle, Emitter, State, Url};
+use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_updater::{Update, UpdaterExt};
 
 #[derive(Default)]
@@ -40,7 +40,6 @@ fn info(update: &Update, ready: bool) -> UpdateInfo {
 pub async fn update_check(
     app: AppHandle,
     state: State<'_, UpdateState>,
-    endpoint: String,
 ) -> Result<Option<UpdateInfo>, String> {
     if app
         .config()
@@ -54,12 +53,7 @@ pub async fn update_check(
         return Err("Updater pubkey is empty".into());
     }
     // Check even when ready: an explicit check may discover a newer release.
-    let updater = app
-        .updater_builder()
-        .endpoints(vec![Url::parse(&endpoint).map_err(|e| e.to_string())?])
-        .map_err(|e| e.to_string())?
-        .build()
-        .map_err(|e| e.to_string())?;
+    let updater = app.updater_builder().build().map_err(|e| e.to_string())?;
     let update = updater.check().await.map_err(|e| e.to_string())?;
     let mut pending = state.pending.lock().map_err(|e| e.to_string())?;
     let mut bytes = state.bytes.lock().map_err(|e| e.to_string())?;

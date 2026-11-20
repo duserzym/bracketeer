@@ -19,14 +19,12 @@ every repository; the last section is the part specific to this one.
   downloaded bytes and restarts the app.
 - The page checks 8 seconds after launch and every 6 hours. With
   "Download updates automatically" on (the default), an available update is
-  downloaded quietly and the chip turns into "Update ready, restart". With it
-  off, the chip says "Update available" and the panel offers Download.
-- Channels: **Stable** reads `https://github.com/<owner>/<repo>/releases/latest/download/latest.json`,
-  which GitHub resolves to the newest published, non-pre-release release.
-  **Beta** lists the repository's releases through the GitHub API, skips
-  drafts, and takes `latest.json` from the newest release, pre-releases
-  included. A tag like `v0.4.0-beta.1` becomes a pre-release and only the Beta
-  channel receives it.
+  downloaded quietly and the button gains a badge when ready. With it
+  off, the popover says "Update available: vX.Y.Z" and offers Download.
+- Every app follows the latest stable public release from
+  `https://github.com/<owner>/<repo>/releases/latest/download/latest.json`.
+  Old channel preferences migrate silently to stable. No channel selector or
+  release-list request remains.
 - Hosted inside UPb Studio (the `@lab/bridge` transport is `tauri` or
   `postMessage`), a module never runs its own updater: the shell updates
   itself and the modules it pins in `modules.lock.json`. The chip is hidden
@@ -36,32 +34,53 @@ every repository; the last section is the part specific to this one.
 
 ## What the user sees
 
-- **Version chip**: a small pill in the bottom-right corner of the window on
-  every screen: `v1.2.3`. It becomes `Update available` or
-  `Update ready, restart` with a dot when there is something to do, shows a
-  spinner while checking or downloading, and `Check failed` after an error.
-  Clicking it opens Settings > Updates.
-- **Settings > Updates**: current version, the last check time and result,
-  **Check now**, **Download** (when automatic downloads are off), **Restart to
-  update** (when the download is done), "Download updates automatically",
-  the channel (Stable / Beta), and a link to the release notes.
-- Nothing is sent anywhere: the check is one GET of `latest.json` (and the
-  releases list on Beta). No telemetry.
+- **Check for updates**: a circular-arrows button beside the always-visible
+  `vX.Y.Z` chip. Its icon rotates while busy and carries a badge for an update.
+  Clicking it checks and opens a popover; **Update settings…** opens the panel.
+- **Updates panel**: current version, canonical update state, last check time
+  and result, **Check now**, **Download** (when automatic downloads are off),
+  **Restart to update** and **Download updates automatically**.
+- Available and ready states show the manifest's plain-text notes, clamped to
+  four lines, and **Release notes** opens that version's GitHub release in the
+  system browser. The native opener permits only this repository's HTTPS
+  release-tag URLs.
+- After an upgrade, **What's new in vX.Y.Z** appears once beside the check
+  button. Dismiss with the close button or Esc; **What's new** in the popover
+  opens it again. First installs only record their version. Notes bundled at
+  build time cover manual reinstalls too; saved manifest notes are the fallback,
+  followed by `Updated to vX.Y.Z.` when neither source has notes.
+- No telemetry is sent. A check requests only the stable `latest.json` feed.
 
-## Release flow
+## Releasing
 
-1. Bump the version (the three copies must agree; see the repository section),
-   commit and push.
-2. Tag `vX.Y.Z` (or `vX.Y.Z-beta.N` for the Beta channel) and push the tag.
-3. The release workflow (`v*` tags and manual dispatch only, never on push)
-   builds the installers, signs the update bundles with the private key from
-   the `TAURI_SIGNING_PRIVATE_KEY` secret, and creates a draft GitHub Release with
-   the installers, the signed bundles (`.app.tar.gz` + `.sig` on macOS,
-   `.exe`/`.msi` + `.sig` on Windows) and `latest.json`.
-4. Publish the draft on GitHub. Installed copies see the new version at their next check.
+1. Write `release-notes/X.Y.Z.md`: plain text or at most five short `- ` bullets,
+   no headings, at most 600 characters. Describe changes for lab users. The
+   running version's file is bundled into the app; commit the notes with the
+   release's version changes (all three version copies must agree).
+2. Build with the signing key available:
 
-A manual run (`gh workflow run <name>`) builds the same artifacts and keeps
-them as workflow artifacts without publishing a release; it is the dry run.
+   ```bash
+   TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/bracketeer-updater.key)" cargo tauri build --config src-tauri/tauri.release.conf.json
+   ```
+
+   Build the optional Windows installer with the same release config and key.
+   Keep the `.sig` files beside their artifacts.
+
+3. Create the stable feed (version defaults to `src-tauri/tauri.conf.json`):
+
+   ```bash
+   node scripts/release-feed.mjs --darwin-aarch64 src-tauri/target/release/bundle/macos/bracketeer.app.tar.gz --out latest.json
+   ```
+
+   Add `--windows-x86_64 <path-to-setup.exe>` when available, and `--version X.Y.Z`
+   only when needed. The script refuses missing, empty or overlong notes, an
+   empty/invalid public key, missing signatures, mismatched key IDs or either
+   failed minisign signature. It verifies every artifact before writing.
+
+4. Upload the `.dmg`, `.app.tar.gz`, its `.sig` and `latest.json` to the public
+   stable GitHub release tagged `vX.Y.Z`. Also upload the Windows installer and
+   its `.sig` when included in the feed. Publish the release so installed copies
+   can find it at their next check. Existing release workflows are unchanged.
 
 ## One-time setup per repository (the owner does this)
 
@@ -85,8 +104,10 @@ them as workflow artifacts without publishing a release; it is the dry run.
 
 ## Checks in the repository
 
-- Unit tests cover version comparison, channel selection and the update state
-  machine (`updates.test.*`).
+- Unit tests cover version comparison, stable preference migration, release-note fallbacks
+  and the update state machine (`updates.test.*`).
+- `scripts/release-feed.test.mjs` generates synthetic Ed25519 keys and verifies
+  raw/prehashed signatures, trusted comments, tampering and feed validation.
 - A browser test renders the chip and the panel in every state at
   1440 x 900 and 1280 x 800, light and dark, using the `?update-preview=`
   query (`ready`, `available`, `downloading`, `error`, `none`) that the page
@@ -96,10 +117,10 @@ them as workflow artifacts without publishing a release; it is the dry run.
 ## bracketeer specifics
 
 - Tauri project: `src-tauri/`. Updater code: `src-tauri/src/updater.rs`; page
-  side `src/lib/updates/updates.ts` (pure version and channel logic plus the
+  side `src/lib/updates/updates.ts` (pure version, preference and notes logic plus the
   state machine, unit-tested in `src/lib/updates/updates.test.ts`),
   `src/lib/updates/updater.svelte.ts` (scheduler and Tauri calls),
-  `src/lib/updates/VersionChip.svelte` (right end of the wizard footer, on every step) and
+  `src/lib/updates/VersionChip.svelte` (in the top bar, on every step) and
   `src/lib/updates/UpdatesPanel.svelte` (a dialog opened from the chip; there
   is no Settings screen in bracketeer).
 - Version copies that must agree: `package.json`, `src-tauri/tauri.conf.json`
@@ -117,6 +138,6 @@ them as workflow artifacts without publishing a release; it is the dry run.
   when an update is available it shows "Update available" and offers the download page instead (the app knows it is portable when no `uninstall.exe`
   sits next to it).
 - Update endpoint: `https://github.com/duserzym/bracketeer/releases/latest/download/latest.json`.
-- Settings: `localStorage['bracketeer.updates']` holds the channel, the
-  automatic-download switch and the last check (per computer, never in a
-  project file).
+- Settings: `localStorage['bracketeer.updates']` holds the automatic-download
+  switch, last check, `lastSeenVersion` and saved manifest notes (per computer,
+  never in a project file).

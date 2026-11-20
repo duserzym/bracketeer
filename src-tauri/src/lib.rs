@@ -3,6 +3,7 @@
 use tauri::{Manager, WindowEvent};
 
 mod geometry;
+mod release_url;
 mod updater;
 
 #[tauri::command]
@@ -54,7 +55,8 @@ pub fn run() {
             updater::update_download,
             updater::update_install,
             updater::update_status,
-            updater::update_supported
+            updater::update_supported,
+            release_url::open_release_url
         ])
         .run(tauri::generate_context!())
         .expect("error while running bracketeer");

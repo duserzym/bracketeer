@@ -3,9 +3,9 @@ import { listen } from '@tauri-apps/api/event';
 import { scheduleUpdateChecks } from './scheduler';
 import {
   loadPrefs,
+  whatsNew,
+  releaseNotesUrl,
   savePrefs,
-  pickEndpoint,
-  STABLE_ENDPOINT,
   UNSUPPORTED_FOLDER_REASON,
   transition,
   type UpdateStatus,
@@ -22,11 +22,18 @@ const storage = {
   getItem: (key: string) => localStorage.getItem(key),
   setItem: (key: string, value: string) => localStorage.setItem(key, value),
 };
+const bundledNotes = import.meta.glob<string>('/release-notes/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
 export const updater = $state({
   status: { kind: 'idle' } as UpdateStatus,
   prefs: loadPrefs(storage),
   version: __APP_VERSION__,
   justChecked: false,
+  whatsNewOpen: false,
+  currentNotes: '',
 });
 let flashTimer: ReturnType<typeof setTimeout>;
 let previewTimer: ReturnType<typeof setTimeout>;
@@ -72,22 +79,7 @@ export async function check(manual = false) {
   }
   try {
     const canInstall = await supported();
-    let endpoint = STABLE_ENDPOINT;
-    if (updater.prefs.channel === 'beta') {
-      try {
-        const response = await fetch(
-          'https://api.github.com/repos/duserzym/bracketeer/releases?per_page=10',
-          {
-            headers: { Accept: 'application/vnd.github+json' },
-          },
-        );
-        if (!response.ok) throw new Error('Release list unavailable');
-        endpoint = pickEndpoint('beta', await response.json());
-      } catch {
-        /* Use the stable endpoint when GitHub's API is unavailable. */
-      }
-    }
-    const info = await invoke<UpdateInfo | null>('update_check', { endpoint });
+    const info = await invoke<UpdateInfo | null>('update_check');
     record(
       info
         ? `Version ${info.version} ${info.ready ? 'is ready to install' : 'is available'}`
@@ -145,6 +137,13 @@ export async function download() {
 }
 export async function install() {
   if (!isTauri || updater.status.kind !== 'ready') return;
+  // Persist before the native command can install and restart the process.
+  setPrefs({
+    pendingNotes: {
+      version: updater.status.info.version,
+      notes: updater.status.info.notes ?? '',
+    },
+  });
   send({ type: 'install' });
   try {
     await invoke('update_install');
@@ -153,19 +152,46 @@ export async function install() {
   }
 }
 
+export function showWhatsNew() {
+  updater.whatsNewOpen = true;
+}
+function recordRunningVersion(version: string) {
+  updater.version = version;
+  const result = whatsNew(
+    version,
+    updater.prefs,
+    bundledNotes[`/release-notes/${version}.md`],
+  );
+  updater.currentNotes = result.notes;
+  updater.whatsNewOpen = result.show;
+  updater.prefs = result.prefs;
+  savePrefs(storage, result.prefs);
+}
+
+/** Open only a validated release tag in the system browser on desktop. */
+export async function openReleaseNotes(event: MouseEvent, version: string) {
+  const url = releaseNotesUrl(version);
+  if (!isTauri) return;
+  event.preventDefault();
+  await invoke('open_release_url', { url });
+}
+
 /** Start once from onMount; disposal also handles an in-flight support probe. */
 export function startScheduler(): () => void {
   let disposed = false;
   let stopChecks: (() => void) | undefined;
   if (!isTauri) {
+    recordRunningVersion(__APP_VERSION__);
     if (!preview()) send({ type: 'unsupported', reason: WEB_REASON });
   } else {
     void import('@tauri-apps/api/app')
       .then(({ getVersion }) => getVersion())
       .then((version) => {
-        if (!disposed) updater.version = version;
+        if (!disposed) recordRunningVersion(version);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!disposed) recordRunningVersion(__APP_VERSION__);
+      });
     void supported()
       .then(async (canInstall) => {
         if (disposed) return;

@@ -6,8 +6,10 @@
     install,
     setPrefs,
     isTauri,
+    openReleaseNotes,
   } from './updater.svelte';
-  import { checkButtonView, type Channel } from './updates';
+  import { checkButtonView, releaseNotesUrl } from './updates';
+  import ReleaseNotes from './ReleaseNotes.svelte';
   let dialog: HTMLDialogElement;
   export function open() {
     dialog.showModal();
@@ -28,6 +30,9 @@
   <strong>bracketeer v{updater.version}</strong>
   <p aria-live="polite">{view.text}</p>
   {#if view.secondaryText}<p>{view.secondaryText}</p>{/if}
+  {#if status.kind === 'available' || status.kind === 'ready'}
+    <ReleaseNotes info={status.info} />
+  {/if}
   {#if view.details !== null}<p class="details">Details: {view.details}</p>{/if}
   <div class="update-actions">
     <button
@@ -44,7 +49,8 @@
         >Restart to update</button
       >{/if}
     {#if status.kind === 'unsupported' && info}<a
-        href="https://github.com/duserzym/bracketeer/releases/latest"
+        href={releaseNotesUrl(info.version)}
+        onclick={(event) => openReleaseNotes(event, info.version)}
         target="_blank"
         rel="noreferrer">Open download page</a
       >{/if}
@@ -57,31 +63,12 @@
         setPrefs({ autoDownload: event.currentTarget.checked })}
     /> Download updates automatically</label
   >
-  <label class="channel"
-    >Channel<select
-      value={updater.prefs.channel}
-      onchange={(event) =>
-        setPrefs({ channel: event.currentTarget.value as Channel })}
-      ><option value="stable">Stable</option><option value="beta"
-        >Beta (pre-releases)</option
-      ></select
-    ></label
-  >
   <p class="last-check">
     Last check: {updater.prefs.lastCheck === null
       ? 'Not checked yet'
       : new Date(updater.prefs.lastCheck).toLocaleString()}<br />Last result: {updater
       .prefs.lastResult ?? 'No result yet'}
   </p>
-  {#if info?.notes}<section aria-label="Release notes">
-      <strong>What's new in {info.version}</strong>
-      <pre>{info.notes}</pre>
-    </section>{/if}
-  <a
-    href="https://github.com/duserzym/bracketeer/releases"
-    target="_blank"
-    rel="noreferrer">Release notes on GitHub</a
-  >
   <div class="dialog-actions">
     <button onclick={() => dialog.close()}>Close</button>
   </div>
@@ -105,12 +92,6 @@
     gap: 8px;
     margin-bottom: 16px;
   }
-  .channel {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-  }
   .last-check,
   .details {
     color: var(--muted);
@@ -118,14 +99,6 @@
   }
   .details {
     user-select: text;
-  }
-  pre {
-    font: inherit;
-    white-space: pre-wrap;
-    max-height: 18em;
-    line-height: 1.5;
-    overflow: auto;
-    margin: 8px 0 16px;
   }
   a {
     color: var(--accent);

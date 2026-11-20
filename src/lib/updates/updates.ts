@@ -4,14 +4,6 @@ export const STABLE_ENDPOINT =
 const APP_NAME = 'bracketeer';
 const FEED_HOST = new URL(STABLE_ENDPOINT).host;
 export const UNSUPPORTED_FOLDER_REASON = `${APP_NAME} cannot replace itself in this folder. Download the new version from GitHub.`;
-export type Channel = 'stable' | 'beta';
-export interface Release {
-  draft: boolean;
-  prerelease: boolean;
-  tag_name: string;
-  assets: { name: string; browser_download_url: string }[];
-}
-
 export function compareVersions(a: string, b: string): number {
   const split = (v: string) => {
     const [core = '', pre] = v.replace(/^v/, '').split('+')[0]!.split(/-(.*)/s);
@@ -37,17 +29,6 @@ export function compareVersions(a: string, b: string): number {
     return l < r ? -1 : 1;
   }
   return 0;
-}
-
-export function pickEndpoint(channel: Channel, releases: Release[]): string {
-  if (channel === 'stable') return STABLE_ENDPOINT;
-  const newest = releases
-    .filter((release) => !release.draft)
-    .sort((a, b) => compareVersions(b.tag_name, a.tag_name))[0];
-  return (
-    newest?.assets.find((asset) => asset.name === 'latest.json')
-      ?.browser_download_url ?? STABLE_ENDPOINT
-  );
 }
 
 export interface UpdateInfo {
@@ -224,10 +205,11 @@ export function transition(
 }
 
 export interface UpdatePrefs {
-  channel: Channel;
   autoDownload: boolean;
   lastCheck: number | null;
   lastResult: string | null;
+  lastSeenVersion: string | null;
+  pendingNotes: { version: string; notes: string } | null;
 }
 interface PrefStorage {
   getItem(key: string): string | null;
@@ -236,15 +218,15 @@ interface PrefStorage {
 const PREF_KEY = 'bracketeer.updates';
 export function loadPrefs(storage: PrefStorage): UpdatePrefs {
   const defaults: UpdatePrefs = {
-    channel: 'stable',
     autoDownload: true,
     lastCheck: null,
     lastResult: null,
+    lastSeenVersion: null,
+    pendingNotes: null,
   };
   try {
     const value = JSON.parse(storage.getItem(PREF_KEY) ?? '{}');
-    return {
-      channel: value.channel === 'beta' ? 'beta' : 'stable',
+    const prefs: UpdatePrefs = {
       autoDownload:
         typeof value.autoDownload === 'boolean' ? value.autoDownload : true,
       lastCheck:
@@ -253,7 +235,22 @@ export function loadPrefs(storage: PrefStorage): UpdatePrefs {
           : null,
       lastResult:
         typeof value.lastResult === 'string' ? value.lastResult : null,
+      lastSeenVersion:
+        typeof value.lastSeenVersion === 'string'
+          ? value.lastSeenVersion
+          : null,
+      pendingNotes:
+        typeof value.pendingNotes?.version === 'string' &&
+        typeof value.pendingNotes?.notes === 'string'
+          ? {
+              version: value.pendingNotes.version,
+              notes: value.pendingNotes.notes,
+            }
+          : null,
     };
+    // Retire either old channel value without changing any other preference.
+    if ('channel' in value) savePrefs(storage, prefs);
+    return prefs;
   } catch {
     return defaults;
   }
@@ -264,4 +261,41 @@ export function savePrefs(storage: PrefStorage, prefs: UpdatePrefs): void {
   } catch {
     /* Storage is optional. */
   }
+}
+
+/** A release URL is constructed only from a version, never from manifest HTML. */
+export function releaseNotesUrl(version: string): string {
+  if (
+    version.trim() !== version ||
+    !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(version)
+  )
+    throw new Error('Invalid release version');
+  return `https://github.com/duserzym/bracketeer/releases/tag/v${version}`;
+}
+
+/** Start-up policy shared by manual reinstalls and in-app updates. */
+export function whatsNew(
+  version: string,
+  prefs: UpdatePrefs,
+  bundledNotes: string | undefined,
+): { show: boolean; notes: string; prefs: UpdatePrefs } {
+  const fallback =
+    prefs.pendingNotes?.version === version ? prefs.pendingNotes.notes : '';
+  return {
+    show:
+      !!prefs.lastSeenVersion &&
+      compareVersions(version, prefs.lastSeenVersion) > 0,
+    notes: bundledNotes?.trim() || fallback.trim() || `Updated to v${version}.`,
+    prefs: {
+      ...prefs,
+      lastSeenVersion: version,
+      // Keep matching notes so the card can be reopened on later launches.
+      // Keep future notes across an intervening manual reinstall too.
+      pendingNotes:
+        prefs.pendingNotes &&
+        compareVersions(prefs.pendingNotes.version, version) >= 0
+          ? prefs.pendingNotes
+          : null,
+    },
+  };
 }

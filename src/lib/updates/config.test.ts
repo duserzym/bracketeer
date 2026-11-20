@@ -1,6 +1,6 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { checkButtonView, pickEndpoint, STABLE_ENDPOINT } from './updates';
+import { checkButtonView, STABLE_ENDPOINT } from './updates';
 
 const config = JSON.parse(
   readFileSync(
@@ -34,12 +34,11 @@ function validMinisignPublicKey(value: string): boolean {
 }
 
 describe('updater configuration', () => {
-  it('uses the canonical stable feed and preserves channel selection', () => {
+  it('uses only the canonical stable feed', () => {
     const endpoint =
       'https://github.com/duserzym/bracketeer/releases/latest/download/latest.json';
     expect(config.plugins.updater.endpoints).toEqual([endpoint]);
     expect(STABLE_ENDPOINT).toBe(endpoint);
-    expect(pickEndpoint('stable', [])).toBe(endpoint);
   });
 
   it('creates signed updater artifacts in release builds', () => {
@@ -80,5 +79,23 @@ describe('updater configuration', () => {
       encode(`${comment}\n${Buffer.alloc(42).toString('base64')}`),
     ])
       expect(validMinisignPublicKey(invalid)).toBe(false);
+  });
+});
+
+describe('bundled release notes', () => {
+  const directory = new URL('../../../release-notes/', import.meta.url);
+  it('includes the running version', () => {
+    expect(readdirSync(directory)).toContain(`${config.version}.md`);
+  });
+  it('keeps every notes file short and user-facing, without headings', () => {
+    for (const file of readdirSync(directory).filter((file) =>
+      file.endsWith('.md'),
+    )) {
+      const notes = readFileSync(new URL(file, directory), 'utf8');
+      expect(notes.trim(), file).not.toBe('');
+      expect([...notes].length, file).toBeLessThanOrEqual(600);
+      expect(notes, file).not.toMatch(/^\s*#/m);
+      expect(notes.match(/^- /gm)?.length ?? 0, file).toBeLessThanOrEqual(5);
+    }
   });
 });
