@@ -1,5 +1,12 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
+import { APP_VERSION } from './app-version';
+
+const currentReleaseNotes = readFileSync(
+  new URL(`../release-notes/${APP_VERSION}.md`, import.meta.url),
+  'utf8',
+).trim();
 
 async function fits(locator: Locator, page: Page) {
   await expect(locator).toBeVisible();
@@ -36,7 +43,7 @@ for (const viewport of [
       );
       await page.goto('/?update-preview=ready');
       const chip = page.getByTestId('version-chip');
-      await expect(chip).toHaveText('v0.1.0');
+      await expect(chip).toHaveText(`v${APP_VERSION}`);
       await footerFits(page);
       await page
         .getByRole('button', { name: 'Open example', exact: true })
@@ -96,9 +103,9 @@ for (const viewport of [
       await panel.getByRole('button', { name: 'Close', exact: true }).click();
       await expect(panel).not.toBeVisible();
       await page.goto('/?update-preview=available');
-      await expect(chip).toHaveText('v0.1.0');
+      await expect(chip).toHaveText(`v${APP_VERSION}`);
       await page.goto('/?update-preview=none');
-      await expect(chip).toHaveText('v0.1.0');
+      await expect(chip).toHaveText(`v${APP_VERSION}`);
     });
   }
 }
@@ -113,7 +120,9 @@ for (const [state, panelText] of [
 ] as const) {
   test(`preview ${state}`, async ({ page }) => {
     await page.goto(`/?update-preview=${state}`);
-    await expect(page.getByTestId('version-chip')).toHaveText('v0.1.0');
+    await expect(page.getByTestId('version-chip')).toHaveText(
+      `v${APP_VERSION}`,
+    );
     await page.getByTestId('version-chip').click();
     await expect(page.getByTestId('updates-panel')).toContainText(panelText);
     if (state === 'error') {
@@ -134,7 +143,7 @@ for (const [state, panelText] of [
 }
 test('browser version and persisted update preferences', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByTestId('version-chip')).toHaveText('v0.1.0');
+  await expect(page.getByTestId('version-chip')).toHaveText(`v${APP_VERSION}`);
   await page.getByTestId('version-chip').click();
   const panel = page.getByTestId('updates-panel');
   await expect(panel).toContainText('Updates come with the desktop app.');
@@ -193,10 +202,8 @@ for (const theme of ['light', 'dark']) {
     }, theme);
     await page.goto('/?update-preview=idle');
     const card = page.getByTestId('whats-new');
-    await expect(card).toContainText("What's new in v0.1.0");
-    await expect(card).toContainText(
-      'Mineral, Unknowns, Bracketing and Review',
-    );
+    await expect(card).toContainText(`What's new in v${APP_VERSION}`);
+    await expect(card).toContainText(currentReleaseNotes);
     await fits(card, page);
     await card.getByRole('button', { name: "Dismiss what's new" }).click();
     await expect(card).not.toBeVisible();
@@ -220,17 +227,17 @@ test('first install records its version and shows no automatic card', async ({
   page,
 }) => {
   await page.goto('/');
-  await expect(page.getByTestId('version-chip')).toHaveText('v0.1.0');
+  await expect(page.getByTestId('version-chip')).toHaveText(`v${APP_VERSION}`);
   await expect(page.getByTestId('whats-new')).not.toBeVisible();
   expect(
     await page.evaluate(
       () =>
         JSON.parse(localStorage.getItem('bracketeer.updates')!).lastSeenVersion,
     ),
-  ).toBe('0.1.0');
+  ).toBe(APP_VERSION);
   await page.getByTestId('check-updates').click();
   await page.getByRole('button', { name: "What's new", exact: true }).click();
   await expect(page.getByTestId('whats-new')).toContainText(
-    'Mineral, Unknowns, Bracketing and Review',
+    currentReleaseNotes,
   );
 });

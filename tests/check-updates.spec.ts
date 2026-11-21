@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import { APP_VERSION } from './app-version';
 
 const button = (page: Page) => page.getByTestId('check-updates');
 const popover = (page: Page) => page.getByTestId('check-updates-popover');
@@ -38,7 +39,7 @@ test('idle button has a stable accessible name and no badge', async ({
 
 for (const [scenario, text, badge] of [
   ['available', 'Update available: v0.2.0', true],
-  ['none', 'Up to date (v0.1.0)', false],
+  ['none', `Up to date (v${APP_VERSION})`, false],
   ['error', networkMessage, false],
   ['ready', 'v0.2.0 is ready', true],
   [
@@ -59,7 +60,9 @@ for (const [scenario, text, badge] of [
     await expect(button(page)).not.toHaveAttribute('data-busy', 'true');
     if (badge) await expect(button(page)).toHaveAttribute('data-badge', 'true');
     if (scenario === 'available') {
-      await expect(popover(page)).toContainText('Current version: v0.1.0');
+      await expect(popover(page)).toContainText(
+        `Current version: v${APP_VERSION}`,
+      );
       await expect(
         popover(page).getByRole('button', { name: 'Download', exact: true }),
       ).toBeVisible();
@@ -164,8 +167,8 @@ for (const viewport of [
     await fits(button(page), page);
     const chip = page.getByTestId('version-chip');
     await fits(chip, page);
-    await expect(chip).toHaveText('v0.1.0');
-    await expect(page.getByTestId('topbar')).toContainText('v0.1.0');
+    await expect(chip).toHaveText(`v${APP_VERSION}`);
+    await expect(page.getByTestId('topbar')).toContainText(`v${APP_VERSION}`);
     const screenshot =
       process.env.SCREENSHOTS === '1' &&
       browserName === 'chromium' &&
