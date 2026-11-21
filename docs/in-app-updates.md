@@ -80,7 +80,7 @@ every repository; the last section is the part specific to this one.
 4. Upload the `.dmg`, `.app.tar.gz`, its `.sig` and `latest.json` to the public
    stable GitHub release tagged `vX.Y.Z`. Also upload the Windows installer and
    its `.sig` when included in the feed. Publish the release so installed copies
-   can find it at their next check. Existing release workflows are unchanged.
+   can find it at their next check. Releases are built and signed by hand on the owner's Mac.
 
 ## One-time setup per repository (the owner does this)
 
@@ -128,7 +128,7 @@ every repository; the last section is the part specific to this one.
   match them.
 - Signing key: `~/.tauri/bracketeer-updater.key`; setup script
   `scripts/setup-updater.mjs` (Node 22 and `cargo tauri` 2, run from the repository root).
-- Release workflow: `.github/workflows/release.yml` (macOS arm64 `.app` and
+- Release workflow (disabled on GitHub until `TAURI_SIGNING_PRIVATE_KEY` is set): `.github/workflows/release.yml` (macOS arm64 `.app` and
   `.dmg`, Windows NSIS installer, plus the portable `bracketeer-portable.exe`
   for the instrument PC). The release is a draft; publish it on GitHub and the
   updater endpoint starts serving it. A manual run keeps the files as workflow

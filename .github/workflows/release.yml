@@ -1,4 +1,5 @@
-# Quiet until a version tag or an owner-triggered dry run.
+# Disabled on GitHub: releases are built and signed by hand on the owner's Mac.
+# Re-enable once the TAURI_SIGNING_PRIVATE_KEY secret is set.
 name: release
 on:
   push:
@@ -7,31 +8,7 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - run: pnpm check
-      - run: pnpm test
-      - name: Check versions and tag
-        shell: bash
-        run: |
-          node --input-type=module <<'JS'
-          import { readFileSync } from 'node:fs';
-          const pkg = JSON.parse(readFileSync('package.json', 'utf8')).version;
-          const conf = JSON.parse(readFileSync('src-tauri/tauri.conf.json', 'utf8')).version;
-          const cargo = readFileSync('src-tauri/Cargo.toml', 'utf8').split('[package]')[1].split(/^\[/m)[0].match(/^version\s*=\s*"([^"]+)"/m)?.[1];
-          if (pkg !== conf || pkg !== cargo) throw new Error('Package, Tauri and Cargo versions must agree');
-          if (process.env.GITHUB_REF.startsWith('refs/tags/') && process.env.GITHUB_REF_NAME !== `v${pkg}`) throw new Error(`Tag must be v${pkg}`);
-          JS
+    uses: ./.github/workflows/ci.yml
 
   desktop:
     needs: check
@@ -49,8 +26,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: 22
