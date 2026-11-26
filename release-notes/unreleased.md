@@ -1,1 +1,0 @@
-- Match the shared lab design with counted workflow steps, segmented modes, clearer input and standard budgets, and status chips; keep Export .xls as the filled primary action.
