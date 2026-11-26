@@ -190,8 +190,12 @@ for (const viewport of [
       await page.setViewportSize(viewport);
       await page.goto('/');
       await page
-        .getByRole('combobox', { name: 'Theme', exact: true })
-        .selectOption(theme);
+        .getByRole('radiogroup', { name: 'Theme', exact: true })
+        .getByRole('radio', {
+          name: theme === 'dark' ? 'Dark' : 'Light',
+          exact: true,
+        })
+        .click();
       await page.getByRole('radio', { name: 'Zircon', exact: true }).click();
       await expect(
         page.getByRole('textbox', { name: 'Rename Plešovice', exact: true }),

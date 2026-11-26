@@ -4,7 +4,7 @@ bracketeer turns unknowns and standard spot ranges into a standard-bracketed LA-
 
 ## At the instrument in four steps
 
-Open bracketeer: on Windows, double-click `bracketeer.exe`; on Mac, open the app; or open `bracketeer.html` in Edge. The step bar at the top shows where you are (**1 Mineral, 2 Unknowns, 3 Bracketing, 4 Review**). **Back** never loses what you typed, and **Next** stays disabled until the step is complete, with the reason shown beside it.
+Open bracketeer: on Windows, double-click `bracketeer.exe`; on Mac, open the app; or open `bracketeer.html` in Edge. The connected step bar at the top shows project counts under each step and where you are (**1 Mineral, 2 Unknowns, 3 Bracketing, 4 Review**). **Back** never loses what you typed, and **Next** stays disabled until the step is complete, with the reason shown beside it.
 
 1. **Mineral.** Click the mineral you are dating. Its primary, secondaries and reference glasses appear below. Zircon starts with S513 as primary, Seiland, 91500, PL and LTSE as secondaries, and NIST610 and NIST612. Tick, rename or add standards; drag a handle to reorder within a group or move between groups, or use **Move to…**. Moving from Secondaries or Reference glasses into Primary ticks that standard and leaves the previous primary in the same group, unticked. Reordering within Primary keeps the current primary. Moving the ticked primary out requires choosing a replacement. Each mineral is a separate drop area. Your list is remembered for that mineral. **Continue**, **Recent projects** and **Open project** are on the same panel.
 
@@ -14,11 +14,11 @@ Open bracketeer: on Windows, double-click `bracketeer.exe`; on Mac, open the app
 
    ![Step 1: apatite added to a zircon run](docs/screenshots/wizard-1440-1-two-minerals.png)
 
-2. **Unknowns.** Use **Add sample**, enter a name and optional tag, then **Count**. **Begin** follows the previous **End**, across sessions too; Count fills End. Type Begin or End to keep a hand value. The accent bar marks it; **Auto** lets it follow again. Later automatic values move when a row changes, while hand values stay. You can also paste `SYN-1 S 1-30, 35, 40-42`; each range becomes a row, with pasted numbers kept as hand values. **Import sequence** brings in an earlier fixed session.
+2. **Unknowns.** The input table and paste tools have separate areas that scroll inside the panel. Use **Add sample**, enter a name and optional tag, then **Count**. **Begin** follows the previous **End**, across sessions too; Count fills End. Type Begin or End to keep a hand value. The accent bar marks it; **Auto** lets it follow again. Later automatic values move when a row changes, while hand values stay. You can also paste `SYN-1 S 1-30, 35, 40-42`; each range becomes a row, with pasted numbers kept as hand values. **Import sequence** brings in an earlier fixed session.
 
    **Load GrainAtlas spots…** reads a laser CSV or a text list of spot names. It checks the whole project's unknown and standard ranges against the placed spots, and warns about missing positions or too many spots. It does not fill the unknowns table.
 
-3. **Bracketing.** New projects start with **Chunk target 18**: set the design, read the count, then place the standard spots. The **Standard spots** table is here, with **Begin**, **End**, **Placed / needed**, **Used**, **Spare** and **+ range**. Each standard shows its arithmetic underneath. Placed / needed uses the available count after used spots and spare. Automatic standard ranges follow the unknowns and fill to the needed count; type a Begin to move a range and its automatic End follows.
+3. **Bracketing.** Segmented controls switch Chunking and Secondaries modes; the pattern and standard budget have separate scrolling panels. New projects start with **Chunk target 18**: set the design, read the count, then place the standard spots. The **Standard spots** table is here, with **Begin**, **End**, **Placed / needed**, **Used**, **Spare** and **+ range**. Each standard shows its arithmetic underneath, with a thin bar comparing placed supply to the needed count. Shortages and validation messages use status chips. Placed / needed uses the available count after used spots and spare. Automatic standard ranges follow the unknowns and fill to the needed count; type a Begin to move a range and its automatic End follows.
 
    ![Step 3: count from the design and automatic standard ranges](docs/screenshots/wizard-1440-3-design.png)
 
@@ -26,7 +26,9 @@ Open bracketeer: on Windows, double-click `bracketeer.exe`; on Mac, open the app
 
    When the spots are already placed, choose **Auto from budget** and enter the ranges. It derives the bracket count from the available supply and rotates secondary pairs. The summary updates as values change. Click **Generate and review**.
 
-4. **Review.** Edit rows if needed and check the warnings below the grid (click one to select its rows). Then click **Export .xls**, or **Copy for Qtegra** and paste into the LabBook sample list. **Qtegra paste** shows exactly the rows that are copied (no header). **Start another session** marks this one as run and takes you to step 2 for the next.
+4. **Review.** **Export .xls** is the filled primary action; navigation, Generate and other actions stay outlined or quiet. Grid / Qtegra paste is a segmented view switch. Row counts are quiet chips, warnings are status chips, and icon actions retain full names in tooltips and accessible labels. Edit rows if needed and check the warnings below the grid (click one to select its rows). Then click **Export .xls**, or **Copy for Qtegra** and paste into the LabBook sample list. **Qtegra paste** shows exactly the rows that are copied (no header). **Start another session** marks this one as run and takes you to step 2 for the next.
+
+Choose **Light / Dark / System** in the top bar. Theme stays on this computer and is never saved in a project.
 
 ## Projects and sessions
 

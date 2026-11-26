@@ -1,6 +1,10 @@
 <script lang="ts">
   import CommitInput from './CommitInput.svelte';
   import StandardSpots from './StandardSpots.svelte';
+  import SegmentedControl from './SegmentedControl.svelte';
+  import StatusChip from './StatusChip.svelte';
+  import MetaChip from './MetaChip.svelte';
+  import IconButton from './IconButton.svelte';
   import { countText } from '../text';
   import type { ProjectPlan } from '../engine/sequence';
   import type { Project } from '../engine/types';
@@ -34,16 +38,17 @@
   <section class="recipe-panel" aria-label="Recipe" data-testid="recipe-scroll">
     <div class="panel-heading">
       <h2>Recipe</h2>
-      <button onclick={resetRecipe}>Reset recipe</button>
+      <IconButton icon="refresh" label="Reset recipe" onclick={resetRecipe} />
     </div>
     <div class="section-body form-grid">
-      <label class="span-2"
-        >Chunking<select
-          aria-label="Chunking"
+      <div class="span-2 mode-field">
+        <span class="field-label">Chunking</span><SegmentedControl
+          label="Chunking"
+          wrap
+          size="small"
           value={project.recipe.chunking.mode}
-          onchange={(e) =>
+          onchange={(mode) =>
             edit((p) => {
-              const mode = value(e);
               if (mode === 'budget') {
                 delete p.recipe.secondaries;
                 delete p.recipe.openingBracket;
@@ -55,29 +60,32 @@
                     ? { mode, count: 10 }
                     : { mode: 'budget' };
             })}
-        >
-          <option value="budget">Auto from budget</option><option value="size"
-            >Chunk target</option
-          ><option value="count">Chunk count</option>
-        </select></label
-      >
-      <label class="span-2"
-        >Secondaries<select
-          aria-label="Secondaries"
+          options={[
+            { value: 'budget', label: 'Auto from budget' },
+            { value: 'size', label: 'Chunk target' },
+            { value: 'count', label: 'Chunk count' },
+          ]}
+        />
+      </div>
+      <div class="span-2 mode-field">
+        <span class="field-label">Secondaries</span><SegmentedControl
+          label="Secondaries"
+          wrap
+          size="small"
           value={project.recipe.secondaries ?? 'rotate'}
           disabled={project.recipe.chunking.mode === 'budget'}
-          onchange={(e) => {
-            const value = e.currentTarget.value as 'rotate' | 'cadence';
+          onchange={(selected) => {
+            const value = selected as 'rotate' | 'cadence';
             edit((p) => {
               p.recipe.secondaries = value;
             });
           }}
-        >
-          <option value="rotate">Rotate pairs</option><option value="cadence"
-            >Every, odd or even</option
-          >
-        </select></label
-      >
+          options={[
+            { value: 'rotate', label: 'Rotate pairs' },
+            { value: 'cadence', label: 'Every, odd or even' },
+          ]}
+        />
+      </div>
       <label class="check span-2"
         ><input
           type="checkbox"
@@ -251,13 +259,15 @@
                     p.recipe[key][i]!.count = n;
                   })}
               />
-              <button
-                aria-label={`Remove ${block} entry ${i + 1}`}
+              <IconButton
+                icon="close"
+                size="small"
+                label={`Remove ${block} entry ${i + 1}`}
                 onclick={() =>
                   edit((p) => {
                     p.recipe[key].splice(i, 1);
-                  })}>×</button
-              >
+                  })}
+              />
             </div>
           {/each}
           <button
@@ -361,8 +371,10 @@
     data-testid="plan-summary"
   >
     <h2>Live summary</h2>
-    <p>{countText(sessionCount, 'session')} planned</p>
-    {#if planError}<p class="error" role="alert">{planError}</p>{/if}
+    <p><MetaChip text={`${countText(sessionCount, 'session')} planned`} /></p>
+    {#if planError}<p class="error" role="alert">
+        <StatusChip tone="warning" text={planError} />
+      </p>{/if}
     {#if plan}
       <p class="budget" data-testid="budget">
         {bracketingSummary(project, plan)}
@@ -388,14 +400,18 @@
           {#if generated?.chunks.length}
             <p>Chunks: {compactChunks(generated.chunks)}</p>
             <p>
-              {countText(
-                generated.chunks.length +
-                  (project.recipe.openingBracket ? 1 : 0),
-                'bracket',
-              )} · Mid block: {generated.chunks.length < 2 ||
-              !project.recipe.mid.some((entry) => entry.count > 0)
-                ? 'none'
-                : `bracket ${Math.floor((generated.chunks.length + 1) / 2)}`}
+              <MetaChip
+                text={`${countText(
+                  generated.chunks.length +
+                    (project.recipe.openingBracket ? 1 : 0),
+                  'bracket',
+                )} · Mid block: ${
+                  generated.chunks.length < 2 ||
+                  !project.recipe.mid.some((entry) => entry.count > 0)
+                    ? 'none'
+                    : `bracket ${Math.floor((generated.chunks.length + 1) / 2)}`
+                }`}
+              />
             </p>
           {:else}<p>No unknowns to plan</p>{/if}
         </div>
@@ -404,11 +420,14 @@
     <StandardSpots {project} {edit} />
     {#if plan}
       {#each plan.advisories as advisory (advisory)}<p class="error">
-          {advisory}
+          <StatusChip tone="warning" text={advisory} />
         </p>{/each}
       {#each plan.sessions as session (session.number)}
         {#each session.warnings as warning, i (i)}<p class="error">
-            Session {session.number}: {warning.message}
+            <StatusChip
+              tone="warning"
+              text={`Session ${session.number}: ${warning.message}`}
+            />
           </p>{/each}
       {/each}
     {/if}

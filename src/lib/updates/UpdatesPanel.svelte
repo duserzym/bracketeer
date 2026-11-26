@@ -45,7 +45,7 @@
     {#if status.kind === 'available' && !updater.prefs.autoDownload}<button
         onclick={download}>Download</button
       >{/if}
-    {#if status.kind === 'ready'}<button class="primary" onclick={install}
+    {#if status.kind === 'ready'}<button onclick={install}
         >Restart to update</button
       >{/if}
     {#if status.kind === 'unsupported' && info}<a

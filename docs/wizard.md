@@ -3,6 +3,8 @@
 The app has four steps. Sessions 2 and 3 of the example still equal the
 fixtures cell for cell, including cell types.
 
+Changed 2026-11-25: shared lab control shapes, connected workflow counts, segmented modes, quiet facts, status chips and icon actions. Export .xls is the only filled primary action. The four-step workflow and all recipe behavior are unchanged.
+
 Changed 2026-11-18: design counts, automatic Begin / End / Count, standard spots in step 3, cadence, an opening bracket, several minerals and GrainAtlas checks.
 
 ```
@@ -19,8 +21,8 @@ Changed 2026-11-18: design counts, automatic Begin / End / Count, standard spots
   step indicator, Theme, and a Menu (Open project, Save project, Import
   sequence, New project, Reset recipe, Reset layout). Undo and Redo work on
   every step (Ctrl/Cmd+Z, Shift for redo), as today.
-- **Step indicator**: four numbered pills: `1 Mineral`, `2 Unknowns`,
-  `3 Bracketing`, `4 Review`. The current step is filled. Pills for earlier
+- **Step indicator**: a connected stepper: `1 Mineral`, `2 Unknowns`,
+  `3 Bracketing`, `4 Review`. Counts under the steps show project groups, sample input rows, planned chunks and generated rows. The current step has an accent outline and background. Buttons for earlier
   steps are always clickable. A later step is clickable only when every step
   before it validates. Then a click works like pressing Next that many times,
   so going to 4 runs Generate. Steps that cannot be reached are greyed out and
@@ -43,7 +45,7 @@ Changed 2026-11-18: design counts, automatic Begin / End / Count, standard spots
 ## Step 1: Mineral
 
 On launch the app shows a large welcome panel: a rounded rectangle in the
-glass style, centred, at most 1180 px wide.
+plain surface style, centred, at most 1180 px wide.
 
 - **Header**: `bracketeer` and one sentence: "Plan a standard-bracketed
   LA-ICP-MS run for the Qtegra LabBook."
@@ -138,6 +140,7 @@ question for Yiming.
 - **Session strip**: one tab per session. Imported and run sessions are marked
   and read-only. `+ Session` adds an empty planned session. All open sessions
   are planned together in step 3, within their mineral groups.
+- **Input grouping**: the unknowns table and paste tools sit beside each other on laptop screens; narrower windows stack them. Both scroll inside the panel. Validation wording is unchanged and appears in status chips.
 - **Unknowns table**: `Row`, `Name`, optional `Tag`, `Begin`, `End`, editable
   `Count`, and ↑ ↓ ×. Each range has its own row. Consecutive entries with the
   same name and tag show `↳ continued` and count as one sample for sample
@@ -182,6 +185,8 @@ endpoints may move. Old files have no such flags, so their numbers stay.
 
 ## Step 3: Bracketing
 
+Chunking and Secondaries are segmented radio groups with the same mode names. The recipe and live summary scroll independently. Standard rows retain every range, Used, Spare and cadence editor, their arithmetic and inline messages. Thin bars compare available placed supply with the needed count; the existing short count appears as a warning chip. Table cadence editors remain selects so the full table fits the laptop width.
+
 - **Recipe**: new projects and Reset recipe use Chunk target 18. Chunk count
   sets the number per session. Auto from budget reads placed pools instead;
   the example keeps that saved mode. The panel also holds primary and
@@ -221,7 +226,9 @@ endpoints may move. Old files have no such flags, so their numbers stay.
   opens step 4. With edits, it asks: `Keep my edits` (open step 4 without
   regenerating), `Regenerate`, or `Cancel`.
 
-## Step 4: Review and export
+## Step 4: Review
+
+Export .xls is the filled primary action. Other exports, Copy for Qtegra and navigation stay outlined or quiet. Grid / Qtegra paste uses a segmented control and preserves its existing pressed-button roles. Save project, Delete rows and Move up/down use icon buttons with full accessible names and tooltips. Counts use quiet fact chips and the existing validation messages use status chips. The full thirteen-column grid, cell editors, sticky columns and warning navigation remain intact. and export
 
 - **Session tabs**. Each session has the editable sequence grid, as today, with
   Insert, Delete, Move, Undo and Redo, Mark as run, Unlock, and the warnings

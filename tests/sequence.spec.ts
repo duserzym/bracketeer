@@ -375,14 +375,17 @@ test('live recipe changes, invalid numbers, Sheet columns and Reset recipe work 
   await expect(pairs).toBeFocused();
   await page.getByRole('button', { name: 'Reset recipe', exact: true }).click();
   await expect(
-    page.getByRole('combobox', { name: 'Chunking', exact: true }),
-  ).toHaveValue('size');
+    page
+      .getByRole('radiogroup', { name: 'Chunking', exact: true })
+      .getByRole('radio', { name: 'Chunk target', exact: true }),
+  ).toBeChecked();
   await expect(
     page.getByRole('spinbutton', { name: 'Unknowns per chunk', exact: true }),
   ).toHaveValue('18');
   await page
-    .getByRole('combobox', { name: 'Chunking', exact: true })
-    .selectOption('budget');
+    .getByRole('radiogroup', { name: 'Chunking', exact: true })
+    .getByRole('radio', { name: 'Auto from budget', exact: true })
+    .click();
   await expect(pairs).toHaveValue('2');
   await expect(
     page.getByRole('button', { name: 'Generate and review', exact: true }),

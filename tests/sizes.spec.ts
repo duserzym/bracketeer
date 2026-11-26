@@ -117,12 +117,17 @@ for (const viewport of [
     await expect(page.getByTestId('budget')).toContainText('37 brackets');
     for (const mode of ['budget', 'size']) {
       await page
-        .getByRole('combobox', { name: 'Chunking', exact: true })
-        .selectOption(mode);
+        .getByRole('radiogroup', { name: 'Chunking', exact: true })
+        .getByRole('radio', {
+          name: mode === 'budget' ? 'Auto from budget' : 'Chunk target',
+          exact: true,
+        })
+        .click();
       if (mode === 'size')
         await page
-          .getByRole('combobox', { name: 'Secondaries', exact: true })
-          .selectOption('cadence');
+          .getByRole('radiogroup', { name: 'Secondaries', exact: true })
+          .getByRole('radio', { name: 'Every, odd or even', exact: true })
+          .click();
       const table = page.getByRole('table', {
         name: 'Standard spots',
         exact: true,
@@ -135,8 +140,9 @@ for (const viewport of [
       await pageFits(page);
     }
     await page
-      .getByRole('combobox', { name: 'Chunking', exact: true })
-      .selectOption('budget');
+      .getByRole('radiogroup', { name: 'Chunking', exact: true })
+      .getByRole('radio', { name: 'Auto from budget', exact: true })
+      .click();
 
     await pageFits(page);
     for (const id of ['recipe-scroll', 'plan-summary']) {
@@ -246,8 +252,9 @@ for (const viewport of [
     await pageFits(page);
     // Every populated step also remains inside the window in Dark.
     await page
-      .getByRole('combobox', { name: 'Theme', exact: true })
-      .selectOption('dark');
+      .getByRole('radiogroup', { name: 'Theme', exact: true })
+      .getByRole('radio', { name: 'Dark', exact: true })
+      .click();
     for (const step of ['3 Bracketing', '2 Unknowns', '1 Mineral']) {
       await page.getByRole('button', { name: step, exact: true }).click();
       await pageFits(page);

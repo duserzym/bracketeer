@@ -432,8 +432,12 @@ for (const viewport of [
       await start(page);
       await page.setViewportSize(viewport);
       await page
-        .getByRole('combobox', { name: 'Theme', exact: true })
-        .selectOption(theme);
+        .getByRole('radiogroup', { name: 'Theme', exact: true })
+        .getByRole('radio', {
+          name: theme === 'dark' ? 'Dark' : 'Light',
+          exact: true,
+        })
+        .click();
       const name = 'WWWWLongStandardName'; // 20 characters, including wide glyphs.
       await group(page, 'Reference glasses')
         .getByRole('textbox', {

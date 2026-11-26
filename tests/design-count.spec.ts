@@ -19,8 +19,10 @@ test('design counts, automatic chains, hand endpoints, Auto and GrainAtlas warni
     .getByRole('button', { name: 'Next: bracketing', exact: true })
     .click();
   await expect(
-    page.getByRole('combobox', { name: 'Chunking', exact: true }),
-  ).toHaveValue('size');
+    page
+      .getByRole('radiogroup', { name: 'Chunking', exact: true })
+      .getByRole('radio', { name: 'Chunk target', exact: true }),
+  ).toBeChecked();
   for (const name of [
     'S513',
     'Seiland',
@@ -204,8 +206,9 @@ test('zircon and apatite sessions draw their own standards and share the glasses
     .click();
   // Apatite has no preselected secondaries. Cadence allows a primary-only bracket.
   await page
-    .getByRole('combobox', { name: 'Secondaries', exact: true })
-    .selectOption('cadence');
+    .getByRole('radiogroup', { name: 'Secondaries', exact: true })
+    .getByRole('radio', { name: 'Every, odd or even', exact: true })
+    .click();
   await page
     .getByRole('checkbox', { name: 'Opening bracket', exact: true })
     .check();
@@ -273,12 +276,14 @@ test('single counts use singular wording and design summaries omit budget alloca
     '1 bracket, 1 secondary pair.',
   );
   await page
-    .getByRole('combobox', { name: 'Secondaries', exact: true })
-    .selectOption('cadence');
+    .getByRole('radiogroup', { name: 'Secondaries', exact: true })
+    .getByRole('radio', { name: 'Every, odd or even', exact: true })
+    .click();
   await expect(page.getByTestId('budget')).toHaveText('1 bracket.');
   await page
-    .getByRole('combobox', { name: 'Chunking', exact: true })
-    .selectOption('budget');
+    .getByRole('radiogroup', { name: 'Chunking', exact: true })
+    .getByRole('radio', { name: 'Auto from budget', exact: true })
+    .click();
   await expect(page.getByTestId('budget')).toContainText(
     '1 bracket for 1 session (1),',
   );

@@ -31,6 +31,11 @@
     moveRows,
   } from './lib/ui/model';
   import CommitInput from './lib/ui/CommitInput.svelte';
+  import Stepper from './lib/ui/Stepper.svelte';
+  import IconButton from './lib/ui/IconButton.svelte';
+  import SegmentedControl from './lib/ui/SegmentedControl.svelte';
+  import StatusChip from './lib/ui/StatusChip.svelte';
+  import { countText } from './lib/text';
   import type Review from './lib/ui/Step4Review.svelte';
   import { afterPaintIdle, loadOnce } from './lib/ui/lazy';
   import Step1Mineral from './lib/ui/Step1Mineral.svelte';
@@ -187,6 +192,24 @@
           : '',
   );
   const stepNames = ['Mineral', 'Unknowns', 'Bracketing', 'Review'];
+  const stepCounts = $derived([
+    countText(
+      [mineral, ...Object.keys(extras)].filter(Boolean).length,
+      'group',
+    ),
+    countText(
+      project.sessions.reduce((n, s) => n + s.unknowns.length, 0),
+      'sample',
+    ),
+    countText(
+      plan?.sessions.reduce((n, s) => n + s.chunks.length, 0) ?? 0,
+      'chunk',
+    ),
+    countText(
+      project.sessions.reduce((n, s) => n + s.rows.length, 0),
+      'row',
+    ),
+  ]);
 
   function setStep(next: Step) {
     if (next === 1 && step !== 1) syncSelections(project, mineral);
@@ -336,7 +359,11 @@
     }
     if (step === 1) {
       if (!mineral)
-        document.querySelector<HTMLButtonElement>('[role="radio"]')?.focus();
+        document
+          .querySelector<HTMLButtonElement>(
+            '[role="radiogroup"][aria-label="Mineral"] [role="radio"]',
+          )
+          ?.focus();
       else {
         const checked = entries
           .map((e, i) => ({ ...e, i }))
@@ -361,6 +388,14 @@
       invalidInput ??
       (step === 2 ? inputProblem : (standardProblem ?? inputProblem));
     if (problem?.session) chooseSession(problem.session);
+    await tick();
+    // The footer updates before a lazy input panel has finished mounting.
+    // Keep the requested focus until its fields are available.
+    try {
+      await prepareStep(step);
+    } catch {
+      return; // The step loader displays the error and Retry action.
+    }
     await tick();
     const field = problem?.label
       ? [
@@ -895,8 +930,8 @@
     });
     menuOpen = false;
   }
-  function chooseTheme(event: Event) {
-    theme = (event.currentTarget as HTMLSelectElement).value as Theme;
+  function chooseTheme(value: string) {
+    theme = value as Theme;
     try {
       localStorage.setItem('bracketeer.theme', theme);
     } catch {
@@ -1019,43 +1054,59 @@
         />
       </div>
 
-      <nav class="step-bar" aria-label="Wizard steps">
-        {#each stepNames as name, i (name)}
-          <button
-            class:current={step === i + 1}
-            aria-current={step === i + 1 ? 'step' : undefined}
-            disabled={!!reachProblem(i + 1)}
-            title={reachProblem(i + 1) || `Go to ${name.toLowerCase()}`}
-            onclick={() => goTo((i + 1) as Step)}>{i + 1} {name}</button
-          >
-        {/each}
-      </nav>
-      <button
-        title="Ctrl/Cmd+Z"
+      <div class="step-bar">
+        <Stepper
+          label="Wizard steps"
+          steps={stepNames.map((name, i) => ({
+            label: name,
+            fullName: name,
+            ariaLabel: `${i + 1} ${name}`,
+            detail: stepCounts[i]!,
+            state:
+              step === i + 1 ? 'current' : i + 1 < step ? 'done' : 'pending',
+            disabled: !!reachProblem(i + 1),
+            title: reachProblem(i + 1) || `Go to ${name.toLowerCase()}`,
+          }))}
+          onselect={(i) => goTo((i + 1) as Step)}
+        />
+      </div>
+      <IconButton
+        icon="chevron-left"
+        label="Undo"
+        title="Undo · Ctrl/Cmd+Z"
         disabled={!undo.length}
-        onclick={() => history('undo')}>Undo</button
-      >
-      <button
-        title="Ctrl/Cmd+Shift+Z"
+        onclick={() => history('undo')}
+      />
+      <IconButton
+        icon="chevron-right"
+        label="Redo"
+        title="Redo · Ctrl/Cmd+Shift+Z"
         disabled={!redo.length}
-        onclick={() => history('redo')}>Redo</button
-      >
-      <label class="theme-control"
-        >Theme<select aria-label="Theme" value={theme} onchange={chooseTheme}
-          ><option value="light">Light</option><option value="dark">Dark</option
-          ><option value="system">System</option></select
-        ></label
-      >
+        onclick={() => history('redo')}
+      />
+      <SegmentedControl
+        label="Theme"
+        size="small"
+        value={theme}
+        onchange={chooseTheme}
+        options={[
+          { value: 'light', label: 'Light' },
+          { value: 'dark', label: 'Dark' },
+          { value: 'system', label: 'System' },
+        ]}
+      />
       <CheckUpdatesButton onopen={() => updatesPanel.open()} />
       <VersionChip onopen={() => updatesPanel.open()} />
       <div class="menu-wrap">
-        <button
+        <IconButton
+          icon="more"
+          label="Menu"
           aria-expanded={menuOpen}
           aria-controls="app-menu"
           onclick={() => {
             menuOpen = !menuOpen;
-          }}>Menu</button
-        >
+          }}
+        />
         {#if menuOpen}<div class="menu" id="app-menu">
             <button onclick={openProject}>Open project</button>
             <button onclick={saveProject}>Save project</button>
@@ -1075,16 +1126,17 @@
     </div>
   </header>
   {#if error}<div class="app-error" role="alert">
-      {error}<button
-        aria-label="Dismiss error"
+      <StatusChip tone="warning" text={error} /><IconButton
+        icon="close"
+        label="Dismiss error"
         onclick={() => {
           error = '';
-        }}>×</button
-      >
+        }}
+      />
     </div>{/if}
   {#if stepLoadError}
     <div class="app-error" role="alert">
-      {stepLoadError}<button
+      <StatusChip tone="warning" text={stepLoadError} /><button
         onclick={() => {
           stepLoadAttempt += 1;
         }}>Retry</button
@@ -1189,7 +1241,7 @@
         >{blocking}</button
       >{/if}
     {#if step < 4}<button
-        class="primary"
+        class="next-action"
         disabled={!!blocking}
         onclick={nextStep}
         >{step === 1
@@ -1236,7 +1288,7 @@
         regenerateDialog.close();
         setStep(4);
       }}>Keep my edits</button
-    ><button class="primary" onclick={generate}>Regenerate</button>
+    ><button onclick={generate}>Regenerate</button>
   </div>
 </dialog>
 <dialog bind:this={importDialog} aria-labelledby="import-title">
@@ -1258,10 +1310,11 @@
       placeholder="Paste the 13 columns, with or without a header"
     ></textarea></label
   >
-  {#if importError}<p class="error" role="alert">{importError}</p>{/if}
+  {#if importError}<p class="error" role="alert">
+      <StatusChip tone="warning" text={importError} />
+    </p>{/if}
   <div class="dialog-actions">
     <button onclick={() => importDialog.close()}>Cancel</button><button
-      class="primary"
       disabled={!importPaste.trim()}
       onclick={pastedSequence}>Import pasted sequence</button
     >

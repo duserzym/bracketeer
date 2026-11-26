@@ -187,7 +187,7 @@ for (const viewport of [
     const center = (await button(page).boundingBox())!;
     for (const locator of [
       page.getByTestId('version-chip'),
-      page.getByLabel('Theme', { exact: true }),
+      page.getByRole('radiogroup', { name: 'Theme', exact: true }),
       page.locator('.menu-wrap > button'),
       page.locator('.step-bar'),
     ]) {

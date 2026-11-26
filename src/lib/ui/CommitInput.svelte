@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
+  import StatusChip from './StatusChip.svelte';
   let {
     label,
     value,
@@ -126,4 +127,6 @@
   {/if}
 </div>
 
-{#if draftError}<small class="error">{draftError}</small>{/if}
+{#if draftError}<small class="error"
+    ><StatusChip tone="warning" text={draftError} /></small
+  >{/if}

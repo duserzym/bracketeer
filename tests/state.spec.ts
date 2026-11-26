@@ -14,15 +14,18 @@ test('light is the default, Dark persists, and System follows the OS', async ({
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(
-    page.getByRole('combobox', { name: 'Theme', exact: true }),
-  ).toHaveValue('light');
+    page
+      .getByRole('radiogroup', { name: 'Theme', exact: true })
+      .getByRole('radio', { name: 'Light', exact: true }),
+  ).toBeChecked();
   const lightCrystal = await page
     .getByRole('radio', { name: 'Zircon', exact: true })
     .locator('img')
     .getAttribute('src');
   await page
-    .getByRole('combobox', { name: 'Theme', exact: true })
-    .selectOption('dark');
+    .getByRole('radiogroup', { name: 'Theme', exact: true })
+    .getByRole('radio', { name: 'Dark', exact: true })
+    .click();
   await expect(
     page.getByRole('radio', { name: 'Zircon', exact: true }).locator('img'),
   ).not.toHaveAttribute('src', lightCrystal!);
@@ -30,8 +33,9 @@ test('light is the default, Dark persists, and System follows the OS', async ({
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page
-    .getByRole('combobox', { name: 'Theme', exact: true })
-    .selectOption('system');
+    .getByRole('radiogroup', { name: 'Theme', exact: true })
+    .getByRole('radio', { name: 'System', exact: true })
+    .click();
   await page.emulateMedia({ colorScheme: 'light' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 });
@@ -99,8 +103,9 @@ test('fixed sessions are locked and Start another session advances rotation and 
   await page.getByRole('button', { name: 'Session 2', exact: true }).click();
   await page.getByRole('button', { name: '3 Bracketing', exact: true }).click();
   await page
-    .getByRole('combobox', { name: 'Chunking', exact: true })
-    .selectOption('size');
+    .getByRole('radiogroup', { name: 'Chunking', exact: true })
+    .getByRole('radio', { name: 'Chunk target', exact: true })
+    .click();
   await page
     .getByRole('button', { name: 'Generate and review', exact: true })
     .click();

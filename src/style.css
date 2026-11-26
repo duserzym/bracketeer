@@ -149,15 +149,6 @@ h1 {
   max-width: 300px;
   background: var(--subtle);
 }
-.theme-control {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-}
-.theme-control select {
-  width: 84px;
-}
 .menu-wrap {
   position: relative;
 }
@@ -576,29 +567,12 @@ dialog p {
     flex-basis: 120px;
     max-width: none;
   }
-  .theme-control {
-    margin-left: auto;
-  }
   .toolbar-spacer {
     display: none;
   }
 }
 
 /* Wizard frame */
-.step-bar {
-  display: flex;
-  gap: 5px;
-  margin-left: auto;
-}
-.step-bar button {
-  border-radius: 18px;
-  padding: 7px 11px;
-}
-.step-bar .current {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--surface);
-}
 .wizard-body {
   flex: 1;
   min-height: 0;
@@ -812,11 +786,6 @@ dialog p {
   background: var(--subtle);
 }
 @media (max-width: 1100px) {
-  .step-bar {
-    order: 2;
-    width: 100%;
-    justify-content: center;
-  }
   .welcome-panel {
     grid-template-columns: minmax(0, 1fr) 200px;
     padding: 20px;
@@ -1191,16 +1160,6 @@ dialog p {
 .budget-table th:first-child {
   text-align: left;
 }
-.view-toggle {
-  display: flex;
-  gap: 2px;
-  margin-right: 8px;
-}
-.view-toggle [aria-pressed='true'] {
-  background: var(--selection);
-  border-color: var(--accent);
-  color: var(--accent);
-}
 .grid-toolbar .toast {
   margin-top: 6px;
   min-height: 16px;
@@ -1417,4 +1376,309 @@ dialog p {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* Lab design suite, 2026-11-25: shared shapes, restrained surfaces and hierarchy. */
+:root {
+  --ink: #233338;
+  --control-radius: 4px;
+  --control-motion: 120ms ease;
+  --control-press: #142c240a;
+}
+[data-theme='dark'] {
+  --ink: #e2eae7;
+  --control-press: #ffffff0a;
+}
+.topbar {
+  padding: 8px 18px;
+}
+.top-line {
+  gap: 8px;
+}
+.experiment-title {
+  flex: 1 1 150px;
+  max-width: 260px;
+  min-width: 80px;
+}
+.step-bar {
+  display: block;
+  flex: 1 1 360px;
+  min-width: 280px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+.wizard-body {
+  padding: 12px 18px;
+}
+.wizard-footer {
+  min-height: 54px;
+  padding: 10px 18px;
+}
+.next-action {
+  color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.welcome-panel,
+.unknowns-step,
+.recipe-panel,
+.plan-summary,
+.sequence-panel {
+  border-radius: 6px;
+  box-shadow: none;
+  background: var(--surface);
+}
+.welcome-panel {
+  backdrop-filter: none;
+}
+.catalogue-group,
+.recent-entry,
+.mineral-tiles button {
+  border-radius: var(--control-radius);
+}
+.recent-entry {
+  border-width: 0 0 1px;
+}
+.step-two {
+  padding: 14px;
+  gap: 12px;
+}
+.step-two-heading {
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.step-two-heading label {
+  min-width: 240px;
+  margin-right: auto;
+}
+.samples-panel {
+  border-radius: var(--control-radius);
+}
+.samples-panel > .toolbar-line {
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--border);
+  background: var(--subtle);
+}
+.samples-scroll {
+  min-width: 0;
+}
+.sample-paste {
+  margin: 0;
+  background: var(--subtle);
+}
+.sample-paste .toolbar-line {
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.samples-table .actions {
+  width: 86px;
+}
+.samples-table td,
+.samples-table tbody th {
+  padding: 5px 4px;
+}
+.samples-table tbody tr:hover > td,
+.standard-spots-table tbody:hover {
+  background: color-mix(in srgb, var(--subtle) 65%, var(--surface));
+}
+.row-actions {
+  vertical-align: middle;
+}
+.bracketing-panels {
+  grid-template-columns: minmax(310px, 0.78fr) minmax(0, 2fr);
+  gap: 14px;
+}
+.panel-heading {
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--subtle);
+}
+.panel-heading h2,
+.plan-summary h2 {
+  font-size: 15px;
+  letter-spacing: -0.15px;
+}
+.recipe-panel .section-body {
+  padding: 0 14px 14px;
+}
+.mode-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+.field-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.block-list {
+  border-width: 1px 0 0;
+  border-radius: 0;
+  padding: 10px 0 0;
+  margin-top: 10px;
+}
+.block-list legend {
+  padding-left: 0;
+  font-weight: 600;
+}
+.plan-summary {
+  padding: 14px;
+}
+.plan-summary p {
+  font-size: 12px;
+}
+.session-plan {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  margin: 0;
+}
+.session-plan h3 {
+  font-size: 13px;
+}
+.standard-spots > h2 {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.standard-spots [data-testid='spots-scroll'] {
+  overflow: auto;
+}
+/* Keep these styles ready while the bracketing module loads. A pending
+   stylesheet can block animation frames in WebKit, including on other steps. */
+.count-progress {
+  min-width: 0;
+}
+.count-progress .caption {
+  font-size: 11px;
+  color: var(--muted);
+}
+.count-progress .track {
+  height: 5px;
+  border-radius: var(--control-radius);
+  overflow: hidden;
+  background: var(--border);
+}
+.count-progress .fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.standard-spots-table {
+  min-width: 610px;
+  margin-top: 0;
+}
+.standard-spots-table:has(.cadence) {
+  min-width: 790px;
+}
+.standard-spots-table thead th {
+  background: var(--subtle);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.standard-spots-table tbody > tr:first-child > td,
+.standard-spots-table tbody > tr:first-child > th {
+  padding-top: 12px;
+}
+.standard-spots-table small,
+.legend {
+  font-size: 11px;
+}
+.standard-spots-table [data-testid^='placed-'] {
+  font-variant-numeric: tabular-nums;
+  line-height: 1.7;
+}
+.short-count {
+  margin: 2px 0 4px;
+}
+.session-tabs {
+  gap: 0;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.session-tabs button,
+.session-tabs button.active {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+}
+.session-tabs button.active {
+  border-bottom-color: var(--accent);
+}
+.grid-toolbar {
+  background: var(--surface);
+  padding: 6px 12px;
+}
+.row-tools {
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.sequence-grid thead th {
+  padding: 4px;
+}
+.sequence-grid td,
+.sequence-grid tbody th {
+  border-bottom-color: color-mix(in srgb, var(--border) 65%, var(--surface));
+}
+.sequence-grid tbody tr:hover > td:not(.label-column) {
+  background: color-mix(in srgb, var(--selection) 40%, var(--surface));
+}
+.sequence-grid tbody tr.selected > td,
+.sequence-grid tbody tr.selected > th {
+  background: var(--selection);
+}
+.counts {
+  gap: 5px;
+}
+.status-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 6px 12px;
+}
+.status-strip .counts {
+  grid-column: 1 / -1;
+}
+.status-strip .legend,
+.status-strip .warnings {
+  margin-top: 0;
+}
+.status-strip .warnings {
+  max-width: 55vw;
+}
+.warning-link {
+  text-decoration: none;
+  padding: 3px 0;
+}
+.warning-link:hover {
+  text-decoration: underline;
+}
+.warning-item {
+  flex-wrap: wrap;
+}
+@media (max-width: 1100px) {
+  .top-line {
+    gap: 5px;
+  }
+  .step-bar {
+    order: 0;
+    width: auto;
+    min-width: 250px;
+  }
+  .experiment-title {
+    flex-basis: 80px;
+  }
+  .sample-paste {
+    max-height: 240px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --control-motion: 0ms;
+  }
 }

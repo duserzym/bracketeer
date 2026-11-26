@@ -121,7 +121,7 @@
   {#if view.action === 'download'}
     <button onclick={download}>Download</button>
   {:else if view.action === 'install'}
-    <button class="primary" onclick={install}>Restart to update</button>
+    <button onclick={install}>Restart to update</button>
   {:else if view.action === 'link'}
     <a
       href={releaseNotesUrl(

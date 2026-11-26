@@ -80,8 +80,9 @@ test('sessions typed through all four steps export the exact fixtures', async ({
     .getByRole('button', { name: 'Next: bracketing', exact: true })
     .click();
   await page
-    .getByRole('combobox', { name: 'Chunking', exact: true })
-    .selectOption('budget');
+    .getByRole('radiogroup', { name: 'Chunking', exact: true })
+    .getByRole('radio', { name: 'Auto from budget', exact: true })
+    .click();
   for (const [name, [pool, used]] of Object.entries(spots)) {
     const [begin, end] = pool.split('-');
     await commitCell(page, `${name} begin`, begin!);

@@ -10,6 +10,9 @@
   import { parseSamplePaste } from './unknowns';
   import { countText } from '../text';
   import CommitInput from './CommitInput.svelte';
+  import IconButton from './IconButton.svelte';
+  import StatusChip from './StatusChip.svelte';
+  import MetaChip from './MetaChip.svelte';
   let {
     project,
     session,
@@ -134,7 +137,9 @@
       >
     </div>
   {/if}
-  {#if loadError}<p class="error" role="alert">{loadError}</p>{/if}
+  {#if loadError}<p class="error" role="alert">
+      <StatusChip tone="warning" text={loadError} />
+    </p>{/if}
   <section
     class="samples-panel"
     aria-label="Unknown samples"
@@ -268,37 +273,49 @@
                     >
                   {/each}
                   <td class="row-actions">
-                    <button
-                      aria-label={`Move unknown ${i + 1} up`}
+                    <IconButton
+                      icon="arrow-up"
+                      size="small"
+                      label={`Move unknown ${i + 1} up`}
                       disabled={current.fixed || i === 0}
-                      onclick={() => move(i, -1)}>↑</button
-                    >
-                    <button
-                      aria-label={`Move unknown ${i + 1} down`}
+                      onclick={() => move(i, -1)}
+                    />
+                    <IconButton
+                      icon="arrow-down"
+                      size="small"
+                      label={`Move unknown ${i + 1} down`}
                       disabled={current.fixed ||
                         i === current.unknowns.length - 1}
-                      onclick={() => move(i, 1)}>↓</button
-                    >
-                    <button
-                      aria-label={`Delete unknown ${i + 1}`}
+                      onclick={() => move(i, 1)}
+                    />
+                    <IconButton
+                      icon="close"
+                      size="small"
+                      label={`Delete unknown ${i + 1}`}
                       disabled={current.fixed}
                       onclick={() =>
                         edit((p) => {
                           p.sessions
                             .find((s) => s.number === current.number)!
                             .unknowns.splice(i, 1);
-                        })}>×</button
-                    >
+                        })}
+                    />
                   </td>
                 </tr>
                 {#if !row.name.trim()}<tr
                     ><td></td><td colspan="6" class="error"
-                      >Row {i + 1}, unnamed: add a name.</td
+                      ><StatusChip
+                        tone="warning"
+                        text={`Row ${i + 1}, unnamed: add a name.`}
+                      /></td
                     ></tr
                   >{/if}
                 {#if nameIssue(current, i)}<tr
                     ><td></td><td colspan="6" class="error"
-                      >{nameIssue(current, i)}</td
+                      ><StatusChip
+                        tone="warning"
+                        text={nameIssue(current, i)}
+                      /></td
                     ></tr
                   >{/if}
                 {#each rowIssues as issue, n (n)}<tr
@@ -306,7 +323,7 @@
                       colspan="6"
                       class:error={issue.severity === 'error'}
                       class:hint={issue.severity === 'warning'}
-                      >{issue.message}</td
+                      ><StatusChip tone="warning" text={issue.message} /></td
                     ></tr
                   >{/each}
               {/each}
@@ -323,7 +340,9 @@
       <div class="toolbar-line">
         <button disabled={session.fixed} onclick={add}>Add sample</button>
         <span class="hint" data-testid="unknown-total"
-          >{countText(total, 'unknown')} in this session</span
+          ><MetaChip
+            text={`${countText(total, 'unknown')} in this session`}
+          /></span
         >
       </div>
       {#if !session.fixed && !session.unknowns.length}<p class="hint">
@@ -339,7 +358,10 @@
         ></textarea></label
       >
       {#each parsed.errors as error (error.line)}<p class="error">
-          Line {error.line}: {error.text} — {error.reason}
+          <StatusChip
+            tone="warning"
+            text={`Line ${error.line}: ${error.text} — ${error.reason}`}
+          />
         </p>{/each}
       <button
         disabled={session.fixed ||

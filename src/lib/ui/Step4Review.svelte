@@ -4,6 +4,10 @@
   import { validate } from '../engine/sequence';
   import type { Project, QtegraCells, Session, Warning } from '../engine/types';
   import SequenceGrid from './SequenceGrid.svelte';
+  import SegmentedControl from './SegmentedControl.svelte';
+  import IconButton from './IconButton.svelte';
+  import MetaChip from './MetaChip.svelte';
+  import StatusChip from './StatusChip.svelte';
 
   let {
     project,
@@ -94,40 +98,43 @@
       <button disabled={!session.rows.length} onclick={copy}
         >Copy for Qtegra</button
       >
-      <button onclick={saveProject}>Save project</button>
+      <IconButton icon="edit" label="Save project" onclick={saveProject} />
     </div>
     <div class="toolbar-line row-tools">
-      <div class="view-toggle" role="group" aria-label="Sequence view">
-        <button
-          aria-pressed={reviewView === 'grid'}
-          onclick={() => {
-            reviewView = 'grid';
-          }}>Grid</button
-        >
-        <button
-          aria-pressed={reviewView === 'paste'}
-          onclick={() => {
-            reviewView = 'paste';
-          }}>Qtegra paste</button
-        >
-      </div>
+      <SegmentedControl
+        label="Sequence view"
+        buttonMode
+        size="small"
+        bind:value={reviewView}
+        options={[
+          { value: 'grid', label: 'Grid' },
+          { value: 'paste', label: 'Qtegra paste' },
+        ]}
+      />
       <button disabled={session.fixed} onclick={() => insert('above')}
         >Insert above</button
       ><button disabled={session.fixed} onclick={() => insert('below')}
         >Insert below</button
       >
-      <button disabled={session.fixed || !selected.length} onclick={removeRows}
-        >Delete rows</button
-      >
-      <button
-        title="Alt+↑"
+      <IconButton
+        icon="close"
+        label="Delete rows"
         disabled={session.fixed || !selected.length}
-        onclick={() => move(-1)}>Move up</button
-      ><button
-        title="Alt+↓"
+        onclick={removeRows}
+      />
+      <IconButton
+        icon="arrow-up"
+        label="Move up"
+        title="Move up · Alt+↑"
         disabled={session.fixed || !selected.length}
-        onclick={() => move(1)}>Move down</button
-      >
+        onclick={() => move(-1)}
+      /><IconButton
+        icon="arrow-down"
+        label="Move down"
+        title="Move down · Alt+↓"
+        disabled={session.fixed || !selected.length}
+        onclick={() => move(1)}
+      />
       <span class="toolbar-spacer"></span>
       <button disabled={!session.rows.length} onclick={addSession}
         >Start another session</button
@@ -169,11 +176,12 @@
   {/if}
   <footer class="status-strip">
     <div class="counts" data-testid="counts">
-      <strong>{session.rows.length} rows</strong><span
-        >{counts.structure.chunks.reduce((sum, n) => sum + n, 0)} unknowns</span
-      >{#each project.standards as s, i (i)}<span
-          >{s.name} {counts.used[s.name]?.length ?? 0}</span
-        >{/each}
+      <MetaChip text={`${session.rows.length} rows`} /><MetaChip
+        text={`${counts.structure.chunks.reduce((sum, n) => sum + n, 0)} unknowns`}
+      />
+      {#each project.standards as s, i (i)}<MetaChip
+          text={`${s.name} ${counts.used[s.name]?.length ?? 0}`}
+        />{/each}
     </div>
     <div class="legend">
       <span class="kind-unknown">Unknown</span><span class="kind-primary"
@@ -183,10 +191,13 @@
       ><span class="hint">{saved}</span>
     </div>
     <div class="warnings" data-testid="warnings" aria-label="Sequence warnings">
-      {#if !warnings.length}<span class="no-warnings">No warnings</span>{/if}
+      {#if !warnings.length}<StatusChip
+          tone="success"
+          text="No warnings"
+        />{/if}
       {#each warnings as warning, i (i)}<div class="warning-item">
           <button class="warning-link" onclick={() => warningRows(warning)}
-            >{warning.message}</button
+            ><StatusChip tone="warning" text={warning.message} /></button
           >{#if warning.locations}{#each [...new Set(warning.locations.map((l) => l.session))].filter((n) => n !== session.number) as number (number)}<button
                 onclick={() => warningRows(warning, number)}
                 >Show Session {number}</button

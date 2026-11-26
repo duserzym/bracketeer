@@ -26,7 +26,7 @@
   .version-chip {
     flex: 0 0 auto;
     max-width: 220px;
-    border-radius: 999px;
+    border-radius: var(--control-radius);
     background: var(--surface);
     border: 1px solid var(--border);
     color: var(--muted);

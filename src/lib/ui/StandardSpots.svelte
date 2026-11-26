@@ -11,6 +11,8 @@
   import { formatSpots, parseSpotList } from '../engine/parse';
   import { minerals } from './catalogue';
   import CommitInput from './CommitInput.svelte';
+  import StatusChip from './StatusChip.svelte';
+  import ProgressBar from './ProgressBar.svelte';
   let {
     project,
     edit,
@@ -130,9 +132,18 @@
                   data-testid={`placed-${standard.name}`}
                   >{count
                     ? `${count.available} / ${count.needed}`
-                    : '—'}{#if count?.short}<strong class="short-count"
-                      >{count.short} short</strong
-                    >{/if}</td
+                    : '—'}{#if count?.short}<div class="short-count">
+                      <StatusChip
+                        tone="warning"
+                        text={`${count.short} short`}
+                      />
+                    </div>{/if}
+                  {#if count}<ProgressBar
+                      value={count.available}
+                      total={count.needed}
+                      noun={`${standard.name} Placed / needed`}
+                      hideCaption
+                    />{/if}</td
                 >
                 <td
                   ><CommitInput
@@ -208,7 +219,8 @@
                 ><td
                   colspan={cadence ? 9 : 7}
                   class:error={issue.severity === 'error'}
-                  class:hint={issue.severity === 'warning'}>{issue.message}</td
+                  class:hint={issue.severity === 'warning'}
+                  ><StatusChip tone="warning" text={issue.message} /></td
                 ></tr
               >{/each}
           {/each}

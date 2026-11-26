@@ -1,4 +1,5 @@
 <script lang="ts">
+  import StatusChip from './StatusChip.svelte';
   import { onDestroy, tick, untrack } from 'svelte';
   import { applyDrop, roles, type Entry } from './catalogue';
   import CommitInput from './CommitInput.svelte';
@@ -529,7 +530,10 @@
             >
           </div>
           {#if nameProblem(entry.index)}<small class="error catalogue-error"
-              >{nameProblem(entry.index)}</small
+              ><StatusChip
+                tone="warning"
+                text={nameProblem(entry.index)}
+              /></small
             >{/if}
         </div>
       {/each}
