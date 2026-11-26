@@ -18,21 +18,21 @@
     display: inline-block;
     max-width: 100%;
     padding: 2px 6px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--status-border);
     border-radius: var(--control-radius);
     font-size: 12px;
     color: var(--muted);
-    background: var(--subtle);
+    background: var(--status-background);
     overflow-wrap: anywhere;
   }
   .warning {
-    color: var(--error);
-    background: color-mix(in srgb, var(--error) 12%, transparent);
-    border-color: color-mix(in srgb, var(--error) 30%, transparent);
+    color: var(--warning);
+    background: color-mix(in srgb, var(--warning) 12%, transparent);
+    border-color: color-mix(in srgb, var(--warning) 30%, transparent);
   }
   .success {
-    color: var(--primary);
-    background: color-mix(in srgb, var(--primary) 12%, transparent);
-    border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+    color: var(--ok);
+    background: color-mix(in srgb, var(--ok) 12%, transparent);
+    border-color: color-mix(in srgb, var(--ok) 30%, transparent);
   }
 </style>

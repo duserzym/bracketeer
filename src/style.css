@@ -1,34 +1,49 @@
+/* Lab blue palette: upblab/ui/src/tokens.css at
+   419eadc11751aa6ccc0b274f2d75cbf048bfe57d (tokens last changed in 4886cc0).
+   Accent hover follows ui/src/app.css .btn.edit-action:hover at the same commit:
+   86% accent mixed with black. Focus uses accent; selection uses accent-soft.
+   Status colours/mixes follow ui/src/components/ui/StatusChip.svelte there.
+   Run-table category colours below are independent and intentionally retained. */
 :root {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 13px;
-  color: #233338;
-  background: #f3f5f4;
+  color: #17202e;
+  background: #eef2f8;
   color-scheme: light;
   --surface: #fff;
-  --subtle: #f3f5f4;
-  --border: #cbd5d2;
-  --muted: #526560;
-  --accent: #176454;
-  --accent-hover: #104f42;
-  --selection: #dfefed;
+  --subtle: #eef2f8;
+  --border: #e6e9ef;
+  --muted: #556172;
+  --accent: #2f6fde;
+  --accent-hover: color-mix(in srgb, var(--accent) 86%, black);
+  --accent-contrast: #fff;
+  --selection: rgba(47, 111, 222, 0.12);
+  --ok: #1d8a5b;
+  --warning: #a96800;
+  --status-background: rgba(255, 255, 255, 0.55);
+  --status-border: rgba(23, 32, 46, 0.1);
   --error: #97401f;
   --unknown: #52778a;
   --primary: #226c58;
   --secondary: #a96c23;
   --reference: #8765a5;
-  --shadow: 0 8px 32px #182e2820;
+  --shadow: 0 8px 32px rgba(31, 45, 80, 0.12);
 }
 [data-theme='dark'] {
-  color: #e2eae7;
-  background: #171e1d;
+  color: #e7ecf4;
+  background: #0c111b;
   color-scheme: dark;
-  --surface: #202a28;
-  --subtle: #17211f;
-  --border: #43544e;
-  --muted: #acbdb6;
-  --accent: #8dd2b9;
-  --accent-hover: #b1e6d1;
-  --selection: #344f48;
+  --surface: #121926;
+  --subtle: #0c111b;
+  --border: #263043;
+  --muted: #a3aec0;
+  --accent: #7aa7ff;
+  --accent-contrast: #0c111b;
+  --selection: rgba(122, 167, 255, 0.16);
+  --ok: #56d364;
+  --warning: #e3b341;
+  --status-background: rgba(255, 255, 255, 0.08);
+  --status-border: rgba(255, 255, 255, 0.1);
   --error: #ffb18e;
   --unknown: #89b7cf;
   --primary: #7ec9ab;
@@ -114,7 +129,7 @@ label {
 }
 button.primary {
   background: var(--accent);
-  color: var(--surface);
+  color: var(--accent-contrast);
   border-color: var(--accent);
   font-weight: 600;
 }
@@ -543,7 +558,7 @@ dialog {
   padding: 24px;
 }
 dialog::backdrop {
-  background: #142c2466;
+  background: rgba(15, 23, 42, 0.4);
 }
 dialog h2 {
   margin: 0 0 16px;
@@ -1380,14 +1395,14 @@ dialog p {
 
 /* Lab design suite, 2026-11-25: shared shapes, restrained surfaces and hierarchy. */
 :root {
-  --ink: #233338;
+  --ink: #17202e;
   --control-radius: 4px;
   --control-motion: 120ms ease;
-  --control-press: #142c240a;
+  --control-press: rgba(15, 23, 42, 0.08);
 }
 [data-theme='dark'] {
-  --ink: #e2eae7;
-  --control-press: #ffffff0a;
+  --ink: #e7ecf4;
+  --control-press: rgba(255, 255, 255, 0.08);
 }
 .topbar {
   padding: 8px 18px;
