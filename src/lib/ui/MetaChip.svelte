@@ -8,11 +8,13 @@
     icon,
     info,
     infoLabel,
+    kind,
   }: {
     text: string;
     icon?: IconName | Snippet;
     info?: string;
     infoLabel?: string;
+    kind?: 'primary' | 'secondary' | 'reference';
   } = $props();
   const uid = $props.id();
   let hovered = $state(false),
@@ -30,7 +32,8 @@
     }
   }}
 />
-<span class="meta">
+<span class="meta" data-kind={kind}>
+  {#if kind}<span class="role-dot" aria-hidden="true"></span>{/if}
   {#if typeof icon === 'string'}<Icon
       kind={icon}
     />{:else if icon}{@render icon()}{/if}
@@ -77,8 +80,8 @@
     padding: 2px 6px;
     border: 1px solid var(--border);
     border-radius: var(--control-radius);
-    color: var(--muted);
-    background: var(--subtle);
+    color: var(--role-text, var(--muted));
+    background: var(--role-tint, var(--subtle));
     font-size: 12px;
   }
   .text {

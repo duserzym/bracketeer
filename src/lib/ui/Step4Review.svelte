@@ -158,7 +158,7 @@
     </div>
   {:else if reviewView === 'paste'}
     {#await import('./QtegraPaste.svelte') then { default: QtegraPaste }}
-      <QtegraPaste rows={session.rows} {copy} />
+      <QtegraPaste rows={session.rows} standards={project.standards} {copy} />
     {:catch e}
       <p class="error">{e instanceof Error ? e.message : String(e)}</p>
     {/await}
@@ -181,6 +181,7 @@
       />
       {#each project.standards as s, i (i)}<MetaChip
           text={`${s.name} ${counts.used[s.name]?.length ?? 0}`}
+          kind={s.role}
         />{/each}
     </div>
     <div class="legend">

@@ -588,6 +588,7 @@
   <div
     use:portal
     class="catalogue-lifted"
+    data-kind={drag.source.role}
     aria-hidden="true"
     style:left={`clamp(12px, ${drag.x + 14}px, calc(100vw - 280px))`}
     style:top={`clamp(12px, ${drag.y + 12}px, calc(100vh - 90px))`}

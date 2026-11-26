@@ -1,8 +1,13 @@
 <script lang="ts">
   import { toTSV } from '../engine/export';
-  import { QTEGRA_COLUMNS, type Row } from '../engine/types';
+  import { parseLabel } from '../engine/labels';
+  import { QTEGRA_COLUMNS, type Row, type Standard } from '../engine/types';
   import { splitTSV } from './review';
-  let { rows, copy }: { rows: Row[]; copy: () => void } = $props();
+  let {
+    rows,
+    standards,
+    copy,
+  }: { rows: Row[]; standards: Standard[]; copy: () => void } = $props();
   const cells = $derived(splitTSV(toTSV(rows)));
 </script>
 
@@ -23,6 +28,7 @@
     >
     <tbody
       >{#each cells as row, i (i)}<tr
+          data-kind={parseLabel(rows[i]!.Label, standards).kind}
           ><th scope="row">{i + 1}</th>{#each row as value, j (j)}<td
               >{value}</td
             >{/each}</tr

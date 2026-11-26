@@ -87,7 +87,10 @@
       >
       {#each project.standards as standard, standardIndex (standard.name)}
         {@const count = counts.find((c) => c.name === standard.name)}
-        <tbody data-testid={`standard-${standard.name}`}>
+        <tbody
+          data-testid={`standard-${standard.name}`}
+          data-role={standard.role}
+        >
           {#each standard.ranges.length ? standard.ranges : [null] as range, i (i)}
             {@const rowIssues = issues.filter(
               (issue) =>
@@ -215,7 +218,8 @@
                 {/if}
               {:else}<td colspan={cadence ? 6 : 4}></td>{/if}
             </tr>
-            {#each rowIssues as issue, n (n)}<tr class="standard-detail"
+            {#each rowIssues as issue, n (n)}<tr
+                class="standard-detail warning-row"
                 ><td
                   colspan={cadence ? 9 : 7}
                   class:error={issue.severity === 'error'}
