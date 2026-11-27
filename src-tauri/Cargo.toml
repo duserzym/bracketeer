@@ -1,6 +1,6 @@
 [package]
 name = "bracketeer"
-version = "0.1.2"
+version = "0.1.3"
 description = "Standard-bracketed LA-ICP-MS run sequences for Qtegra"
 edition = "2024"
 license = "MIT"
